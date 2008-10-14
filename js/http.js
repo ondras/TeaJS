@@ -26,9 +26,9 @@ HTTPResponse.prototype.header = function(h) {
     }
 }
 
-HTTPResponse.prototype.escapeHTML = function(str) {
+HTTPResponse.prototype.escape = function(str) {
     if (!str) { return ""; }
-    return str.toString().replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    return str.toString().replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;"); // "
 }
 
 HTTPResponse.prototype.dump = function(obj, depth) {

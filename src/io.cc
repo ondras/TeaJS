@@ -4,6 +4,7 @@
 #include <common.h>
 #include <dirent.h>
 #include <string.h>
+#include <unistd.h>
 
 v8::Handle<v8::Value> _directory(const v8::Arguments& args) {
     v8::HandleScope handle_scope;
@@ -225,14 +226,9 @@ v8::Handle<v8::Value> _write(const v8::Arguments& args) {
 v8::Handle<v8::Value> _remove(const v8::Arguments& args) {
     v8::HandleScope handle_scope;
     v8::String::Utf8Value name(args.This()->GetInternalField(0));
-    v8::Handle<v8::Value> file = args.This()->GetInternalField(1);
     
-    if (!file->IsFalse()) {
-	return v8::ThrowException(v8::String::New("File must be closed before deleting"));
-    }
-    
-    if (!remove(*name)) {
-	return v8::ThrowException(v8::String::New("Cannot remove file"));
+    if (remove(*name) != 0) {
+	return v8::ThrowException(v8::String::New("Cannot remove file/dir"));
     }
     
     return args.This();
@@ -253,7 +249,13 @@ v8::Handle<v8::Value> _getsize(const v8::Arguments& args) {
 v8::Handle<v8::Value> _tostring(const v8::Arguments& args) {
     v8::HandleScope handle_scope;
     return args.This()->GetInternalField(0);
+}
 
+v8::Handle<v8::Value> _exists(const v8::Arguments& args) {
+    v8::HandleScope handle_scope;
+    v8::String::Utf8Value name(args.This()->GetInternalField(0));
+    int result = access(*name, F_OK);
+    return v8::Boolean::New(result == 0);
 }
 
 void SetupIo(v8::Handle<v8::Object> target) {
@@ -273,6 +275,7 @@ void SetupIo(v8::Handle<v8::Object> target) {
   pt->Set("remove", v8::FunctionTemplate::New(_remove));
   pt->Set("getSize", v8::FunctionTemplate::New(_getsize));
   pt->Set("toString", v8::FunctionTemplate::New(_tostring));
+  pt->Set("exists", v8::FunctionTemplate::New(_exists));
 
   target->Set(v8::String::New("File"), ft->GetFunction());	      
   
@@ -286,6 +289,8 @@ void SetupIo(v8::Handle<v8::Object> target) {
   pt->Set("listFiles", v8::FunctionTemplate::New(_listfiles));
   pt->Set("listDirectories", v8::FunctionTemplate::New(_listdirectories));
   pt->Set("toString", v8::FunctionTemplate::New(_tostring));
+  pt->Set("exists", v8::FunctionTemplate::New(_exists));
+  pt->Set("remove", v8::FunctionTemplate::New(_remove));
 
   target->Set(v8::String::New("Directory"), ft->GetFunction());	      
   

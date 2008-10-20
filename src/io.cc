@@ -1,6 +1,82 @@
 #include <v8.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <common.h>
+#include <dirent.h>
+#include <string.h>
+
+v8::Handle<v8::Value> _directory(const v8::Arguments& args) {
+    v8::HandleScope handle_scope;
+    if (args.Length() < 1 || args.This()->InternalFieldCount() == 0) {
+	return v8::ThrowException(v8::String::New("Invalid call format. Use 'new Directory(name)'"));
+    }
+    
+    args.This()->SetInternalField(0, args[0]);
+    return args.This();
+}
+
+v8::Handle<v8::Value> _create(const v8::Arguments& args) {
+    v8::HandleScope handle_scope;
+
+    v8::String::Utf8Value name(args.This()->GetInternalField(0));
+    int mode;
+    if (args.Length() == 0) { 
+	mode = 0777; 
+    } else {
+	mode = args[0]->Int32Value();
+    }
+
+    int result = mkdir(*name, mode);
+    if (result != 0) {
+	return v8::ThrowException(v8::String::New("Cannot create directory'"));
+    }
+    
+    return args.This();
+}
+
+v8::Handle<v8::Value> _listfiles(const v8::Arguments& args) {
+    v8::HandleScope handle_scope;
+    v8::String::Utf8Value name(args.This()->GetInternalField(0));
+
+    DIR * dp;
+    struct dirent * ep;
+    
+    v8::Handle<v8::Array> result = v8::Array::New();
+  
+    dp = opendir(*name);
+    if (dp == NULL) { return v8::ThrowException(v8::String::New("Directory cannot be opened")); }
+    int cnt = 0;
+    while ((ep = readdir(dp))) { 
+	if (ep->d_type == DT_REG) {
+	    result->Set(v8::Integer::New(cnt++), v8::String::New(ep->d_name));
+	}
+    }
+    closedir(dp);
+    return result;
+}
+
+v8::Handle<v8::Value> _listdirectories(const v8::Arguments& args) {
+    v8::HandleScope handle_scope;
+    v8::String::Utf8Value name(args.This()->GetInternalField(0));
+
+    DIR * dp;
+    struct dirent * ep;
+    
+    v8::Handle<v8::Array> result = v8::Array::New();
+  
+    dp = opendir(*name);
+    if (dp == NULL) { return v8::ThrowException(v8::String::New("Directory cannot be opened")); }
+    int cnt = 0;
+    while ((ep = readdir(dp))) { 
+	if (ep->d_type == DT_DIR) {
+	    if (strcmp(ep->d_name, ".") != 0 && strcmp(ep->d_name, "..") != 0) {
+		result->Set(v8::Integer::New(cnt++), v8::String::New(ep->d_name));
+	    }
+	}
+    }
+    closedir(dp);
+    return result;
+}
 
 v8::Handle<v8::Value> _file(const v8::Arguments& args) {
     v8::HandleScope handle_scope;
@@ -182,6 +258,7 @@ v8::Handle<v8::Value> _tostring(const v8::Arguments& args) {
 
 void SetupIo(v8::Handle<v8::Object> target) {
   v8::HandleScope handle_scope;
+
   v8::Handle<v8::FunctionTemplate> ft = v8::FunctionTemplate::New(_file);
   ft->SetClassName(v8::String::New("File"));
   v8::Handle<v8::ObjectTemplate> ot = ft->InstanceTemplate();
@@ -198,4 +275,18 @@ void SetupIo(v8::Handle<v8::Object> target) {
   pt->Set("toString", v8::FunctionTemplate::New(_tostring));
 
   target->Set(v8::String::New("File"), ft->GetFunction());	      
+  
+  ft = v8::FunctionTemplate::New(_directory);
+  ft->SetClassName(v8::String::New("Directory"));
+  ot = ft->InstanceTemplate();
+  ot->SetInternalFieldCount(1); /* dirname */
+
+  pt = ft->PrototypeTemplate();
+  pt->Set("create", v8::FunctionTemplate::New(_create));
+  pt->Set("listFiles", v8::FunctionTemplate::New(_listfiles));
+  pt->Set("listDirectories", v8::FunctionTemplate::New(_listdirectories));
+  pt->Set("toString", v8::FunctionTemplate::New(_tostring));
+
+  target->Set(v8::String::New("Directory"), ft->GetFunction());	      
+  
 }

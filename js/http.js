@@ -37,7 +37,7 @@ HTTPResponse.prototype.dump = function(obj, depth) {
     for (var p in obj) {
 	var val = obj[p];
 	for (var i=0;i<2*d;i++) { this.write(" "); }
-	this.write(p+": "+this.escapeHTML(val)+"\n");
+	this.write(p+": "+this.escape(val)+"\n");
 	if (typeof(val) == "object") {
 	    arguments.callee.call(this, val, d+1);
 	}

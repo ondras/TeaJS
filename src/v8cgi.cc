@@ -1,5 +1,5 @@
 /* 
- * v8cgi main file. Based on V8's "shell" sample app.
+ * v8cgi main file. Based on V8's "shell" sample app
  */
 
 #include <v8.h>

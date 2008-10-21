@@ -6,6 +6,8 @@
 #include <string.h>
 #include <unistd.h>
 
+v8::Handle<v8::FunctionTemplate> ft;
+
 v8::Handle<v8::Value> _directory(const v8::Arguments& args) {
     v8::HandleScope handle_scope;
     if (args.Length() < 1 || args.This()->InternalFieldCount() == 0) {
@@ -297,7 +299,8 @@ v8::Handle<v8::Value> _copyfile(const v8::Arguments & args) {
 
     v8::Handle<v8::Value> result = _copy(*name, *newname);    
     if (result->IsTrue()) {
-	return _file(args);
+	v8::Handle<v8::Value> fargs[] = { args[0] };
+    	return ft->GetFunction()->NewInstance(1, fargs);
     } else {
 	return result;
     }
@@ -318,9 +321,8 @@ v8::Handle<v8::Value> _exists(const v8::Arguments& args) {
 }
 
 void SetupIo(v8::Handle<v8::Object> target) {
-  v8::HandleScope handle_scope;
 
-  v8::Handle<v8::FunctionTemplate> ft = v8::FunctionTemplate::New(_file);
+  ft = v8::FunctionTemplate::New(_file);
   ft->SetClassName(v8::String::New("File"));
   v8::Handle<v8::ObjectTemplate> ot = ft->InstanceTemplate();
   ot->SetInternalFieldCount(4); /* filename, handle, size, position */

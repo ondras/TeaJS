@@ -188,9 +188,6 @@ v8::Handle<v8::Value> _write(const v8::Arguments& args) {
 	return v8::ThrowException(v8::String::New("File must be opened before writing"));
     }
     
-    if (args.Length() < 1) {
-	return v8::ThrowException(v8::String::New("Bad argument count. Use 'file.write(data)'"));
-    }
 
     FILE * f = reinterpret_cast<FILE *>(v8::Handle<v8::External>::Cast(file)->Value());
     
@@ -217,8 +214,6 @@ v8::Handle<v8::Value> _write(const v8::Arguments& args) {
     
 	fwrite(*data, sizeof(char), args[0]->ToString()->Utf8Length(), f);
     }
-								  
-    
 	    
     return args.This();
 }
@@ -245,6 +240,70 @@ v8::Handle<v8::Value> _getsize(const v8::Arguments& args) {
 	return v8::Boolean::New(false);
     } 
 }
+
+v8::Handle<v8::Value> _copy(char * name1, char * name2) {
+    int len = 1024;
+    char buf[len];
+    
+    FILE * f1 = fopen(name1, "rb");
+    FILE * f2 = fopen(name2, "wb");
+    
+    if (f1 == NULL) { return v8::ThrowException(v8::String::New("Cannot open source file")); }
+    if (f2 == NULL) { return v8::ThrowException(v8::String::New("Cannot open target file")); }
+    
+    int size = 0;
+    
+    while ((size = fread(buf, sizeof(char), len, f1))) {
+	fwrite(buf, sizeof(char), size, f2);
+    }
+    
+    fclose(f1);
+    fclose(f2);
+    return v8::Boolean::New(true);
+}
+v8::Handle<v8::Value> _movefile(const v8::Arguments& args) {
+    v8::HandleScope handle_scope;
+    
+    if (args.Length() < 1) {
+	return v8::ThrowException(v8::String::New("Bad argument count. Use 'file.rename(newname)'"));
+    }
+    
+    v8::String::Utf8Value name(args.This()->GetInternalField(0));
+    v8::String::Utf8Value newname(args[0]);
+
+    int renres = rename(*name, *newname);
+
+    if (renres != 0) {
+	v8::Handle<v8::Value> result = _copy(*name, *newname);
+	if (result->IsTrue()) {
+	    remove(*name);
+	} else {
+	    return result;
+	}
+    }
+    
+    args.This()->SetInternalField(0, args[0]);
+    return args.This();    
+}
+
+v8::Handle<v8::Value> _copyfile(const v8::Arguments & args) {
+    v8::HandleScope handle_scope;
+    if (args.Length() < 1) {
+	return v8::ThrowException(v8::String::New("Bad argument count. Use 'file.copy(newname)'"));
+    }
+    
+    v8::String::Utf8Value name(args.This()->GetInternalField(0));
+    v8::String::Utf8Value newname(args[0]);
+
+    v8::Handle<v8::Value> result = _copy(*name, *newname);    
+    if (result->IsTrue()) {
+	return _file(args);
+    } else {
+	return result;
+    }
+}
+
+
 
 v8::Handle<v8::Value> _tostring(const v8::Arguments& args) {
     v8::HandleScope handle_scope;
@@ -276,6 +335,8 @@ void SetupIo(v8::Handle<v8::Object> target) {
   pt->Set("getSize", v8::FunctionTemplate::New(_getsize));
   pt->Set("toString", v8::FunctionTemplate::New(_tostring));
   pt->Set("exists", v8::FunctionTemplate::New(_exists));
+  pt->Set("move", v8::FunctionTemplate::New(_movefile));
+  pt->Set("copy", v8::FunctionTemplate::New(_copyfile));
 
   target->Set(v8::String::New("File"), ft->GetFunction());	      
   

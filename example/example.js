@@ -1,6 +1,6 @@
 #!../v8cgi
 
-include("../http.js");
+include("../js/http.js");
 
 response.dump(request.get);
 response.dump(request.post);

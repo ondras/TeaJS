@@ -16,58 +16,22 @@ bool ExecuteString(v8::Handle<v8::String> source,
                    v8::Handle<v8::Value> name,
                    bool print_result,
                    bool report_exceptions);
-v8::Handle<v8::Value> Include(const v8::Arguments& args);
-v8::Handle<v8::Value> Quit(const v8::Arguments& args);
 v8::Handle<v8::String> ReadFile(const char* name);
 void ReportException(v8::TryCatch* handler);
 
-int main(int argc, char ** argv, char ** envp) {
-  v8::V8::SetFlagsFromCommandLine(&argc, argv, true);
-  v8::HandleScope handle_scope;
-  v8::Handle<v8::ObjectTemplate> global = v8::ObjectTemplate::New();
-  
-  v8::Handle<v8::Context> context = v8::Context::New(NULL, global);
-  v8::Context::Scope context_scope(context);
+v8::Handle<v8::Array> onexit;
 
-  context->Global()->Set(v8::String::New("include"), v8::FunctionTemplate::New(Include)->GetFunction());
-  context->Global()->Set(v8::String::New("quit"), v8::FunctionTemplate::New(Quit)->GetFunction());
-
-  SetupSys(envp, context->Global());
-  SetupIo(context->Global());  
-  SetupMysql(context->Global());  
-
-  bool run_shell = (argc == 1);
-  for (int i = 1; i < argc; i++) {
-    const char* str = argv[i];
-    if (strcmp(str, "--shell") == 0) {
-      run_shell = true;
-    } else if (strcmp(str, "-f") == 0) {
-      // Ignore any -f flags for compatibility with the other stand-
-      // alone JavaScript engines.
-      continue;
-    } else if (strncmp(str, "--", 2) == 0) {
-      printf("Warning: unknown flag %s.\n", str);
-    } else {
-      // Use all other arguments as names of files to load and run.
-      v8::HandleScope handle_scope;
-      v8::Handle<v8::String> file_name = v8::String::New(str);
-      v8::Handle<v8::String> source = ReadFile(str);
-      if (source.IsEmpty()) {
-        printf("Error reading '%s'\n", str);
-        return 1;
-      }
-      if (!ExecuteString(source, file_name, false, true))
-        return 1;
+void die(int code) {
+    int max = onexit->Length();
+    v8::Handle<v8::Function> fun;
+    for (int i=0;i<max;i++) {
+	fun = v8::Handle<v8::Function>::Cast(onexit->Get(v8::Integer::New(i)));
+	fun->Call(v8::Context::GetCurrent()->Global(), 0, NULL);
     }
-  }
-  
-  
-  if (run_shell) RunShell(context);
-  return 0;
+    exit(code);
 }
 
-
-v8::Handle<v8::Value> Include(const v8::Arguments& args) {
+v8::Handle<v8::Value> _include(const v8::Arguments& args) {
   for (int i = 0; i < args.Length(); i++) {
     v8::HandleScope handle_scope;
     v8::String::Utf8Value file(args[i]);
@@ -84,9 +48,13 @@ v8::Handle<v8::Value> Include(const v8::Arguments& args) {
 }
 
 
-v8::Handle<v8::Value> Quit(const v8::Arguments& args) {
-  int exit_code = args[0]->Int32Value();
-  exit(exit_code);
+v8::Handle<v8::Value> _exit(const v8::Arguments& args) {
+  die(args[0]->Int32Value());
+  return v8::Undefined();
+}
+
+v8::Handle<v8::Value> _onexit(const v8::Arguments& args) {
+  onexit->Set(v8::Integer::New(onexit->Length()), args[0]);
   return v8::Undefined();
 }
 
@@ -219,4 +187,51 @@ void ReportException(v8::TryCatch* try_catch) {
   v8::Handle<v8::Value> data[1];
   data[0] = v8::String::New(msgstring.c_str());
   fun->Call(context->ToObject(), 1, data);
+}
+
+int main(int argc, char ** argv, char ** envp) {
+  v8::V8::SetFlagsFromCommandLine(&argc, argv, true);
+  v8::HandleScope handle_scope;
+
+  v8::Handle<v8::ObjectTemplate> global = v8::ObjectTemplate::New();
+  v8::Handle<v8::Context> context = v8::Context::New(NULL, global);
+  v8::Context::Scope context_scope(context);
+
+  onexit = v8::Array::New();
+  context->Global()->Set(v8::String::New("include"), v8::FunctionTemplate::New(_include)->GetFunction());
+  context->Global()->Set(v8::String::New("exit"), v8::FunctionTemplate::New(_exit)->GetFunction());
+  context->Global()->Set(v8::String::New("onexit"), v8::FunctionTemplate::New(_onexit)->GetFunction());
+
+  SetupSys(envp, context->Global());
+  SetupIo(context->Global());  
+  SetupMysql(context->Global());  
+
+  bool run_shell = (argc == 1);
+  for (int i = 1; i < argc; i++) {
+    const char* str = argv[i];
+    if (strcmp(str, "--shell") == 0) {
+      run_shell = true;
+    } else if (strcmp(str, "-f") == 0) {
+      // Ignore any -f flags for compatibility with the other stand-
+      // alone JavaScript engines.
+      continue;
+    } else if (strncmp(str, "--", 2) == 0) {
+      printf("Warning: unknown flag %s.\n", str);
+    } else {
+      // Use all other arguments as names of files to load and run.
+      v8::HandleScope handle_scope;
+      v8::Handle<v8::String> file_name = v8::String::New(str);
+      v8::Handle<v8::String> source = ReadFile(str);
+      if (source.IsEmpty()) {
+        printf("Error reading '%s'\n", str);
+        die(1);
+      }
+      if (!ExecuteString(source, file_name, false, true))
+        die(1);
+    }
+  }
+  
+  
+  if (run_shell) RunShell(context);
+  die(0);
 }

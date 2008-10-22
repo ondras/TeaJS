@@ -14,12 +14,27 @@ HTTPResponse.prototype.write = function(str) {
     system.stdout(str);
 }
 
+HTTPResponse.prototype.cookie = function(name, value, expires, path, domain, secure, httponly) {
+    if (expires && !(expires instanceof Date)) { return false; }
+    var arr = [];
+    arr.push(encodeURIComponent(name)+"="+encodeURIComponent(value));
+    if (expires) { arr.push("expires="+expires.toGMTString()); }
+    if (path) { arr.push("path="+path); }
+    if (domain) { arr.push("domain="+domain); }
+    if (secure) { arr.push("secure"); }
+    if (httponly) { arr.push("httponly"); }
+    
+    var str = arr.join("; ");
+    this.header({"Set-Cookie":str});
+    return true;
+}
+
 HTTPResponse.prototype.error = function(txt) {
     this.write("<pre>Error: "+txt+"</pre>");
 }
 
 HTTPResponse.prototype.header = function(h) {
-    for (var p in h) {	
+    for (var p in h) {
 	if (p.match(/content-type/i)) { this._ct = true; }
 	var str = p+": "+h[p]+"\n";
 	system.stdout(str);

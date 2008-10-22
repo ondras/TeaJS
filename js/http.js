@@ -9,9 +9,9 @@ HTTPResponse.prototype.write = function(str) {
     if (!this._output) {
 	this._output = true;
 	if (!this._ct) { this.header({"Content-type":"text/html"}); }
-	system.stdout("\n");
+	System.stdout("\n");
     }
-    system.stdout(str);
+    System.stdout(str);
 }
 
 HTTPResponse.prototype.cookie = function(name, value, expires, path, domain, secure, httponly) {
@@ -37,7 +37,7 @@ HTTPResponse.prototype.header = function(h) {
     for (var p in h) {
 	if (p.match(/content-type/i)) { this._ct = true; }
 	var str = p+": "+h[p]+"\n";
-	system.stdout(str);
+	System.stdout(str);
     }
 }
 
@@ -69,22 +69,22 @@ var HTTPRequest = function() {
     this.files = {};
 
     this.method = null;
-    if (system.env["REQUEST_METHOD"]) { this.method = system.env["REQUEST_METHOD"].toUpperCase(); }
+    if (System.env["REQUEST_METHOD"]) { this.method = System.env["REQUEST_METHOD"].toUpperCase(); }
     if (!this.method) { return; }
 
     this._parseCookie();
-    this._parseQS(system.env["QUERY_STRING"], this.get);
+    this._parseQS(System.env["QUERY_STRING"], this.get);
     if (this.method == "POST") { this._parsePOST(); }
 }
 
 HTTPRequest.prototype.header = function(name) {
     var n = "HTTP_" + name.toUpperCase().replace(/-/g,"_");
-    return (n in system.env ? system.env[n] : null);
+    return (n in System.env ? System.env[n] : null);
 }
 
 HTTPRequest.prototype._parseCookie = function() {
-    if (!("HTTP_COOKIE" in system.env)) { return; }
-    var all = system.env["HTTP_COOKIE"].split("; ");
+    if (!("HTTP_COOKIE" in System.env)) { return; }
+    var all = System.env["HTTP_COOKIE"].split("; ");
     for (var i=0;i<all.length;i++) {
 	var row = all[i];
 	var eq = row.indexOf("=");
@@ -132,15 +132,15 @@ HTTPRequest.prototype._parseQS = function(qs, output) {
 }
 
 HTTPRequest.prototype._parsePOST = function() {
-    var ct = system.env["CONTENT_TYPE"] || "";
-    var length = parseInt(system.env["CONTENT_LENGTH"], 10);
+    var ct = System.env["CONTENT_TYPE"] || "";
+    var length = parseInt(System.env["CONTENT_LENGTH"], 10);
     if (!length) { return false; }
     
-    if (system.env["CONTENT_TYPE"] == "application/x-www-form-urlencoded") {
-	var data = system.stdin(length);
+    if (System.env["CONTENT_TYPE"] == "application/x-www-form-urlencoded") {
+	var data = System.stdin(length);
 	this._parseQS(data, this.post);
     } else if (ct.match(/boundary/)) {
-	var arr = system.stdin(length, true);
+	var arr = System.stdin(length, true);
 	var str = String.fromCharCode.apply(this, arr); /* convert from array to string */
 	this._parseMultipart(ct, str, false);
     } else {

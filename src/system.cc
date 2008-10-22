@@ -41,7 +41,7 @@ void SetupSys(char ** envp, v8::Handle<v8::Object> global) {
   v8::Handle<v8::ObjectTemplate> envt = v8::ObjectTemplate::New();
   v8::Handle<v8::Object> env = envt->NewInstance();
 
-  global->Set(v8::String::New("system"), system);
+  global->Set(v8::String::New("System"), system);
   system->Set(v8::String::New("stdin"), v8::FunctionTemplate::New(_stdin)->GetFunction());
   system->Set(v8::String::New("stdout"), v8::FunctionTemplate::New(_stdout)->GetFunction());
   

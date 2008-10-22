@@ -231,16 +231,21 @@ v8::Handle<v8::Value> _remove(const v8::Arguments& args) {
     return args.This();
 }
 
-v8::Handle<v8::Value> _getsize(const v8::Arguments& args) {
+v8::Handle<v8::Value> _stat(const v8::Arguments& args) {
     v8::HandleScope handle_scope;
     
     v8::String::Utf8Value name(args.This()->GetInternalField(0));
     struct stat st;
     if (stat(*name, &st) == 0) {
-	return v8::Integer::New(st.st_size);
+	v8::Handle<v8::Object> obj = v8::Object::New();
+	obj->Set(v8::String::New("size"), v8::Integer::New(st.st_size));
+	obj->Set(v8::String::New("mtime"), v8::Integer::New(st.st_mtime));
+	obj->Set(v8::String::New("atime"), v8::Integer::New(st.st_atime));
+	obj->Set(v8::String::New("ctime"), v8::Integer::New(st.st_ctime));
+	return obj;
     } else {
 	return v8::Boolean::New(false);
-    } 
+    }
 }
 
 v8::Handle<v8::Value> _copy(char * name1, char * name2) {
@@ -334,11 +339,11 @@ void SetupIo(v8::Handle<v8::Object> target) {
   pt->Set("close", v8::FunctionTemplate::New(_close));
   pt->Set("write", v8::FunctionTemplate::New(_write));
   pt->Set("remove", v8::FunctionTemplate::New(_remove));
-  pt->Set("getSize", v8::FunctionTemplate::New(_getsize));
   pt->Set("toString", v8::FunctionTemplate::New(_tostring));
   pt->Set("exists", v8::FunctionTemplate::New(_exists));
   pt->Set("move", v8::FunctionTemplate::New(_movefile));
   pt->Set("copy", v8::FunctionTemplate::New(_copyfile));
+  pt->Set("stat", v8::FunctionTemplate::New(_stat));
 
   target->Set(v8::String::New("File"), ft->GetFunction());	      
   
@@ -354,6 +359,7 @@ void SetupIo(v8::Handle<v8::Object> target) {
   pt->Set("toString", v8::FunctionTemplate::New(_tostring));
   pt->Set("exists", v8::FunctionTemplate::New(_exists));
   pt->Set("remove", v8::FunctionTemplate::New(_remove));
+  pt->Set("stat", v8::FunctionTemplate::New(_stat));
 
   target->Set(v8::String::New("Directory"), ft->GetFunction());	      
   

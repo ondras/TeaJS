@@ -180,7 +180,7 @@ void ReportException(v8::TryCatch* try_catch) {
     }
   }
   if (!cgi) {
-    context = v8::Context::GetCurrent()->Global()->Get(v8::String::New("system"));
+    context = v8::Context::GetCurrent()->Global()->Get(v8::String::New("System"));
     fun = v8::Local<v8::Function>::Cast(context->ToObject()->Get(v8::String::New("stdout")));
   }
   

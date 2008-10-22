@@ -201,6 +201,7 @@ int main(int argc, char ** argv, char ** envp) {
   context->Global()->Set(v8::String::New("include"), v8::FunctionTemplate::New(_include)->GetFunction());
   context->Global()->Set(v8::String::New("exit"), v8::FunctionTemplate::New(_exit)->GetFunction());
   context->Global()->Set(v8::String::New("onexit"), v8::FunctionTemplate::New(_onexit)->GetFunction());
+  context->Global()->Set(v8::String::New("global"), context->Global());
 
   SetupSys(envp, context->Global());
   SetupIo(context->Global());  

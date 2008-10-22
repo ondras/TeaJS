@@ -242,6 +242,9 @@ v8::Handle<v8::Value> _stat(const v8::Arguments& args) {
 	obj->Set(v8::String::New("mtime"), v8::Integer::New(st.st_mtime));
 	obj->Set(v8::String::New("atime"), v8::Integer::New(st.st_atime));
 	obj->Set(v8::String::New("ctime"), v8::Integer::New(st.st_ctime));
+	obj->Set(v8::String::New("mode"), v8::Integer::New(st.st_mode));
+	obj->Set(v8::String::New("uid"), v8::Integer::New(st.st_uid));
+	obj->Set(v8::String::New("gid"), v8::Integer::New(st.st_gid));
 	return obj;
     } else {
 	return v8::Boolean::New(false);

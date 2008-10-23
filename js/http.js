@@ -304,7 +304,9 @@ HTTPSession.prototype._gc = function() {
 }
 
 HTTPSession.prototype._cookie = function() {
-    response.cookie(this._name, this._id);
+    var d = new Date();
+    d.setFullYear(100+d.getFullYear());
+    response.cookie(this._name, this._id, d);
 }
 
 HTTPSession.prototype._load = function() {

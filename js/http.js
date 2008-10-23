@@ -223,11 +223,18 @@ var HTTPSession = function() {
     this._lifetime = 60*60;
     this._gc();
     
-    
-    if (request.cookie[this._name]) {
-	this.setId(request.cookie[this._name]);
-	if (this._file.exists()) { this._load(); }
-    } else {
+    var ok = false;
+    if (request.cookie[this._name]) { /* cookie here */
+	var id = request.cookie[this._name];
+	var f = new File(this._fileName(id));
+	if (f.exists()) { /* matching file */
+	    this._id = id;
+	    this._file = f;
+	    this._load();
+	    ok = true;
+	}
+    }
+    if (!ok) {
 	this.setId();
 	this.clear();
     }
@@ -268,16 +275,19 @@ HTTPSession.prototype.getId = function() {
 HTTPSession.prototype.setId = function(id) {
     this._id = id || this._newId();
     this._cookie();
-    if (this._file && this._file.exists()) { this._file.remove(); }
-    this._file = new File(this._fileName());
+    this._file = new File(this._fileName(this._id));
 }
 
 HTTPSession.prototype._newId = function() {
-    return Math.random();
+    var str = "";
+    for (var i=0;i<3;i++) {
+	str += Math.random().toString();
+    }
+    return Util.sha1(str);
 }
 
-HTTPSession.prototype._fileName = function() {
-    return this._path + this._id;
+HTTPSession.prototype._fileName = function(id) {
+    return this._path + Util.sha1(id);
 }
 
 HTTPSession.prototype._gc = function() {

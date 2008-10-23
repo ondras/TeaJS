@@ -4,12 +4,26 @@
 
 v8::Handle<v8::Value> _stdin(const v8::Arguments&args) {
     v8::HandleScope handle_scope;
-    int count = args[0]->Int32Value();
-
-    char data[count+sizeof(char)];
-    fread(data,sizeof(char),count,stdin);
-    data[count] = '\0';
     
+    int count = args[0]->Int32Value();
+    char * data;
+
+    if (count == 0) {
+	data = (char *) malloc(sizeof(char));
+	char * ch;
+	do {
+	    count++;
+	    fread(ch, sizeof(char), 1, stdin);
+	    data = (char *) realloc(data, count+1);
+	    data[count-1] = ch[0];
+	    data[count] = '\0';
+	} while (ch[0] != '\n');
+    } else {
+	data = (char *)  malloc(count + sizeof(char));
+	fread(data,sizeof(char),count,stdin);
+	data[count] = '\0';
+    }
+
     if (args.Length() > 1 && args[1]->IsTrue()) {
 	return char2array(data, count);
     } else {

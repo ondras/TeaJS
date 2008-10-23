@@ -60,8 +60,6 @@ HTTPResponse.prototype.dump = function(obj, depth) {
     if (!d) { this.write("</pre>\n"); }
 }
 
-this.response = new HTTPResponse();
-
 var HTTPRequest = function() {
     this.get = {};
     this.post = {};
@@ -156,7 +154,7 @@ HTTPRequest.prototype._addField = function(output, name, value) {
         output[name].push(value);
     } else {
 	output[name] = [output[name], value];
-}
+    }
 }
 
 HTTPRequest.prototype._parseMultipart = function(header, data, name) {
@@ -177,10 +175,10 @@ HTTPRequest.prototype._parseMultipart = function(header, data, name) {
 	};
 	for (var j=0;j<lines.length;j++) {
 	    if (lines[j] == end) { continue; }
-	    if (done) {
+	    if (done) { /* data */
 		obj.data += (obj.data.length ? "\r\n" : "")+lines[j];
-	    } else {
-		if (lines[j] == "") { done = true; continue; }
+	    } else { /* headers */
+		if (lines[j] == "") { done = true; continue; } /* headers done */
 		var r = lines[j].match(/([^:]+): *(.*)/);
 		var name = r[1].replace(/-/g,"_").toUpperCase();
 		var value = r[2];
@@ -214,7 +212,99 @@ HTTPRequest.prototype._processMultipart = function(obj, n) {
     }		
 }
 
+var HTTPSession = function() {
+    this._data = {};
+    this._id = null;
+    this._file = null;
+
+    this._name = "V8SID";
+    this._path = "/tmp";
+    if (this._path.charAt(this._path.length-1) != "/") { this._path += "/"; }
+    this._lifetime = 60*60;
+    this._gc();
+    
+    
+    if (request.cookie[this._name]) {
+	this.setId(request.cookie[this._name]);
+	if (this._file.exists()) { this._load(); }
+    } else {
+	this.setId();
+	this.clear();
+    }
+    
+    var self = this;
+    var callback = function() { self.save(); }
+    onexit(callback);
+}
+
+HTTPSession.prototype.set = function(name, value) {
+    this._data[name] = value;
+}
+
+HTTPSession.prototype.get = function(name) {
+    return this._data[name] || null;
+}
+
+HTTPSession.prototype.clear = function() {
+    this._data = {};
+    if (this._file.exists()) { this._file.remove(); }
+}
+
+HTTPSession.prototype.save = function() {
+    var propcnt = 0;
+    for (var p in this._data) { propcnt++; }
+    if (propcnt == 0) {
+	if (this._file.exists()) { this._file.remove(); }
+	return;
+    }
+    var str = Util.serialize(this._data);
+    this._file.open("w").write(str).close();
+}
+
+HTTPSession.prototype.getId = function() {
+    return this._id;
+}
+
+HTTPSession.prototype.setId = function(id) {
+    this._id = id || this._newId();
+    this._cookie();
+    if (this._file && this._file.exists()) { this._file.remove(); }
+    this._file = new File(this._fileName());
+}
+
+HTTPSession.prototype._newId = function() {
+    return Math.random();
+}
+
+HTTPSession.prototype._fileName = function() {
+    return this._path + this._id;
+}
+
+HTTPSession.prototype._gc = function() {
+    var d = new Directory(this._path);
+    var files = d.listFiles();
+    var now = Math.round(new Date().getTime()/1000);
+    for (var i=0;i<files.length;i++) {
+	var file = new File(this._path + files[i]);
+	var data = file.stat();
+	if (now - data.atime > this._lifetime && now - data.mtime > this._lifetime) {
+	    try { file.remove(); } catch(e) { }
+	}
+    }
+}
+
+HTTPSession.prototype._cookie = function() {
+    response.cookie(this._name, this._id);
+}
+
+HTTPSession.prototype._load = function() {
+    var str = this._file.open("r").read();
+    this._file.close();
+    this._data = Util.unserialize(str);
+}
+
+this.response = new HTTPResponse();
 this.request = new HTTPRequest();
+this.session = new HTTPSession();
 
 })();
-

@@ -2,4 +2,5 @@
 1) download and build V8
 2) copy libv8.so to /usr/include/
 3) make sure that V8 header file is in ../v8/include
-4) run `scons [mysql=1]`
+4) run `scons`, for help on compile time arguments see `scons -Q -h`
+5) copy v8cgi.conf.dist to config file location (set at compile time)

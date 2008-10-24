@@ -1,17 +1,31 @@
-/* 
- * v8cgi main file. Based on V8's "shell" sample app
+/*
+ * v8cgi main file. Loosely based on V8's "shell" sample app.
  */
 
 #include <v8.h>
 #include <system.h>
 #include <io.h>
 #include <jsmysql.h>
+
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
 #include <sstream>
 
+#define _STRING(x) #x
+#define STRING(x) _STRING(x)
+
 v8::Handle<v8::Array> onexit;
+
+void Die(int code) {
+    int max = onexit->Length();
+    v8::Handle<v8::Function> fun;
+    for (int i=0;i<max;i++) {
+	fun = v8::Handle<v8::Function>::Cast(onexit->Get(v8::Integer::New(i)));
+	fun->Call(v8::Context::GetCurrent()->Global(), 0, NULL);
+    }
+    exit(code);
+}
 
 v8::Handle<v8::String> ReadFile(const char* name) {
   FILE* file = fopen(name, "rb");
@@ -95,52 +109,51 @@ void ReportException(v8::TryCatch* try_catch) {
   fun->Call(context->ToObject(), 1, data);
 }
 
-bool ExecuteString(v8::Handle<v8::String> source, v8::Handle<v8::Value> name) {
-  v8::HandleScope handle_scope;
-  v8::TryCatch try_catch;
-  v8::Handle<v8::Script> script = v8::Script::Compile(source, name);
-  if (script.IsEmpty()) {
-    ReportException(&try_catch);
-    return false;
-  } else {
-    v8::Handle<v8::Value> result = script->Run();
-    if (result.IsEmpty()) {
-      ReportException(&try_catch);
-      return false;
+int ExecuteFile(char * str) {
+    v8::HandleScope handle_scope;
+    v8::TryCatch try_catch;
+    v8::Handle<v8::String> name = v8::String::New(str);
+    v8::Handle<v8::String> source = ReadFile(str);
+
+    if (source.IsEmpty()) {
+	printf("Error reading '%s'\n", str);
+        return 1;
     }
-  }
-  return true;
+    
+    v8::Handle<v8::Script> script = v8::Script::Compile(source, name);
+    if (script.IsEmpty()) {
+	ReportException(&try_catch);
+	return 1;
+    } else {
+	v8::Handle<v8::Value> result = script->Run();
+	if (result.IsEmpty()) {
+	    ReportException(&try_catch);
+	    return 1;
+	}
+    }
+    return 0;
 }
 
-void die(int code) {
-    int max = onexit->Length();
-    v8::Handle<v8::Function> fun;
-    for (int i=0;i<max;i++) {
-	fun = v8::Handle<v8::Function>::Cast(onexit->Get(v8::Integer::New(i)));
-	fun->Call(v8::Context::GetCurrent()->Global(), 0, NULL);
+void Init() {
+    int result = ExecuteFile(STRING(CONFIG_PATH));
+    if (result) { 
+	printf("Cannot load configuration, quitting...\n");
+	Die(1);
     }
-    exit(code);
 }
 
 v8::Handle<v8::Value> _include(const v8::Arguments& args) {
   for (int i = 0; i < args.Length(); i++) {
     v8::HandleScope handle_scope;
     v8::String::Utf8Value file(args[i]);
-    v8::Handle<v8::String> source = ReadFile(*file);
-    if (source.IsEmpty()) {
-      return v8::ThrowException(v8::String::New("Error loading file"));
-    }
-    
-    if (!ExecuteString(source, v8::String::New(*file))) {
-      return v8::ThrowException(v8::String::New("Error executing file"));
-    }
+    ExecuteFile(*file); /* in include, we don't care about returned values */
   }
   return v8::Undefined();
 }
 
 
 v8::Handle<v8::Value> _exit(const v8::Arguments& args) {
-  die(args[0]->Int32Value());
+  Die(args[0]->Int32Value());
   return v8::Undefined();
 }
 
@@ -148,7 +161,6 @@ v8::Handle<v8::Value> _onexit(const v8::Arguments& args) {
   onexit->Set(v8::Integer::New(onexit->Length()), args[0]);
   return v8::Undefined();
 }
-
 
 int main(int argc, char ** argv, char ** envp) {
   v8::V8::SetFlagsFromCommandLine(&argc, argv, true);
@@ -171,19 +183,13 @@ int main(int argc, char ** argv, char ** envp) {
     SetupMysql(context->Global());  
   #endif
   
+  Init();
+  
   if (argc == 1) {
     printf("Nothing to do.\n");
   } else {
-    char* str = argv[1];
-    v8::Handle<v8::String> name = v8::String::New(str);
-    v8::Handle<v8::String> source = ReadFile(str);
-    if (source.IsEmpty()) {
-	printf("Error reading '%s'\n", str);
-        die(1);
-    }
-    
-    int result = ExecuteString(source, name);
-    if (result) { die(result); }
+    int result = ExecuteFile(argv[1]);
+    if (result) { Die(result); }
   }
-  die(0);
+  Die(0);
 }

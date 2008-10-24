@@ -6,6 +6,7 @@ target = "v8cgi"
 
 opts = Options()
 opts.Add(BoolOption("mysql", "MySQL support", 0))
+opts.Add(PathOption("mysqlpath", "MySQL header path", "/usr/include/mysql"))
 
 env = Environment(options=opts)
 Help(opts.GenerateHelpText(env))
@@ -20,7 +21,7 @@ sources = [
 if env["mysql"] == 1:
     sources.append("jsmysql.cc")    
     libs.append("mysqlclient")
-    cpppath.append("/usr/include/mysql")
+    cpppath.append(env["mysqlpath"])
     cppdefines["HAVE_MYSQL"] = 1
 # if
 

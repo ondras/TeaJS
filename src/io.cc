@@ -2,9 +2,19 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <common.h>
-#include <dirent.h>
 #include <string.h>
 #include <unistd.h>
+
+#ifdef unix
+#  include <dirent.h>
+#else
+#  ifndef F_OK
+#    define F_OK  0    
+#  endif
+#  include <direct.h>
+#  include <io.h>
+#  define access(path,mode) _access(path,mode)
+#endif
 
 v8::Handle<v8::FunctionTemplate> ft;
 

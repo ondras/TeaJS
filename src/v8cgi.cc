@@ -205,7 +205,10 @@ int main(int argc, char ** argv, char ** envp) {
 
   SetupSys(envp, context->Global());
   SetupIo(context->Global());  
+  
+  #ifdef HAVE_MYSQL
   SetupMysql(context->Global());  
+  #endif
 
   bool run_shell = (argc == 1);
   for (int i = 1; i < argc; i++) {

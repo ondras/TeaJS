@@ -1,0 +1,5 @@
+0) get scons
+1) download and build V8
+2) copy libv8.so to /usr/include/
+3) make sure that V8 header file is in ../v8/include
+4) run `scons [mysql=1]`

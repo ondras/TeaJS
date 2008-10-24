@@ -7,10 +7,11 @@ v8::Handle<v8::Value> _stdin(const v8::Arguments&args) {
     
     int count = args[0]->Int32Value();
     char * data;
-
     if (count == 0) {
 	data = (char *) malloc(sizeof(char));
-	char * ch;
+	char * ch = (char *) malloc(sizeof(char));
+	ch[0] = '\0';
+	
 	do {
 	    count++;
 	    fread(ch, sizeof(char), 1, stdin);
@@ -23,7 +24,6 @@ v8::Handle<v8::Value> _stdin(const v8::Arguments&args) {
 	fread(data,sizeof(char),count,stdin);
 	data[count] = '\0';
     }
-
     if (args.Length() > 1 && args[1]->IsTrue()) {
 	return char2array(data, count);
     } else {

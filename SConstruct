@@ -1,6 +1,6 @@
 libs = ["v8", "pthread"]
 cpppath = ["src", "../v8/include"]
-ccflags = ["-Wall"]
+ccflags = ["-Wall", "-O3"]
 cppdefines = {}
 target = "v8cgi"
 
@@ -25,9 +25,7 @@ if env["mysql"] == 1:
     cppdefines["HAVE_MYSQL"] = 1
 # if
 
-for index in range(len(sources)):
-    sources[index] = "src/"+sources[index]
-# for
+sources = [ "src/%s" % s for s in sources ]
 
 Program(
     source = sources, 

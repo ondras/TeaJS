@@ -31,16 +31,16 @@ Help(opts.GenerateHelpText(env))
 
 sources = [
     "v8cgi.cc", 
-    "common.cc", 
-    "system.cc", 
-    "io.cc"
+    "js_common.cc", 
+    "js_system.cc", 
+    "js_io.cc"
 ]
 
 cppdefines.append("CONFIG_PATH=" + env["conffile"])
 cppdefines.append(env["os"])
 
 if env["mysql"] == 1:
-    sources.append("jsmysql.cc")    
+    sources.append("js_mysql.cc")    
     libs.append("mysqlclient")
     cpppath.append(env["mysqlpath"])
     cppdefines.append("HAVE_MYSQL")

@@ -3,20 +3,63 @@
 #include <sys/types.h>
 #include <common.h>
 #include <string.h>
-#include <unistd.h>
 
-#ifdef unix
+#ifdef posix
+#  include <unistd.h> 
 #  include <dirent.h>
 #else
-#  ifndef F_OK
-#    define F_OK  0    
-#  endif
-#  include <direct.h>
+#  define F_OK 0
 #  include <io.h>
+#  include <stdlib.h>
 #  define access(path,mode) _access(path,mode)
 #endif
 
+#define TYPE_FILE 0
+#define TYPE_DIR 1
+
 v8::Handle<v8::FunctionTemplate> ft;
+
+v8::Handle<v8::Value> list_items(char * name, int type) {
+    v8::Handle<v8::Array> result = v8::Array::New();
+    int cnt = 0;
+
+#ifdef posix
+    DIR * dp;
+    struct dirent * ep;
+    int cond = (type == TYPE_FILE ? DT_REG : DT_DIR);
+    
+    dp = opendir(name);
+    if (dp == NULL) { return v8::ThrowException(v8::String::New("Directory cannot be opened")); }
+    while ((ep = readdir(dp))) { 
+	if (ep->d_type == cond) {
+	    if (type == TYPE_FILE) {
+		result->Set(v8::Integer::New(cnt++), v8::String::New(ep->d_name));
+	    } else if (strcmp(ep->d_name, ".") != 0 && strcmp(ep->d_name, "..") != 0) {
+		result->Set(v8::Integer::New(cnt++), v8::String::New(ep->d_name));
+	    }
+	}
+    }
+    closedir(dp);
+#else
+    struct _finddata_t * info;
+    int value = (type  == TYPE_FILE ? 0 : 1);
+    char * path = (char *) malloc((strlen(*name) + 2 + 1)* sizeof(char));
+    strcat(path, name);
+    strcat(path, "\\*");
+    
+    long hFile = _findfirst(path, info);
+    if (hFile != -1) {
+	do {
+	    if (info->attrib & _A_SUBDIR == value) {
+		result->Set(v8::Integer::New(cnt++), v8::String::New(info->name));
+	    }
+	} while (_findnext(hFile, info) == 0);
+	_findclose(hFile);
+    }
+#endif
+    
+    return result;
+}
 
 v8::Handle<v8::Value> _directory(const v8::Arguments& args) {
     v8::HandleScope handle_scope;
@@ -47,48 +90,18 @@ v8::Handle<v8::Value> _create(const v8::Arguments& args) {
     return args.This();
 }
 
+
+
 v8::Handle<v8::Value> _listfiles(const v8::Arguments& args) {
     v8::HandleScope handle_scope;
     v8::String::Utf8Value name(args.This()->GetInternalField(0));
-
-    DIR * dp;
-    struct dirent * ep;
-    
-    v8::Handle<v8::Array> result = v8::Array::New();
-  
-    dp = opendir(*name);
-    if (dp == NULL) { return v8::ThrowException(v8::String::New("Directory cannot be opened")); }
-    int cnt = 0;
-    while ((ep = readdir(dp))) { 
-	if (ep->d_type == DT_REG) {
-	    result->Set(v8::Integer::New(cnt++), v8::String::New(ep->d_name));
-	}
-    }
-    closedir(dp);
-    return result;
+    return list_items(*name, TYPE_FILE);
 }
 
 v8::Handle<v8::Value> _listdirectories(const v8::Arguments& args) {
     v8::HandleScope handle_scope;
     v8::String::Utf8Value name(args.This()->GetInternalField(0));
-
-    DIR * dp;
-    struct dirent * ep;
-    
-    v8::Handle<v8::Array> result = v8::Array::New();
-  
-    dp = opendir(*name);
-    if (dp == NULL) { return v8::ThrowException(v8::String::New("Directory cannot be opened")); }
-    int cnt = 0;
-    while ((ep = readdir(dp))) { 
-	if (ep->d_type == DT_DIR) {
-	    if (strcmp(ep->d_name, ".") != 0 && strcmp(ep->d_name, "..") != 0) {
-		result->Set(v8::Integer::New(cnt++), v8::String::New(ep->d_name));
-	    }
-	}
-    }
-    closedir(dp);
-    return result;
+    return list_items(*name, TYPE_DIR);
 }
 
 v8::Handle<v8::Value> _file(const v8::Arguments& args) {
@@ -338,7 +351,7 @@ v8::Handle<v8::Value> _exists(const v8::Arguments& args) {
     return v8::Boolean::New(result == 0);
 }
 
-void SetupIo(v8::Handle<v8::Object> target) {
+void setup_io(v8::Handle<v8::Object> target) {
 
   ft = v8::FunctionTemplate::New(_file);
   ft->SetClassName(v8::String::New("File"));

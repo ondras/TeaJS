@@ -1,1 +1,1 @@
-void SetupSys(char ** envp, v8::Handle<v8::Object> global);
+void setup_system(char ** envp, v8::Handle<v8::Object> global);

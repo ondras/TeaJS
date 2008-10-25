@@ -223,7 +223,7 @@ v8::Handle<v8::Value> _fetchobjects(const v8::Arguments & args) {
   return result;
 }
 
-void SetupMysql(v8::Handle<v8::Object> target) {
+void setup_mysql(v8::Handle<v8::Object> target) {
 //  v8::HandleScope handle_scope;
 
   v8::Handle<v8::FunctionTemplate> ft = v8::FunctionTemplate::New(_mysql);

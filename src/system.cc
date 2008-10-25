@@ -47,7 +47,7 @@ v8::Handle<v8::Value> _stdout(const v8::Arguments&args) {
     return v8::Undefined();
 }
 
-void SetupSys(char ** envp, v8::Handle<v8::Object> global) {
+void setup_system(char ** envp, v8::Handle<v8::Object> global) {
   v8::HandleScope handle_scope;
   v8::Handle<v8::ObjectTemplate> systemt = v8::ObjectTemplate::New();
   v8::Handle<v8::Object> system = systemt->NewInstance();

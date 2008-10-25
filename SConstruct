@@ -17,14 +17,14 @@ if sys.platform.find("win") != -1:
 else:
     mysql_include = "/usr/include/mysql"
     config_path = "/etc/v8cgi.conf"
-    os = "linux"
+    os = "posix"
 # endif 
 
 opts = Options()
 opts.Add(BoolOption("mysql", "MySQL support", 0))
 opts.Add(PathOption("mysqlpath", "MySQL header path", mysql_include))
 opts.Add(("conffile", "Config file", config_path))
-opts.Add(EnumOption("os", "Operating system", os, allowed_values = ["windows", "linux"]))
+opts.Add(EnumOption("os", "Operating system", os, allowed_values = ["windows", "posix"]))
 
 env = Environment(options=opts)
 Help(opts.GenerateHelpText(env))

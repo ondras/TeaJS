@@ -3,9 +3,9 @@
  */
 
 #include <v8.h>
-#include <system.h>
-#include <io.h>
-#include <jsmysql.h>
+#include "system.h"
+#include "io.h"
+#include "jsmysql.h"
 
 #include <cstring>
 #include <cstdio>
@@ -17,7 +17,7 @@
 
 v8::Handle<v8::Array> onexit;
 
-void Die(int code) {
+void die(int code) {
     int max = onexit->Length();
     v8::Handle<v8::Function> fun;
     for (int i=0;i<max;i++) {
@@ -27,7 +27,7 @@ void Die(int code) {
     exit(code);
 }
 
-v8::Handle<v8::String> ReadFile(const char* name) {
+v8::Handle<v8::String> read_file(const char* name) {
   FILE* file = fopen(name, "rb");
   if (file == NULL) return v8::Handle<v8::String>();
 
@@ -55,7 +55,7 @@ v8::Handle<v8::String> ReadFile(const char* name) {
   return result;
 }
 
-void ReportException(v8::TryCatch* try_catch) {
+void report_exception(v8::TryCatch* try_catch) {
   v8::HandleScope handle_scope;
   v8::String::Utf8Value exception(try_catch->Exception());
   v8::Handle<v8::Message> message = try_catch->Message();
@@ -109,11 +109,11 @@ void ReportException(v8::TryCatch* try_catch) {
   fun->Call(context->ToObject(), 1, data);
 }
 
-int ExecuteFile(char * str) {
+int execute_file(char * str) {
     v8::HandleScope handle_scope;
     v8::TryCatch try_catch;
     v8::Handle<v8::String> name = v8::String::New(str);
-    v8::Handle<v8::String> source = ReadFile(str);
+    v8::Handle<v8::String> source = read_file(str);
 
     if (source.IsEmpty()) {
 	printf("Error reading '%s'\n", str);
@@ -122,23 +122,23 @@ int ExecuteFile(char * str) {
     
     v8::Handle<v8::Script> script = v8::Script::Compile(source, name);
     if (script.IsEmpty()) {
-	ReportException(&try_catch);
+	report_exception(&try_catch);
 	return 1;
     } else {
 	v8::Handle<v8::Value> result = script->Run();
 	if (result.IsEmpty()) {
-	    ReportException(&try_catch);
+	    report_exception(&try_catch);
 	    return 1;
 	}
     }
     return 0;
 }
 
-void Init() {
-    int result = ExecuteFile(STRING(CONFIG_PATH));
+void init() {
+    int result = execute_file(STRING(CONFIG_PATH));
     if (result) { 
 	printf("Cannot load configuration, quitting...\n");
-	Die(1);
+	die(1);
     }
 }
 
@@ -146,14 +146,14 @@ v8::Handle<v8::Value> _include(const v8::Arguments& args) {
   for (int i = 0; i < args.Length(); i++) {
     v8::HandleScope handle_scope;
     v8::String::Utf8Value file(args[i]);
-    ExecuteFile(*file); /* in include, we don't care about returned values */
+    execute_file(*file); /* in include, we don't care about returned values */
   }
   return v8::Undefined();
 }
 
 
 v8::Handle<v8::Value> _exit(const v8::Arguments& args) {
-  Die(args[0]->Int32Value());
+  die(args[0]->Int32Value());
   return v8::Undefined();
 }
 
@@ -176,20 +176,20 @@ int main(int argc, char ** argv, char ** envp) {
   context->Global()->Set(v8::String::New("onexit"), v8::FunctionTemplate::New(_onexit)->GetFunction());
   context->Global()->Set(v8::String::New("global"), context->Global());
 
-  SetupSys(envp, context->Global());
-  SetupIo(context->Global());  
+  setup_system(envp, context->Global());
+  setup_io(context->Global());  
   
   #ifdef HAVE_MYSQL
-    SetupMysql(context->Global());  
+    setup_mysql(context->Global());  
   #endif
   
-  Init();
+  init();
   
   if (argc == 1) {
     printf("Nothing to do.\n");
   } else {
-    int result = ExecuteFile(argv[1]);
-    if (result) { Die(result); }
+    int result = execute_file(argv[1]);
+    if (result) { die(result); }
   }
-  Die(0);
+  die(0);
 }

@@ -1,6 +1,6 @@
 #include <v8.h>
 #include <sstream>
-#include <common.h>
+#include <js_common.h>
 
 v8::Handle<v8::Value> _stdin(const v8::Arguments&args) {
     v8::HandleScope handle_scope;

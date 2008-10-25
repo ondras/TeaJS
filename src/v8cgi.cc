@@ -3,9 +3,9 @@
  */
 
 #include <v8.h>
-#include "system.h"
-#include "io.h"
-#include "jsmysql.h"
+#include "js_system.h"
+#include "js_io.h"
+#include "js_mysql.h"
 
 #include <cstring>
 #include <cstdio>

@@ -1,8 +1,8 @@
 #include <v8.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <common.h>
 #include <string.h>
+#include "js_common.h"
 
 #ifdef posix
 #  include <unistd.h> 
@@ -11,7 +11,7 @@
 #  define F_OK 0
 #  include <io.h>
 #  include <stdlib.h>
-#  include <windows.h>
+#  include <dir.h>
 #  define access(path,mode) _access(path,mode)
 #endif
 

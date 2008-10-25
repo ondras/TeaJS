@@ -11,6 +11,7 @@
 #  define F_OK 0
 #  include <io.h>
 #  include <stdlib.h>
+#  include <windows.h>
 #  define access(path,mode) _access(path,mode)
 #endif
 
@@ -43,7 +44,7 @@ v8::Handle<v8::Value> list_items(char * name, int type) {
 #else
     struct _finddata_t * info;
     int value = (type  == TYPE_FILE ? 0 : 1);
-    char * path = (char *) malloc((strlen(*name) + 2 + 1)* sizeof(char));
+    char * path = (char *) malloc((strlen(name) + 2 + 1)* sizeof(char));
     strcat(path, name);
     strcat(path, "\\*");
     

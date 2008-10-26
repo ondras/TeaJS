@@ -56,6 +56,10 @@ if env["os"] == "posix":
     libs.append("pthread")
 # if
 
+if env["os"] != "windows":
+    cppdefines.append("USING_V8_SHARED")
+# if
+
 if env["mysql"] == 1:
     sources.append("js_mysql.cc")    
     libs.append("mysqlclient")

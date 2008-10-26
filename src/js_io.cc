@@ -2,17 +2,29 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <string.h>
+#include <stdlib.h>
 #include "js_common.h"
 
-#ifdef posix
-#  include <unistd.h> 
-#  include <dirent.h>
+// mkdir() fun
+#ifndef HAVE_MKDIR
+#  include <direct.h>
+#  define mkdir(name, mode) _mkdir(name)
+#endif
+
+// access() fun
+#ifdef HAVE_ACCESS
+#  include <unistd.h>
 #else
 #  define F_OK 0
 #  include <io.h>
-#  include <stdlib.h>
-#  include <dir.h>
 #  define access(path,mode) _access(path,mode)
+#endif
+
+// dir listing fun
+#ifdef posix
+#  include <dirent.h>
+#else
+#  include <io.h>
 #endif
 
 #define TYPE_FILE 0
@@ -179,7 +191,7 @@ v8::Handle<v8::Value> _read(const v8::Arguments& args) {
         int len = args[0]->IntegerValue();
 	if (len < avail) { avail = len; }
     }
-    char buf[avail];
+    char * buf = (char *) malloc(avail * sizeof(char));
     fread(buf, sizeof(char), avail, f);
     pos += avail;
     
@@ -224,7 +236,7 @@ v8::Handle<v8::Value> _write(const v8::Arguments& args) {
 	
 	int max = 4096;
 	int current = 0;
-	char buf[max];
+	char * buf = (char *) malloc(max * sizeof(char));
 	for (int i=0;i<len;i++) {
     	    v8::Handle<v8::Integer> a = v8::Integer::New(arr->Get(v8::Integer::New(i))->IntegerValue());
 	    buf[current++] = (char) a->Int32Value();
@@ -277,7 +289,7 @@ v8::Handle<v8::Value> _stat(const v8::Arguments& args) {
 
 v8::Handle<v8::Value> _copy(char * name1, char * name2) {
     int len = 1024;
-    char buf[len];
+    char * buf = (char *) malloc(len * sizeof(char));
     
     FILE * f1 = fopen(name1, "rb");
     FILE * f2 = fopen(name2, "wb");

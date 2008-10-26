@@ -28,6 +28,18 @@ opts.Add(EnumOption("os", "Operating system", os, allowed_values = ["windows", "
 
 env = Environment(options=opts)
 Help(opts.GenerateHelpText(env))
+conf = Configure(env)
+
+if conf.CheckFunc("access"):
+    cppdefines.append("HAVE_ACCESS")
+
+if conf.CheckFunc("mkdir"):
+    cppdefines.append("HAVE_MKDIR")
+
+if conf.CheckFunc("stat"):
+    cppdefines.append("HAVE_STAT")
+
+env = conf.Finish()
 
 sources = [
     "v8cgi.cc", 

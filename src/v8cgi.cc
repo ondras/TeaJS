@@ -15,13 +15,13 @@
 #define _STRING(x) #x
 #define STRING(x) _STRING(x)
 
-v8::Handle<v8::Array> onexit;
+v8::Handle<v8::Array> __onexit;
 
 void die(int code) {
-    int max = onexit->Length();
+    int max = __onexit->Length();
     v8::Handle<v8::Function> fun;
     for (int i=0;i<max;i++) {
-	fun = v8::Handle<v8::Function>::Cast(onexit->Get(v8::Integer::New(i)));
+	fun = v8::Handle<v8::Function>::Cast(__onexit->Get(v8::Integer::New(i)));
 	fun->Call(v8::Context::GetCurrent()->Global(), 0, NULL);
     }
     exit(code);
@@ -32,12 +32,12 @@ v8::Handle<v8::String> read_file(const char* name) {
   if (file == NULL) return v8::Handle<v8::String>();
 
   fseek(file, 0, SEEK_END);
-  int size = ftell(file);
+  size_t size = ftell(file);
   rewind(file);
 
   char* chars = new char[size + 1];
   chars[size] = '\0';
-  for (int i = 0; i < size;) {
+  for (unsigned int i = 0; i < size;) {
     int read = fread(&chars[i], 1, size - i, file);
     i += read;
   }
@@ -59,23 +59,29 @@ void report_exception(v8::TryCatch* try_catch) {
   v8::HandleScope handle_scope;
   v8::String::Utf8Value exception(try_catch->Exception());
   v8::Handle<v8::Message> message = try_catch->Message();
-
-  char * msg;
   std::string msgstring = "";
+  std::stringstream ss;
+  std::string tmp;
 
   if (message.IsEmpty()) {
-    asprintf(&msg, "%s\n", *exception);
-    msgstring += msg;
+    msgstring += *exception;
+    msgstring += "\n";
   } else {
-    // Print (filename):(line number): (message).
     v8::String::Utf8Value filename(message->GetScriptResourceName());
     int linenum = message->GetLineNumber();
-    asprintf(&msg, "%s:%i: %s\n", *filename, linenum, *exception);
-    msgstring += msg;
-    // Print line of source code.
+    msgstring += *filename;
+    msgstring += ":";
+    
+    ss << linenum;
+    ss >> tmp;
+
+    msgstring += tmp;
+    msgstring += ": ";
+    msgstring += *exception;
+    msgstring += "\n";
     v8::String::Utf8Value sourceline(message->GetSourceLine());
-    asprintf(&msg, "%s\n", *sourceline);
-    msgstring += msg;
+    msgstring += *sourceline;
+    msgstring += "\n";
 
     // Print wavy underline (GetUnderline is deprecated).
     int start = message->GetStartColumn();
@@ -158,7 +164,7 @@ v8::Handle<v8::Value> _exit(const v8::Arguments& args) {
 }
 
 v8::Handle<v8::Value> _onexit(const v8::Arguments& args) {
-  onexit->Set(v8::Integer::New(onexit->Length()), args[0]);
+  __onexit->Set(v8::Integer::New(__onexit->Length()), args[0]);
   return v8::Undefined();
 }
 
@@ -170,7 +176,7 @@ int main(int argc, char ** argv, char ** envp) {
   v8::Handle<v8::Context> context = v8::Context::New(NULL, global);
   v8::Context::Scope context_scope(context);
 
-  onexit = v8::Array::New();
+  __onexit = v8::Array::New();
   context->Global()->Set(v8::String::New("include"), v8::FunctionTemplate::New(_include)->GetFunction());
   context->Global()->Set(v8::String::New("exit"), v8::FunctionTemplate::New(_exit)->GetFunction());
   context->Global()->Set(v8::String::New("onexit"), v8::FunctionTemplate::New(_onexit)->GetFunction());

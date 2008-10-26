@@ -1,8 +1,8 @@
 import sys
 
-libs = ["v8", "pthread"]
+libs = ["v8"]
 cpppath = ["src", "../v8/include"]
-ccflags = ["-Wall", "-O3"]
+ccflags = ["-Wall", "-O3", "-pedantic"]
 cppdefines = []
 target = "v8cgi"
 
@@ -51,6 +51,10 @@ sources = [
 
 cppdefines.append("CONFIG_PATH=" + env["conffile"])
 cppdefines.append(env["os"])
+
+if env["os"] == "posix":
+    libs.append("pthread")
+# if
 
 if env["mysql"] == 1:
     sources.append("js_mysql.cc")    

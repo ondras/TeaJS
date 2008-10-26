@@ -3,7 +3,7 @@ import sys
 libs = ["v8"]
 cpppath = ["src", "../v8/include"]
 ccflags = ["-Wall", "-O3", "-pedantic"]
-cppdefines = []
+cppdefines = ["USING_V8_SHARED"]
 target = "v8cgi"
 
 config_path = ""

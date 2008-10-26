@@ -30,14 +30,15 @@ env = Environment(options=opts)
 Help(opts.GenerateHelpText(env))
 conf = Configure(env)
 
-if conf.CheckFunc("access"):
-    cppdefines.append("HAVE_ACCESS")
+if conf.CheckCHeader("unistd.h", include_quotes = "<>"):
+    cppdefines.append("HAVE_UNISTD_H")
+
+if conf.CheckCHeader("dirent.h", include_quotes = "<>"):
+    cppdefines.append("HAVE_DIRENT_H")
 
 if conf.CheckFunc("mkdir"):
     cppdefines.append("HAVE_MKDIR")
 
-if conf.CheckFunc("stat"):
-    cppdefines.append("HAVE_STAT")
 
 env = conf.Finish()
 

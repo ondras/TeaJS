@@ -5,26 +5,26 @@
 #include <stdlib.h>
 #include "js_common.h"
 
-// mkdir() fun
-#ifndef HAVE_MKDIR
-#  include <direct.h>
-#  define mkdir(name, mode) _mkdir(name)
-#endif
-
-// access() fun
-#ifdef HAVE_ACCESS
+// access()
+#ifdef HAVE_UNISTD_H
 #  include <unistd.h>
 #else
-#  define F_OK 0
 #  include <io.h>
+#  define F_OK 0
 #  define access(path,mode) _access(path,mode)
 #endif
 
-// dir listing fun
-#ifdef posix
+// directory listing
+#ifdef HAVE_DIRENT_H
 #  include <dirent.h>
 #else
 #  include <io.h>
+#endif
+
+// mkdir()
+#ifndef HAVE_MKDIR
+#  include <direct.h>
+#  define mkdir(name, mode) _mkdir(name)
 #endif
 
 #define TYPE_FILE 0
@@ -36,7 +36,7 @@ v8::Handle<v8::Value> list_items(char * name, int type) {
     v8::Handle<v8::Array> result = v8::Array::New();
     int cnt = 0;
 
-#ifdef posix
+#ifdef HAVE_DIRENT_H
     DIR * dp;
     struct dirent * ep;
     int cond = (type == TYPE_FILE ? DT_REG : DT_DIR);
@@ -249,7 +249,6 @@ v8::Handle<v8::Value> _write(const v8::Arguments& args) {
 
     } else {
 	v8::String::Utf8Value data(args[0]);
-    
 	fwrite(*data, sizeof(char), args[0]->ToString()->Utf8Length(), f);
     }
 	    

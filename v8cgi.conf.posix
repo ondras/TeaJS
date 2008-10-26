@@ -1,0 +1,10 @@
+Config.includePath = [".", "/usr/include/v8cgi"];
+
+// name of session cookie
+Config.sessionCookie = "V8SID";
+
+// directory for session storage
+Config.sessionPath = "/tmp";
+
+// session lifetime - in seconds
+Config.sessionTime || 60*60;

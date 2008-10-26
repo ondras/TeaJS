@@ -1,0 +1,10 @@
+Config.includePath = [".", "c:/program files/v8cgi/js"];
+
+// name of session cookie
+Config.sessionCookie = "V8SID";
+
+// directory for session storage
+Config.sessionPath = "c:/windows/temp";
+
+// session lifetime - in seconds
+Config.sessionTime || 60*60;

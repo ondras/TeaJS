@@ -217,10 +217,10 @@ var HTTPSession = function() {
     this._id = null;
     this._file = null;
 
-    this._name = "V8SID";
-    this._path = "/tmp";
+    this._name = Config.sessionCookie || "V8SID";
+    this._path = Config.sessionPath || "/tmp";
     if (this._path.charAt(this._path.length-1) != "/") { this._path += "/"; }
-    this._lifetime = 60*60;
+    this._lifetime = Config.sessionTime || 60*60;
     this._gc();
     
     var ok = false;

@@ -72,7 +72,7 @@ v8::Handle<v8::Value> list_items(char * name, int type) {
 		result->Set(v8::Integer::New(cnt++), v8::String::New(info->name));
 	    }
 	} while (_findnext(ptr, info) == 0);
-	_findclose(hFile);
+	_findclose(ptr);
     }
 #endif
     

@@ -3,6 +3,7 @@
 #include <sys/types.h>
 
 #include <sstream>
+
 #include <string.h>
 #include <stdlib.h>
 #include "js_common.h"
@@ -63,8 +64,11 @@ v8::Handle<v8::Value> list_items(char * name, int type) {
 #else
     struct _finddata_t * info;
     unsigned int value = (type  == TYPE_FILE ? 0 : 1);
+
     std::string path;
-    path << name << "/*";
+    std::stringstream ss;
+    ss << name << "/*";
+    ss >> path;
 
     intptr_t ptr = _findfirst(path.c_str(), info);
     printf("~~~ %s ~~~", path.c_str());

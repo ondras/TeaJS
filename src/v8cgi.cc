@@ -7,9 +7,6 @@
 #include "js_io.h"
 #include "js_mysql.h"
 
-#include <cstring>
-#include <cstdio>
-#include <cstdlib>
 #include <sstream>
 
 #define _STRING(x) #x

@@ -1,6 +1,10 @@
 #include <v8.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+
+// #include <cstdlib>
+#include <sstream>
+
 #include <string.h>
 #include <stdlib.h>
 #include "js_common.h"
@@ -36,6 +40,7 @@
 #define TYPE_DIR 1
 
 v8::Handle<v8::FunctionTemplate> ft;
+std::string a = "ahoj";
 
 v8::Handle<v8::Value> list_items(char * name, int type) {
     v8::Handle<v8::Array> result = v8::Array::New();

@@ -59,11 +59,11 @@ v8::Handle<v8::Value> list_items(char * name, int type) {
     char * path = (char *) malloc((strlen(name) + 2 + 1)* sizeof(char));
     strcat(path, name);
     strcat(path, "\\*");
-    
+
     long hFile = _findfirst(path, info);
     if (hFile != -1) {
 	do {
-	    if (info->attrib & _A_SUBDIR == value) {
+	    if ((info->attrib & _A_SUBDIR) == value) {
 		result->Set(v8::Integer::New(cnt++), v8::String::New(info->name));
 	    }
 	} while (_findnext(hFile, info) == 0);
@@ -179,16 +179,16 @@ v8::Handle<v8::Value> _read(const v8::Arguments& args) {
 	return v8::ThrowException(v8::String::New("File must be opened before reading"));
     }
     
-    long size = args.This()->GetInternalField(2)->IntegerValue();
-    long pos = args.This()->GetInternalField(3)->IntegerValue();
+    int64_t size = args.This()->GetInternalField(2)->IntegerValue();
+    int64_t pos = args.This()->GetInternalField(3)->IntegerValue();
     
     FILE * f = reinterpret_cast<FILE *>(v8::Handle<v8::External>::Cast(file)->Value());
     
-    long avail = size-pos;
+    size_t avail = size-pos;
     if (!avail) { return v8::Boolean::New(false); }
     
     if (args.Length() && args[0]->IsNumber()) {
-        int len = args[0]->IntegerValue();
+        int64_t len = args[0]->IntegerValue();
 	if (len < avail) { avail = len; }
     }
     char * buf = (char *) malloc(avail * sizeof(char));
@@ -232,14 +232,13 @@ v8::Handle<v8::Value> _write(const v8::Arguments& args) {
     
     if (args[0]->IsArray()) {
 	v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(args[0]);
-	int len = arr->Length();
+	uint32_t len = arr->Length();
 	
 	int max = 4096;
 	int current = 0;
 	char * buf = (char *) malloc(max * sizeof(char));
-	for (int i=0;i<len;i++) {
-    	    v8::Handle<v8::Integer> a = v8::Integer::New(arr->Get(v8::Integer::New(i))->IntegerValue());
-	    buf[current++] = (char) a->Int32Value();
+	for (unsigned int i=0;i<len;i++) {
+	    buf[current++] = (char) arr->Get(v8::Integer::New(i))->IntegerValue();
 	    if (current == max) {
     		fwrite(buf, sizeof(char), current, f);
 		current = 0;
@@ -296,7 +295,7 @@ v8::Handle<v8::Value> _copy(char * name1, char * name2) {
     if (f1 == NULL) { return v8::ThrowException(v8::String::New("Cannot open source file")); }
     if (f2 == NULL) { return v8::ThrowException(v8::String::New("Cannot open target file")); }
     
-    int size = 0;
+    size_t size = 0;
     
     while ((size = fread(buf, sizeof(char), len, f1))) {
 	fwrite(buf, sizeof(char), size, f2);

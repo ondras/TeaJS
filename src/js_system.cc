@@ -5,7 +5,7 @@
 v8::Handle<v8::Value> _stdin(const v8::Arguments&args) {
     v8::HandleScope handle_scope;
     
-    int count = args[0]->Int32Value();
+    size_t count = args[0]->Int32Value();
     char * data;
     if (count == 0) {
 	data = (char *) malloc(sizeof(char));
@@ -35,10 +35,9 @@ v8::Handle<v8::Value> _stdout(const v8::Arguments&args) {
     v8::HandleScope handle_scope;
     if (args[0]->IsArray()) {
 	v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(args[0]);
-	int len = arr->Length();
-	for (int i=0;i<len;i++) {
-	    v8::Handle<v8::Integer> a = v8::Integer::New(arr->Get(v8::Integer::New(i))->IntegerValue());
-	    printf("%c", (char) a->Int32Value());
+	uint32_t len = arr->Length();
+	for (unsigned int i=0;i<len;i++) {
+	    printf("%c", (char) arr->Get(v8::Integer::New(i))->IntegerValue());
 	}
     } else {
 	v8::String::Utf8Value str(args[0]);

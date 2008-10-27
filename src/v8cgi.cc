@@ -18,9 +18,9 @@
 v8::Handle<v8::Array> __onexit;
 
 void die(int code) {
-    int max = __onexit->Length();
+    uint32_t max = __onexit->Length();
     v8::Handle<v8::Function> fun;
-    for (int i=0;i<max;i++) {
+    for (unsigned int i=0;i<max;i++) {
 	fun = v8::Handle<v8::Function>::Cast(__onexit->Get(v8::Integer::New(i)));
 	fun->Call(v8::Context::GetCurrent()->Global(), 0, NULL);
     }
@@ -38,7 +38,7 @@ v8::Handle<v8::String> read_file(const char* name) {
   char* chars = new char[size + 1];
   chars[size] = '\0';
   for (unsigned int i = 0; i < size;) {
-    int read = fread(&chars[i], 1, size - i, file);
+    size_t read = fread(&chars[i], 1, size - i, file);
     i += read;
   }
   fclose(file);
@@ -46,7 +46,7 @@ v8::Handle<v8::String> read_file(const char* name) {
   /* remove shebang line */  
   std::string str = chars;
   if ( str.find('#',0) == 0 && str.find('!',1) == 1 ) {
-    int pfix = str.find('\n',0);
+    unsigned int pfix = str.find('\n',0);
     str.erase(0,pfix);
   };
   

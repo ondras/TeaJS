@@ -1,5 +1,6 @@
 #include <v8.h>
 #include <mysql.h>
+#include <stdlib.h>
 
 v8::Handle<v8::FunctionTemplate> rest;
 
@@ -121,7 +122,7 @@ v8::Handle<v8::Value> _escape(const v8::Arguments &args) {
   v8::String::Utf8Value str(args[0]);
   
   int len = args[0]->ToString()->Utf8Length();
-  char result[2*len+1];
+  char * result = (char *) malloc((2*len+1) * sizeof(char));
   
   MYSQL * conn = reinterpret_cast<MYSQL *>(v8::Handle<v8::External>::Cast(c)->Value());
 

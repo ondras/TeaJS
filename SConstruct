@@ -1,4 +1,5 @@
 import sys
+import os
 
 # default values
 libs = ["v8"]

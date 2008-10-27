@@ -62,7 +62,7 @@ v8::Handle<v8::Value> list_items(char * name, int type) {
     }
     closedir(dp);
 #else
-    struct _finddata_t * info;
+    _finddata_t * info;
     unsigned int value = (type  == TYPE_FILE ? 0 : 1);
 
     std::string path;

@@ -11,17 +11,17 @@ target = "v8cgi"
 
 config_path = ""
 mysql_include = ""
-os = ""
+os_string = ""
 
 # platform-based default values
 if sys.platform.find("win") != -1:
     mysql_include = "c:/"
     config_path = "c:/windows/v8cgi.conf"
-    os = "windows"
+    os_string = "windows"
 else:
     mysql_include = "/usr/include/mysql"
     config_path = "/etc/v8cgi.conf"
-    os = "posix"
+    os_string = "posix"
 # endif 
 
 # base source files
@@ -38,7 +38,7 @@ opts.Add(BoolOption("mysql", "MySQL support", 0))
 opts.Add(PathOption("mysqlpath", "MySQL header path", mysql_include))
 opts.Add(PathOption("v8path", "Directory with V8", "../v8"))
 opts.Add(("conffile", "Config file", config_path))
-opts.Add(EnumOption("os", "Operating system", os, allowed_values = ["windows", "posix"]))
+opts.Add(EnumOption("os", "Operating system", os_string, allowed_values = ["windows", "posix"]))
 
 env = Environment(options=opts)
 Help(opts.GenerateHelpText(env))

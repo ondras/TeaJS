@@ -53,6 +53,9 @@ if conf.CheckCHeader("dirent.h", include_quotes = "<>"):
 if conf.CheckFunc("mkdir"):
     cppdefines.append("HAVE_MKDIR")
 
+if conf.CheckFunc("rmdir"):
+    cppdefines.append("HAVE_RMDIR")
+
 env = conf.Finish()
 
 cppdefines.append("CONFIG_PATH=" + env["conffile"])

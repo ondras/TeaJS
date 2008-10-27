@@ -3,7 +3,6 @@
 #include <sys/types.h>
 #include <string.h>
 #include <stdlib.h>
-#include <errno.h>
 #include "js_common.h"
 
 // access()
@@ -26,6 +25,11 @@
 #ifndef HAVE_MKDIR
 #  include <direct.h>
 #  define mkdir(name, mode) _mkdir(name)
+#endif
+
+// mkdir()
+#ifndef HAVE_RMDIR
+#  define rmdir(name) _rmdir(name)
 #endif
 
 #define TYPE_FILE 0
@@ -255,13 +259,23 @@ v8::Handle<v8::Value> _write(const v8::Arguments& args) {
     return args.This();
 }
 
-v8::Handle<v8::Value> _remove(const v8::Arguments& args) {
+v8::Handle<v8::Value> _removefile(const v8::Arguments& args) {
     v8::HandleScope handle_scope;
     v8::String::Utf8Value name(args.This()->GetInternalField(0));
     
     if (remove(*name) != 0) {
-	printf("%i", errno);
-	return v8::ThrowException(v8::String::New("Cannot remove file/dir"));
+	return v8::ThrowException(v8::String::New("Cannot remove file"));
+    }
+    
+    return args.This();
+}
+
+v8::Handle<v8::Value> _removedirectory(const v8::Arguments& args) {
+    v8::HandleScope handle_scope;
+    v8::String::Utf8Value name(args.This()->GetInternalField(0));
+    
+    if (rmdir(*name) != 0) {
+	return v8::ThrowException(v8::String::New("Cannot remove directory"));
     }
     
     return args.This();
@@ -377,7 +391,7 @@ void setup_io(v8::Handle<v8::Object> target) {
   pt->Set("rewind", v8::FunctionTemplate::New(_rewind));
   pt->Set("close", v8::FunctionTemplate::New(_close));
   pt->Set("write", v8::FunctionTemplate::New(_write));
-  pt->Set("remove", v8::FunctionTemplate::New(_remove));
+  pt->Set("remove", v8::FunctionTemplate::New(_removefile));
   pt->Set("toString", v8::FunctionTemplate::New(_tostring));
   pt->Set("exists", v8::FunctionTemplate::New(_exists));
   pt->Set("move", v8::FunctionTemplate::New(_movefile));
@@ -397,7 +411,7 @@ void setup_io(v8::Handle<v8::Object> target) {
   pt->Set("listDirectories", v8::FunctionTemplate::New(_listdirectories));
   pt->Set("toString", v8::FunctionTemplate::New(_tostring));
   pt->Set("exists", v8::FunctionTemplate::New(_exists));
-  pt->Set("remove", v8::FunctionTemplate::New(_remove));
+  pt->Set("remove", v8::FunctionTemplate::New(_removedirectory));
   pt->Set("stat", v8::FunctionTemplate::New(_stat));
 
   target->Set(v8::String::New("Directory"), ft->GetFunction());	      

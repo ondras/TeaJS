@@ -71,7 +71,6 @@ v8::Handle<v8::Value> list_items(char * name, int type) {
     ss >> path;
 
     intptr_t ptr = _findfirst(path.c_str(), info);
-    printf("~~~ %s ~~~", path.c_str());
     
     if (ptr != -1L) {
 	do {

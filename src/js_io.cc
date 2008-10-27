@@ -60,12 +60,13 @@ v8::Handle<v8::Value> list_items(char * name, int type) {
     closedir(dp);
 #else
     struct _finddata_t * info;
-    int value = (type  == TYPE_FILE ? 0 : 1);
-    char * path = (char *) malloc((strlen(name) + 2 + 1)* sizeof(char));
-    strcat(path, name);
-    strcat(path, "/*");
+    unsigned int value = (type  == TYPE_FILE ? 0 : 1);
+    std::string path;
+    path << name << "/*";
 
-    intptr_t ptr = _findfirst(path, info);
+    intptr_t ptr = _findfirst(path.c_str(), info);
+    printf("~~~ %s ~~~", path.c_str());
+    
     if (ptr != -1L) {
 	do {
 	    if ((info->attrib & _A_SUBDIR) == value) {

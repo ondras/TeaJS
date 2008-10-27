@@ -3,7 +3,7 @@ import os
 
 # default values
 libs = ["v8"]
-libpath = []
+libpath = ""
 cpppath = ["src"]
 ccflags = ["-Wall", "-O3"]
 cppdefines = []
@@ -61,7 +61,6 @@ env = conf.Finish()
 
 cppdefines.append("CONFIG_PATH=" + env["conffile"])
 cppdefines.append(env["os"])
-libpath.append(env["v8path"])
 cpppath.append(env["v8path"] + "/include")
 
 if env["os"] == "posix":
@@ -70,8 +69,8 @@ if env["os"] == "posix":
 
 if env["os"] == "windows":
     cppdefines.append("USING_V8_SHARED")
-    libpath.append(os.environ.pop("LIB"))
-    libpath.append(os.environ.pop("LIBPATH"))
+    libpath += os.environ.pop("LIB")
+    libpath += os.environ.pop("LIBPATH")
 # if
 
 if env["mysql"] == 1:
@@ -81,6 +80,7 @@ if env["mysql"] == 1:
     cppdefines.append("HAVE_MYSQL")
 # if
 
+libpath += env["v8path"]
 sources = [ "src/%s" % s for s in sources ]
 
 Program(

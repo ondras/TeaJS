@@ -3,6 +3,7 @@
 #include <sys/types.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 #include "js_common.h"
 
 // access()
@@ -58,15 +59,15 @@ v8::Handle<v8::Value> list_items(char * name, int type) {
     int value = (type  == TYPE_FILE ? 0 : 1);
     char * path = (char *) malloc((strlen(name) + 2 + 1)* sizeof(char));
     strcat(path, name);
-    strcat(path, "\\*");
+    strcat(path, "/*");
 
-    long hFile = _findfirst(path, info);
-    if (hFile != -1) {
+    intptr_t ptr = _findfirst(path, info);
+    if (ptr != -1L) {
 	do {
 	    if ((info->attrib & _A_SUBDIR) == value) {
 		result->Set(v8::Integer::New(cnt++), v8::String::New(info->name));
 	    }
-	} while (_findnext(hFile, info) == 0);
+	} while (_findnext(ptr, info) == 0);
 	_findclose(hFile);
     }
 #endif
@@ -259,6 +260,7 @@ v8::Handle<v8::Value> _remove(const v8::Arguments& args) {
     v8::String::Utf8Value name(args.This()->GetInternalField(0));
     
     if (remove(*name) != 0) {
+	printf("%i", errno);
 	return v8::ThrowException(v8::String::New("Cannot remove file/dir"));
     }
     

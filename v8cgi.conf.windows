@@ -1,10 +1,14 @@
-Config.includePath = [".", "c:/program files/v8cgi/js"];
+// put default .js files here
+Config["libraryPath"] = "c:/program files/v8cgi/js";
+
+// these will get loaded automatically
+Config["libraryAutoload"] = ["util.js"];
 
 // name of session cookie
-Config.sessionCookie = "V8SID";
+Config["sessionCookie"] = "V8SID";
 
 // directory for session storage
-Config.sessionPath = "c:/windows/temp";
+Config["sessionPath"] = "c:/windows/temp";
 
 // session lifetime - in seconds
-Config.sessionTime || 60*60;
+Config["sessionTime"] = 60*60;

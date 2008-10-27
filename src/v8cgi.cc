@@ -112,7 +112,7 @@ void report_exception(v8::TryCatch* try_catch) {
   fun->Call(context->ToObject(), 1, data);
 }
 
-int execute_file(char * str) {
+int execute_file(const char * str) {
     v8::HandleScope handle_scope;
     v8::TryCatch try_catch;
     v8::Handle<v8::String> name = v8::String::New(str);
@@ -137,23 +137,47 @@ int execute_file(char * str) {
     return 0;
 }
 
-void init() {
-    int result = execute_file(STRING(CONFIG_PATH));
-    if (result) { 
-	printf("Cannot load configuration, quitting...\n");
-	die(1);
-    }
+int library(char * name) {
+  v8::HandleScope handle_scope;
+  v8::Handle<v8::Value> config = v8::Context::GetCurrent()->Global()->Get(v8::String::New("Config"));
+  v8::Handle<v8::Value> prefix = config->ToObject()->Get(v8::String::New("libraryPath"));
+  v8::String::Utf8Value pfx(prefix);
+  std::string path = "";
+    
+  path += *pfx;
+  path += "/";
+  path += name;
+  return execute_file(path.c_str());
 }
 
 v8::Handle<v8::Value> _include(const v8::Arguments& args) {
+  bool ok = true;
+  int result;
   for (int i = 0; i < args.Length(); i++) {
     v8::HandleScope handle_scope;
     v8::String::Utf8Value file(args[i]);
-    execute_file(*file); /* in include, we don't care about returned values */
+    result = execute_file(*file);
+    if (result != 0) { ok = false; }
   }
-  return v8::Undefined();
+  return v8::Boolean::New(ok);
 }
 
+v8::Handle<v8::Value> _library(const v8::Arguments & args) {
+  bool ok = true;
+  int result;
+
+  v8::Handle<v8::Value> config = v8::Context::GetCurrent()->Global()->Get(v8::String::New("Config"));
+  v8::Handle<v8::Value> prefix = config->ToObject()->Get(v8::String::New("libraryPath"));
+  v8::String::Utf8Value pfx(prefix);
+
+  for (int i = 0; i < args.Length(); i++) {
+    v8::HandleScope handle_scope;
+    v8::String::Utf8Value file(args[i]);
+    result = library(*file);
+    if (result != 0) { ok = false; }
+  }
+  return v8::Boolean::New(ok);
+}
 
 v8::Handle<v8::Value> _exit(const v8::Arguments& args) {
   die(args[0]->Int32Value());
@@ -165,6 +189,31 @@ v8::Handle<v8::Value> _onexit(const v8::Arguments& args) {
   return v8::Undefined();
 }
 
+int library_autoload() {
+  v8::Handle<v8::Value> config = v8::Context::GetCurrent()->Global()->Get(v8::String::New("Config"));
+  v8::Handle<v8::Array> list = v8::Handle<v8::Array>::Cast(config->ToObject()->Get(v8::String::New("libraryAutoload")));
+  int cnt = list->Length();
+  for (int i=0;i<cnt;i++) {
+    v8::Handle<v8::Value> item = list->Get(v8::Integer::New(i));
+    v8::String::Utf8Value name(item);
+    if (library(*name)) { return 1; }
+  }
+  return 0;
+}
+
+void init() {
+    int result = execute_file(STRING(CONFIG_PATH));
+    if (result) { 
+	printf("Cannot load configuration, quitting...\n");
+	die(1);
+    }
+    result = library_autoload();
+    if (result) { 
+	printf("Cannot load default libraries, quitting...\n");
+	die(1);
+    }
+}
+
 int main(int argc, char ** argv, char ** envp) {
   v8::V8::SetFlagsFromCommandLine(&argc, argv, true);
   v8::HandleScope handle_scope;
@@ -174,6 +223,7 @@ int main(int argc, char ** argv, char ** envp) {
   v8::Context::Scope context_scope(context);
 
   __onexit = v8::Array::New();
+  context->Global()->Set(v8::String::New("library"), v8::FunctionTemplate::New(_library)->GetFunction());
   context->Global()->Set(v8::String::New("include"), v8::FunctionTemplate::New(_include)->GetFunction());
   context->Global()->Set(v8::String::New("exit"), v8::FunctionTemplate::New(_exit)->GetFunction());
   context->Global()->Set(v8::String::New("onexit"), v8::FunctionTemplate::New(_onexit)->GetFunction());

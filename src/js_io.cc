@@ -62,8 +62,8 @@ v8::Handle<v8::Value> list_items(char * name, int type) {
     }
     closedir(dp);
 #else
-    _finddata_t * info;
-    unsigned int value = (type  == TYPE_FILE ? 0 : 1);
+    _finddata_t * info = (_finddata_t *) malloc(sizeof(_finddata_t));
+    unsigned int value = (type == TYPE_FILE ? 0 : _A_SUBDIR);
 
     std::string path;
     std::stringstream ss;
@@ -76,7 +76,11 @@ v8::Handle<v8::Value> list_items(char * name, int type) {
     if (ptr != -1L) {
 	do {
 	    if ((info->attrib & _A_SUBDIR) == value) {
-		result->Set(v8::Integer::New(cnt++), v8::String::New(info->name));
+		if (type == TYPE_FILE) {
+		    result->Set(v8::Integer::New(cnt++), v8::String::New(info->name));
+		} else if (strcmp(info->name, ".") != 0 && strcmp(info->name, "..") != 0) {
+		    result->Set(v8::Integer::New(cnt++), v8::String::New(info->name));
+		}
 	    }
 	} while (_findnext(ptr, info) == 0);
 	_findclose(ptr);

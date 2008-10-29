@@ -240,7 +240,17 @@ int main(int argc, char ** argv, char ** envp) {
   init();
   
   if (argc == 1) {
-    printf("Nothing to do.\n");
+    // try the PATH_TRANSLATED env var
+    v8::Handle<v8::Value> sys = v8::Context::GetCurrent()->Global()->Get(v8::String::New("System"));
+    v8::Handle<v8::Value> env = sys->ToObject()->Get(v8::String::New("env"));
+    v8::Handle<v8::Value> pt = env->ToObject()->Get(v8::String::New("PATH_TRANSLATED"));
+    if (pt->IsString()) {
+      v8::String::Utf8Value name(pt);
+      int result = execute_file(*name);
+      if (result) { die(result); }
+    } else {
+      printf("Nothing to do.\n");
+    }
   } else {
     int result = execute_file(argv[1]);
     if (result) { die(result); }

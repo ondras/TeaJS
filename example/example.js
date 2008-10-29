@@ -2,5 +2,5 @@
 
 library("http.js");
 
-response.dump(request.get);
-response.dump(request.post);
+response.dump(System.env);
+response.write("Hello :)");

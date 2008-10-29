@@ -1,6 +1,1 @@
-1) download and build V8 (library=shared)
-2) copy libv8.so to /usr/include/
-3) run `scons`, for help on compile time arguments see `scons -Q -h`
-
-4) copy v8cgi.conf.yourplatform to config file location (set at compile time)
-5) edit the configuration file to suit your needs
+see http://code.google.com/p/v8cgi/wiki/Installation

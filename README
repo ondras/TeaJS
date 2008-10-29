@@ -5,7 +5,7 @@ v8cgi - CGI wrapper around V8 JS engine
 
 1) Building 
 
-  - see INSTALL file
+  - see http://code.google.com/p/v8cgi/wiki/Compiling and  http://code.google.com/p/v8cgi/wiki/Installation
   
 
 2) Running

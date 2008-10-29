@@ -35,6 +35,7 @@ sources = [
 # command line options
 opts = Options()
 opts.Add(BoolOption("mysql", "MySQL support", 0))
+opts.Add(BoolOption("gd", "GD support", 0))
 opts.Add(PathOption("mysqlpath", "MySQL header path", mysql_include))
 opts.Add(PathOption("v8path", "Directory with V8", "../v8"))
 opts.Add(("conffile", "Config file", config_path))
@@ -78,6 +79,12 @@ if env["mysql"] == 1:
     libs.append("mysqlclient")
     cpppath.append(env["mysqlpath"])
     cppdefines.append("HAVE_MYSQL")
+# if
+
+if env["gd"] == 1:
+    sources.append("js_gd.cc")    
+    libs.append("gd")
+    cppdefines.append("HAVE_GD")
 # if
 
 libpath += env["v8path"]

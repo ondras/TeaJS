@@ -6,6 +6,7 @@
 #include "js_system.h"
 #include "js_io.h"
 #include "js_mysql.h"
+#include "js_gd.h"
 
 #include <sstream>
 
@@ -201,8 +202,8 @@ int library_autoload() {
   return 0;
 }
 
-void init() {
-    int result = execute_file(STRING(CONFIG_PATH));
+void init(char * cfg) {
+    int result = execute_file(cfg);
     if (result) { 
 	printf("Cannot load configuration, quitting...\n");
 	die(1);
@@ -237,9 +238,25 @@ int main(int argc, char ** argv, char ** envp) {
     setup_mysql(context->Global());  
   #endif
   
-  init();
+  #ifdef HAVE_GD
+    setup_gd(context->Global());  
+  #endif
+
+  char * cfg = STRING(CONFIG_PATH);
+  int argptr = 0;
+  for (int i = 1; i < argc; i++) {
+    const char* str = argv[i];
+    argptr = i;
+    if (strcmp(str, "-c") == 0 && i + 1 < argc) {
+      cfg = argv[i+1];
+      argptr = 0;
+      i++;
+    }
+  }
+						   
+  init(cfg);
   
-  if (argc == 1) {
+  if (!argptr) {
     // try the PATH_TRANSLATED env var
     v8::Handle<v8::Value> sys = v8::Context::GetCurrent()->Global()->Get(v8::String::New("System"));
     v8::Handle<v8::Value> env = sys->ToObject()->Get(v8::String::New("env"));
@@ -252,7 +269,7 @@ int main(int argc, char ** argv, char ** envp) {
       printf("Nothing to do.\n");
     }
   } else {
-    int result = execute_file(argv[1]);
+    int result = execute_file(argv[argptr]);
     if (result) { die(result); }
   }
   die(0);

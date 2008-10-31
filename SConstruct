@@ -16,7 +16,7 @@ os_string = ""
 # platform-based default values
 if sys.platform.find("win") != -1:
     mysql_include = "c:/"
-    config_path = "c:/windows/v8cgi.conf"
+    config_path = "c:/v8cgi.conf"
     os_string = "windows"
 else:
     mysql_include = "/usr/include/mysql"

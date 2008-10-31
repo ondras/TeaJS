@@ -46,6 +46,17 @@ v8::Handle<v8::Value> _stdout(const v8::Arguments&args) {
     return v8::Undefined();
 }
 
+v8::Handle<v8::Value> _system(const v8::Arguments&args) {
+    v8::HandleScope handle_scope;
+    if (args.Length() != 1) {
+	 return v8::ThrowException(v8::String::New("Wrong argument count. Use System.system(\"command\")"));
+    }
+    
+    v8::String::Utf8Value cmd(args[0]);
+    int result = system(*cmd);
+    return v8::Integer::New(result);
+}
+
 void setup_system(char ** envp, v8::Handle<v8::Object> global) {
   v8::HandleScope handle_scope;
   v8::Handle<v8::ObjectTemplate> systemt = v8::ObjectTemplate::New();
@@ -57,7 +68,7 @@ void setup_system(char ** envp, v8::Handle<v8::Object> global) {
   global->Set(v8::String::New("System"), system);
   system->Set(v8::String::New("stdin"), v8::FunctionTemplate::New(_stdin)->GetFunction());
   system->Set(v8::String::New("stdout"), v8::FunctionTemplate::New(_stdout)->GetFunction());
-  
+  system->Set(v8::String::New("system"), v8::FunctionTemplate::New(_system)->GetFunction());
   system->Set(v8::String::New("env"), env);
   
   std::string name, value;

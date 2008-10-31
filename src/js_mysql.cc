@@ -1,4 +1,9 @@
 #include <v8.h>
+
+#ifdef windows
+#  include <my_global.h>
+#endif
+
 #include <mysql.h>
 #include <stdlib.h>
 

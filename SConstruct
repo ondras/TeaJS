@@ -8,6 +8,7 @@ cpppath = ["src"]
 ccflags = ["-Wall", "-O3"]
 cppdefines = []
 target = "v8cgi"
+linkflags = []
 
 config_path = ""
 mysql_include = ""
@@ -72,11 +73,18 @@ if env["os"] == "windows":
     cppdefines.append("USING_V8_SHARED")
     libpath += os.environ.pop("LIB")
     libpath += os.environ.pop("LIBPATH")
+    cpppath.append(os.environ.pop("INCLUDE"))
 # if
 
 if env["mysql"] == 1:
-    sources.append("js_mysql.cc")    
+    sources.append("js_mysql.cc")
     libs.append("mysqlclient")
+    if env["os"] == "windows":
+	libs.append("wsock32")
+	libs.append("user32")
+	libs.append("advapi32")
+	linkflags.append("/nodefaultlib:\"libcmtd\"")
+    # if
     cpppath.append(env["mysqlpath"])
     cppdefines.append("HAVE_MYSQL")
 # if
@@ -97,5 +105,6 @@ Program(
     CPPPATH=cpppath, 
     CCFLAGS=ccflags, 
     CPPDEFINES=cppdefines,
-    LIBPATH=libpath
+    LIBPATH=libpath,
+    LINKFLAGS=linkflags
 )

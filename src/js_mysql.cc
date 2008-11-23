@@ -6,6 +6,7 @@
 
 #include <mysql.h>
 #include <stdlib.h>
+#include <string.h>
 
 v8::Handle<v8::FunctionTemplate> rest;
 
@@ -136,6 +137,24 @@ v8::Handle<v8::Value> _escape(const v8::Arguments &args) {
   return v8::String::New(result, length);
 }
 
+v8::Handle<v8::Value> _qualify(const v8::Arguments &args) {
+  v8::HandleScope handle_scope;
+  if (args.Length() < 1) {
+    return v8::ThrowException(v8::String::New("Nothing to qualify"));
+  }
+
+  int len = args[0]->ToString()->Utf8Length();
+  v8::String::Utf8Value str(args[0]);
+  
+  char * result = (char *) malloc((len+3) * sizeof(char));
+  strcpy(result+1, *str);
+  result[0] = '`';
+  result[len+1] = '`';
+  result[len+2] = '\0';
+  
+  return v8::String::New(result);
+}
+
 v8::Handle<v8::Value> _result(const v8::Arguments & args) {
   v8::HandleScope handle_scope;
   args.This()->SetInternalField(0, args[0]);
@@ -245,6 +264,7 @@ void setup_mysql(v8::Handle<v8::Object> target) {
   pt->Set(v8::String::New("errno"), v8::FunctionTemplate::New(_errno));
   pt->Set(v8::String::New("affectedRows"), v8::FunctionTemplate::New(_affectedrows));
   pt->Set(v8::String::New("escape"), v8::FunctionTemplate::New(_escape));
+  pt->Set(v8::String::New("qualify"), v8::FunctionTemplate::New(_qualify));
   pt->Set(v8::String::New("insertId"), v8::FunctionTemplate::New(_insertid));
   
   rest = v8::FunctionTemplate::New(_result);

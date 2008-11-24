@@ -77,8 +77,12 @@ Query.INSERT = 1;
 Query.UPDATE = 2;
 Query.DELETE = 3;
 
-Query.prototype.table = function(table) {
-	this._table.push(table);
+Query.prototype.table = function(table, join) {
+	var obj = {
+	    table:table,
+	    join:join
+	}
+	this._table.push(obj);
 	this._field.push([]);
 	return this;
 }
@@ -234,14 +238,14 @@ Query.prototype._toStringOrder = function() {
 	var arr = [];
 	for (var i=0;i<this._order.length;i++) {
 		var item = this._order[i];
-		var t = item.table || this._table[0];
+		var t = item.table || this._table[0].table;
 
 		var tname = this._db.qualify(t.getName());
 		var fname = this._db.qualify(item.field);
 		
 		arr.push(tname+"."+fname+" "+item.mode);
 	}
-	return "ORDER BY "+arr.join(", ");
+	return (arr.length ? "ORDER BY "+arr.join(", ") : "");
 }
 
 Query.prototype._toStringHaving = function() {
@@ -265,7 +269,7 @@ Query.prototype._toStringCondition = function(list) {
 	
 	for (var i=0;i<list.length;i++) {
 		var item = list[i];
-		var t = item.table || this._table[0];
+		var t = item.table || this._table[0].table;
 		var str = "";
 		if (i) { str += item.mode+" "; }
 		var tname = this._db.qualify(t.getName());
@@ -282,7 +286,7 @@ Query.prototype._toStringGroup = function() {
 	var arr = [];
 	for (var i=0;i<this._group;i++) {
 		var item = this._group[i];
-		var t = item.table || this._table[0];
+		var t = item.table || this._table[0].table;
 		var tname = this._db.qualify(t.getName());
 		var fname = this._db.qualify(item.field);
 		arr.push(tname + "." + fname);
@@ -295,22 +299,27 @@ Query.prototype._toStringTable = function() {
 	
 	for (var i=0;i<this._table.length;i++) {
 		var item = this._table[i];
+		var table = item.table;
 		if (!i) {
-			arr.push(this._db.qualify(item.getName()));
+			arr.push(this._db.qualify(item.table.getName()));
 		} else {
+			var str = "";
+			if (item.join) { str += item.join+" "; }
+			str += "JOIN "+this._db.qualify(table.getName());
+			
 			var rel = false;
 			for (var j=0;j<i;j++) {
-				var t2 = this._table[j];
-				rel = rel || t2.getRelation(item) || item.getRelation(t2);
+				var t2 = this._table[j].table;
+				rel = rel || t2.getRelation(table) || table.getRelation(t2);
 			}
 			if (rel) {
 				var owntable = this._db.qualify(rel.owntable.getName());
 				var ownfield = this._db.qualify(rel.ownfield);
 				var foreigntable = this._db.qualify(rel.foreigntable.getName());
 				var foreignfield = this._db.qualify(rel.foreignfield);
-				var str = "LEFT JOIN "+foreigntable+" ON "+owntable+"."+ownfield+" = "+foreigntable+"."+foreignfield;
-				arr.push(str);
+				str += " ON "+owntable+"."+ownfield+" = "+foreigntable+"."+foreignfield;
 			}
+			arr.push(str);
 		}
 	}
 	
@@ -331,7 +340,7 @@ Query.prototype._toStringField = function() {
 			var arr = [];
 			for (var i=0;i<this._field.length;i++) {
 				var fieldset = this._field[i];
-				var table = this._table[i];
+				var table = this._table[i].table;
 				for (var j=0;j<fieldset.length;j++) {
 					var field = fieldset[j];
 					var name = (field.name == "*" ? "*" : this._db.qualify(field.name));

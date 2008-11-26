@@ -96,11 +96,11 @@ HTTPRequest.prototype._decode = function(str) {
     var s = str;
     var err = false;
     try {
-	s = decodeURIComponent(str);
+		s = decodeURIComponent(str);
     } catch(e) {
-//	response.error("Cannot urldecode string");
+	//	response.error("Cannot urldecode string");
     } finally {
-	return s;
+		return s;
     }
 }
 
@@ -135,14 +135,14 @@ HTTPRequest.prototype._parsePOST = function() {
     if (!length) { return false; }
     
     if (System.env["CONTENT_TYPE"] == "application/x-www-form-urlencoded") {
-	var data = System.stdin(length);
-	this._parseQS(data, this.post);
+		var data = System.stdin(length);
+		this._parseQS(data, this.post);
     } else if (ct.match(/boundary/)) {
-	var arr = System.stdin(length, true);
-	var str = String.fromCharCode.apply(this, arr); /* convert from array to string */
-	this._parseMultipart(ct, str, false);
+		var arr = System.stdin(length, true);
+		var str = String.fromCharCode.apply(this, arr); /* convert from array to string */
+		this._parseMultipart(ct, str, false);
     } else {
-	return false;
+		return false;
     }
     return true;
 }
@@ -164,28 +164,28 @@ HTTPRequest.prototype._parseMultipart = function(header, data, name) {
     var end = "--"+boundary+"--";
     var parts = data.split(start); /* split by boundary */
     for (var i=0;i<parts.length;i++) { /* all multipart parts */
-	var item = parts[i].substring(0, parts[i].length-2);
-	if (item == "" || item == "--") { continue; }
-	
-	var lines = item.split("\r\n");
-	var done = false;
-	var obj = {
-	    headers:{},
-	    data:""
-	};
-	for (var j=0;j<lines.length;j++) {
-	    if (lines[j] == end) { continue; }
-	    if (done) { /* data */
-		obj.data += (obj.data.length ? "\r\n" : "")+lines[j];
-	    } else { /* headers */
-		if (lines[j] == "") { done = true; continue; } /* headers done */
-		var r = lines[j].match(/([^:]+): *(.*)/);
-		var name = r[1].replace(/-/g,"_").toUpperCase();
-		var value = r[2];
-		obj.headers[name] = value;
-	    }
-	}
-	this._processMultipart(obj, name); /* content parsed, decide how to handle it */
+		var item = parts[i].substring(0, parts[i].length-2);
+		if (item == "" || item == "--") { continue; }
+		
+		var lines = item.split("\r\n");
+		var done = false;
+		var obj = {
+			headers:{},
+			data:""
+		};
+		for (var j=0;j<lines.length;j++) {
+			if (lines[j] == end) { continue; }
+			if (done) { /* data */
+			obj.data += (obj.data.length ? "\r\n" : "")+lines[j];
+			} else { /* headers */
+			if (lines[j] == "") { done = true; continue; } /* headers done */
+			var r = lines[j].match(/([^:]+): *(.*)/);
+			var name = r[1].replace(/-/g,"_").toUpperCase();
+			var value = r[2];
+			obj.headers[name] = value;
+			}
+		}
+		this._processMultipart(obj, name); /* content parsed, decide how to handle it */
     }
 }
 
@@ -196,20 +196,17 @@ HTTPRequest.prototype._processMultipart = function(obj, n) {
     var r = cd.match(/ name="(.*?)"/i); /* form field name */
     if (r) { name = r[1]; }
     if (ct.match(/multipart\/mixed/i)) { /* recursive processing */
-	this._parseMultipart(ct, obj.data, name);
+		this._parseMultipart(ct, obj.data, name);
     } else { /* no recursion: either file or form field */
         var r = cd.match(/filename="(.*?)"/i);
-	if (r) { /* file */
-	    obj.originalName = r[1];
-	    this._addField(this.files, name, obj);
-	} else { /* form field */
-	    var arr = [];
-	    for (var i=0;i<obj.data.length;i++) {
-		arr.push("%" + obj.data.charCodeAt(i).toString(16));
-	    }
-	    this._addField(this.post, name, decodeURI(arr.join("")));
-	}
-    }		
+		if (r) { /* file */
+			obj.originalName = r[1];
+			this._addField(this.files, name, obj);
+		} else { /* form field */
+			var utf = Util.utf8encode(obj.data);
+			this._addField(this.post, name, utf);
+		}
+	}		
 }
 
 var HTTPSession = function() {

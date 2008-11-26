@@ -6,7 +6,8 @@
 */
 
 var Util = {
-    md5:function(input) {
+    md5:function(str) {
+		var input = Util.utf8decode(str);
 		var hexcase = 0;  /* hex output format. 0 - lowercase; 1 - uppercase        */
 		var b64pad  = ""; /* base-64 pad character. "=" for strict RFC compliance   */
 		var chrsz   = 8;  /* bits per input character. 8 - ASCII; 16 - Unicode      */
@@ -168,7 +169,8 @@ var Util = {
 		}
 		return binl2hex(core_md5(str2binl(input), input.length * chrsz));
     },
-    sha1:function(input) {
+    sha1:function(str) {
+		var input = Util.utf8decode(str);
 		var hexcase = 0;  /* hex output format. 0 - lowercase; 1 - uppercase        */
 		var b64pad  = ""; /* base-64 pad character. "=" for strict RFC compliance   */
 		var chrsz   = 8;  /* bits per input character. 8 - ASCII; 16 - Unicode      */
@@ -280,6 +282,7 @@ var Util = {
 		return binb2hex(core_sha1(str2binb(input),input.length * chrsz));
 	},
     base64encode:function(str) {
+		var input = Util.utf8decode(str);
 		var keyStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
 		var output = "";
 		var chr1, chr2, chr3, enc1, enc2, enc3, enc4;
@@ -305,7 +308,7 @@ var Util = {
 		} while (i < input.length);
 		return output;
 	},
-    base64decode:function(str) {
+    base64decode:function(input) {
 		var keyStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
 		var output = "";
 		var chr1, chr2, chr3, enc1, enc2, enc3, enc4;
@@ -327,7 +330,7 @@ var Util = {
 			if (enc4 != 64) { output = output + String.fromCharCode(chr3); }
 		} while (i < input.length);
 
-		return output;    
+		return Util.utf8encode(output);
 	},
     serialize:function(obj) {
 		function sanitize(str) {
@@ -366,5 +369,47 @@ var Util = {
     },
     unserialize:function(str) {
 		return eval("("+str+")");
-    }
+    },
+	utf8encode:function(str) {
+		var result = "";
+		var i = 0;
+		var c = c1 = c2 = 0;
+		while (i < str.length ) {
+			c = str.charCodeAt(i);
+			if (c < 128) {
+				result += String.fromCharCode(c);
+				i += 1;
+			} else if ((c > 191) && (c < 224)) {
+				c1 = str.charCodeAt(i+1);
+				result += String.fromCharCode(((c & 31) << 6) | (c1 & 63));
+				i += 2;
+			} else {
+				c1 = str.charCodeAt(i+1);
+				c2 = str.charCodeAt(i+2);
+				result += String.fromCharCode(((c & 15) << 12) | ((c1 & 63) << 6) | (c2 & 63));
+				i += 3;
+			}
+		}
+		return result;	
+	},
+	utf8decode:function(str) {
+		var result = "";
+
+		for (var i=0;i<str.length;i++) {
+
+			var c = str.charCodeAt(i);
+			if (c < 128) {
+				result += String.fromCharCode(c);
+			} else if((c > 127) && (c < 2048)) {
+				result += String.fromCharCode((c >> 6) | 192);
+				result += String.fromCharCode((c & 63) | 128);
+			}
+			else {
+				result += String.fromCharCode((c >> 12) | 224);
+				result += String.fromCharCode(((c >> 6) & 63) | 128);
+				result += String.fromCharCode((c & 63) | 128);
+			}
+		}
+		return result;
+	}
 }

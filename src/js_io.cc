@@ -117,8 +117,6 @@ JS_METHOD(_create) {
 	return args.This();
 }
 
-
-
 JS_METHOD(_listfiles) {
 	v8::HandleScope handle_scope;
 	v8::String::Utf8Value name(LOAD_VALUE(0));

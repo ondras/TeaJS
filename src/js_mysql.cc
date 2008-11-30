@@ -11,7 +11,7 @@
 
 v8::Persistent<v8::FunctionTemplate> rest;
 
-v8::Handle<v8::Value> _mysql(const v8::Arguments& args) {
+JS_METHOD(_mysql) {
 	v8::HandleScope handle_scope;
 	if (args.This()->InternalFieldCount() == 0) {
 		return v8::ThrowException(JS_STR("Invalid call format. Use 'new MySQL()'"));
@@ -21,7 +21,7 @@ v8::Handle<v8::Value> _mysql(const v8::Arguments& args) {
 	return args.This();
 }
 
-v8::Handle<v8::Value> _connect(const v8::Arguments& args) {
+JS_METHOD(_connect) {
 	v8::HandleScope handle_scope;
 	if (args.Length() < 4) {
 		return v8::ThrowException(JS_STR("Invalid call format. Use 'mysql.connect(host, user, pass, db)'"));
@@ -45,7 +45,7 @@ v8::Handle<v8::Value> _connect(const v8::Arguments& args) {
 	}	
 }
 
-v8::Handle<v8::Value> _query(const v8::Arguments &args) {
+JS_METHOD(_query) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::Value> c = LOAD_VALUE(0);
 	if (c->IsFalse()) {
@@ -69,7 +69,7 @@ v8::Handle<v8::Value> _query(const v8::Arguments &args) {
 	}
 }
 
-v8::Handle<v8::Value> _error(const v8::Arguments &args) {
+JS_METHOD(_error) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::Value> c = LOAD_VALUE(0);
 	if (c->IsFalse()) {
@@ -81,7 +81,7 @@ v8::Handle<v8::Value> _error(const v8::Arguments &args) {
 	return JS_STR(mysql_error(conn));
 }
 
-v8::Handle<v8::Value> _errno(const v8::Arguments &args) {
+JS_METHOD(_errno) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::Value> c = LOAD_VALUE(0);
 	if (c->IsFalse()) {
@@ -93,7 +93,7 @@ v8::Handle<v8::Value> _errno(const v8::Arguments &args) {
 	return JS_INT(mysql_errno(conn));
 }
 
-v8::Handle<v8::Value> _affectedrows(const v8::Arguments &args) {
+JS_METHOD(_affectedrows) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::Value> c = LOAD_VALUE(0);
 	if (c->IsFalse()) {
@@ -105,7 +105,7 @@ v8::Handle<v8::Value> _affectedrows(const v8::Arguments &args) {
 	return JS_INT(mysql_affected_rows(conn));
 }
 
-v8::Handle<v8::Value> _insertid(const v8::Arguments &args) {
+JS_METHOD(_insertid) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::Value> c = LOAD_VALUE(0);
 	if (c->IsFalse()) {
@@ -117,7 +117,7 @@ v8::Handle<v8::Value> _insertid(const v8::Arguments &args) {
 	return JS_INT(mysql_insert_id(conn));
 }
 
-v8::Handle<v8::Value> _escape(const v8::Arguments &args) {
+JS_METHOD(_escape) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::Value> c = LOAD_VALUE(0);
 	if (c->IsFalse()) {
@@ -138,7 +138,7 @@ v8::Handle<v8::Value> _escape(const v8::Arguments &args) {
 	return JS_STR(result, length);
 }
 
-v8::Handle<v8::Value> _qualify(const v8::Arguments &args) {
+JS_METHOD(_qualify) {
 	v8::HandleScope handle_scope;
 	if (args.Length() < 1) {
 		return v8::ThrowException(JS_STR("Nothing to qualify"));
@@ -156,27 +156,27 @@ v8::Handle<v8::Value> _qualify(const v8::Arguments &args) {
 	return JS_STR(result);
 }
 
-v8::Handle<v8::Value> _result(const v8::Arguments & args) {
+JS_METHOD(_result) {
 	v8::HandleScope handle_scope;
 	SAVE_VALUE(0, args[0]);
 	return args.This();
 }
 
-v8::Handle<v8::Value> _numrows(const v8::Arguments & args) {
+JS_METHOD(_numrows) {
 	v8::HandleScope handle_scope;
 	MYSQL_RES * res = LOAD_PTR(0, MYSQL_RES *);
 
 	return JS_INT(mysql_num_rows(res));
 }
 
-v8::Handle<v8::Value> _numfields(const v8::Arguments & args) {
+JS_METHOD(_numfields) {
 	v8::HandleScope handle_scope;
 	MYSQL_RES * res = LOAD_PTR(0, MYSQL_RES *);
 
 	return JS_INT(mysql_num_fields(res));
 }
 
-v8::Handle<v8::Value> _fetchnames(const v8::Arguments & args) {
+JS_METHOD(_fetchnames) {
 	v8::HandleScope handle_scope;
 	MYSQL_RES * res = LOAD_PTR(0, MYSQL_RES *);
 
@@ -191,7 +191,7 @@ v8::Handle<v8::Value> _fetchnames(const v8::Arguments & args) {
 	return result;
 }
 
-v8::Handle<v8::Value> _fetcharrays(const v8::Arguments & args) {
+JS_METHOD(_fetcharrays) {
 	v8::HandleScope handle_scope;
 	MYSQL_RES * res = LOAD_PTR(0, MYSQL_RES *);
 	mysql_data_seek(res, 0);
@@ -217,7 +217,7 @@ v8::Handle<v8::Value> _fetcharrays(const v8::Arguments & args) {
 	return result;
 }
 
-v8::Handle<v8::Value> _fetchobjects(const v8::Arguments & args) {
+JS_METHOD(_fetchobjects) {
 	v8::HandleScope handle_scope;
 	MYSQL_RES * res = LOAD_PTR(0, MYSQL_RES *);
 	mysql_data_seek(res, 0);

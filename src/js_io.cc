@@ -88,7 +88,7 @@ v8::Handle<v8::Value> list_items(char * name, int type) {
 	return result;
 }
 
-v8::Handle<v8::Value> _directory(const v8::Arguments& args) {
+JS_METHOD(_directory) {
 	v8::HandleScope handle_scope;
 	if (args.Length() < 1 || args.This()->InternalFieldCount() == 0) {
 		return v8::ThrowException(JS_STR("Invalid call format. Use 'new Directory(name)'"));
@@ -98,7 +98,7 @@ v8::Handle<v8::Value> _directory(const v8::Arguments& args) {
 	return args.This();
 }
 
-v8::Handle<v8::Value> _create(const v8::Arguments& args) {
+JS_METHOD(_create) {
 	v8::HandleScope handle_scope;
 
 	v8::String::Utf8Value name(LOAD_VALUE(0));
@@ -119,19 +119,19 @@ v8::Handle<v8::Value> _create(const v8::Arguments& args) {
 
 
 
-v8::Handle<v8::Value> _listfiles(const v8::Arguments& args) {
+JS_METHOD(_listfiles) {
 	v8::HandleScope handle_scope;
 	v8::String::Utf8Value name(LOAD_VALUE(0));
 	return list_items(*name, TYPE_FILE);
 }
 
-v8::Handle<v8::Value> _listdirectories(const v8::Arguments& args) {
+JS_METHOD(_listdirectories) {
 	v8::HandleScope handle_scope;
 	v8::String::Utf8Value name(LOAD_VALUE(0));
 	return list_items(*name, TYPE_DIR);
 }
 
-v8::Handle<v8::Value> _file(const v8::Arguments& args) {
+JS_METHOD(_file) {
 	v8::HandleScope handle_scope;
 	if (args.Length() < 1 || args.This()->InternalFieldCount() == 0) {
 		return v8::ThrowException(JS_STR("Invalid call format. Use 'new File(name)'"));
@@ -142,7 +142,7 @@ v8::Handle<v8::Value> _file(const v8::Arguments& args) {
 	return args.This();
 }
 
-v8::Handle<v8::Value> _open(const v8::Arguments& args) {
+JS_METHOD(_open) {
 	v8::HandleScope handle_scope;
 	if (args.Length() < 1) {
 		return v8::ThrowException(JS_STR("Bad argument count. Use 'file.open(mode)'"));
@@ -171,7 +171,7 @@ v8::Handle<v8::Value> _open(const v8::Arguments& args) {
 	return args.This();
 }
 		
-v8::Handle<v8::Value> _close(const v8::Arguments& args) {
+JS_METHOD(_close) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::Value> file = LOAD_VALUE(1);
 	
@@ -186,7 +186,7 @@ v8::Handle<v8::Value> _close(const v8::Arguments& args) {
 	return args.This();
 }
 
-v8::Handle<v8::Value> _read(const v8::Arguments& args) {
+JS_METHOD(_read) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::Value> file = LOAD_VALUE(1);
 	
@@ -219,7 +219,7 @@ v8::Handle<v8::Value> _read(const v8::Arguments& args) {
 	}
 }
 
-v8::Handle<v8::Value> _rewind(const v8::Arguments& args) {
+JS_METHOD(_rewind) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::Value> file = LOAD_VALUE(1);
 	if (file->IsFalse()) {
@@ -233,7 +233,7 @@ v8::Handle<v8::Value> _rewind(const v8::Arguments& args) {
 	return args.This();
 }
 
-v8::Handle<v8::Value> _write(const v8::Arguments& args) {
+JS_METHOD(_write) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::Value> file = LOAD_VALUE(1);
 	
@@ -269,7 +269,7 @@ v8::Handle<v8::Value> _write(const v8::Arguments& args) {
 	return args.This();
 }
 
-v8::Handle<v8::Value> _removefile(const v8::Arguments& args) {
+JS_METHOD(_removefile) {
 	v8::HandleScope handle_scope;
 	v8::String::Utf8Value name(LOAD_VALUE(0));
 	
@@ -280,7 +280,7 @@ v8::Handle<v8::Value> _removefile(const v8::Arguments& args) {
 	return args.This();
 }
 
-v8::Handle<v8::Value> _removedirectory(const v8::Arguments& args) {
+JS_METHOD(_removedirectory) {
 	v8::HandleScope handle_scope;
 	v8::String::Utf8Value name(LOAD_VALUE(0));
 	
@@ -291,7 +291,7 @@ v8::Handle<v8::Value> _removedirectory(const v8::Arguments& args) {
 	return args.This();
 }
 
-v8::Handle<v8::Value> _stat(const v8::Arguments& args) {
+JS_METHOD(_stat) {
 	v8::HandleScope handle_scope;
 	
 	v8::String::Utf8Value name(LOAD_VALUE(0));
@@ -331,7 +331,7 @@ v8::Handle<v8::Value> _copy(char * name1, char * name2) {
 	fclose(f2);
 	return JS_BOOL(true);
 }
-v8::Handle<v8::Value> _movefile(const v8::Arguments& args) {
+JS_METHOD(_movefile) {
 	v8::HandleScope handle_scope;
 	
 	if (args.Length() < 1) {
@@ -356,7 +356,7 @@ v8::Handle<v8::Value> _movefile(const v8::Arguments& args) {
 	return args.This();	
 }
 
-v8::Handle<v8::Value> _copyfile(const v8::Arguments & args) {
+JS_METHOD(_copyfile) {
 	v8::HandleScope handle_scope;
 	if (args.Length() < 1) {
 		return v8::ThrowException(JS_STR("Bad argument count. Use 'file.copy(newname)'"));
@@ -376,12 +376,12 @@ v8::Handle<v8::Value> _copyfile(const v8::Arguments & args) {
 
 
 
-v8::Handle<v8::Value> _tostring(const v8::Arguments& args) {
+JS_METHOD(_tostring) {
 	v8::HandleScope handle_scope;
 	return LOAD_VALUE(0);
 }
 
-v8::Handle<v8::Value> _exists(const v8::Arguments& args) {
+JS_METHOD(_exists) {
 	v8::HandleScope handle_scope;
 	v8::String::Utf8Value name(LOAD_VALUE(0));
 	int result = access(*name, F_OK);

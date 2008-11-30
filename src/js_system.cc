@@ -2,7 +2,7 @@
 #include <sstream>
 #include <js_common.h>
 
-v8::Handle<v8::Value> _stdin(const v8::Arguments&args) {
+JS_METHOD(_stdin) {
 	v8::HandleScope handle_scope;
 	
 	size_t count = args[0]->Int32Value();
@@ -31,7 +31,7 @@ v8::Handle<v8::Value> _stdin(const v8::Arguments&args) {
 	}
 }
 
-v8::Handle<v8::Value> _stdout(const v8::Arguments&args) {
+JS_METHOD(_stdout) {
 	v8::HandleScope handle_scope;
 	if (args[0]->IsArray()) {
 		v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(args[0]);
@@ -46,7 +46,7 @@ v8::Handle<v8::Value> _stdout(const v8::Arguments&args) {
 	return v8::Undefined();
 }
 
-v8::Handle<v8::Value> _system(const v8::Arguments&args) {
+JS_METHOD(_system) {
 	v8::HandleScope handle_scope;
 	if (args.Length() != 1) {
 		return v8::ThrowException(JS_STR("Wrong argument count. Use System.system(\"command\")"));

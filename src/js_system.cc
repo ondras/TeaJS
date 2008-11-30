@@ -4,30 +4,18 @@
 
 JS_METHOD(_stdin) {
 	v8::HandleScope handle_scope;
-	
-	size_t count = args[0]->Int32Value();
-	char * data;
-	if (count == 0) {
-		data = (char *) malloc(sizeof(char));
-		char * ch = (char *) malloc(sizeof(char));
-		ch[0] = '\0';
-		
-		do {
-			count++;
-			fread(ch, sizeof(char), 1, stdin);
-			data = (char *) realloc(data, count+1);
-			data[count-1] = ch[0];
-			data[count] = '\0';
-		} while (ch[0] != '\n');
-	} else {
-		data = (char *)	malloc(count + sizeof(char));
-		fread(data,sizeof(char),count,stdin);
-		data[count] = '\0';
+
+	size_t count = 0;
+	if (args.Length() && args[0]->IsNumber()) {
+		count = args[0]->IntegerValue();
 	}
+	
+	char * data = NULL;
+	size_t size = afread(&data, count, stdin);
 	if (args.Length() > 1 && args[1]->IsTrue()) {
-		return char2array(data, count);
+		return char2array(data, size);
 	} else {
-		return char2string(data, count);
+		return char2string(data, size);
 	}
 }
 
@@ -57,6 +45,8 @@ JS_METHOD(_system) {
 	return JS_INT(result);
 }
 
+
+
 JS_METHOD(_sleep) {
 	v8::HandleScope handle_scope;
 	int num = args[0]->Int32Value();
@@ -70,6 +60,7 @@ JS_METHOD(_usleep) {
 	usleep(num);
 	return v8::Undefined();
 }
+
 
 void setup_system(char ** envp, v8::Handle<v8::Object> global) {
 	v8::HandleScope handle_scope;

@@ -159,13 +159,7 @@ JS_METHOD(_open) {
 		return v8::ThrowException(JS_STR("Cannot open file"));
 	}
 	
-	struct stat st;
-	if (stat(*name, &st) == 0) {
-		SAVE_VALUE(2, JS_INT(st.st_size));
-	}
 	SAVE_PTR(1, f);
-	SAVE_VALUE(3, JS_INT(0));
-	
 	return args.This();
 }
 		
@@ -192,29 +186,21 @@ JS_METHOD(_read) {
 		return v8::ThrowException(JS_STR("File must be opened before reading"));
 	}
 	
-	int64_t size = LOAD_VALUE(2)->IntegerValue();
-	int64_t pos = LOAD_VALUE(3)->IntegerValue();
+	FILE * f = LOAD_PTR(1, FILE *);
 	
-	FILE * f = LOAD_PTR(1, FILE *)
-	
-	size_t avail = size-pos;
-	if (!avail) { return JS_BOOL(false); }
-	
+	size_t count = -1;
 	if (args.Length() && args[0]->IsNumber()) {
-		int64_t len = args[0]->IntegerValue();
-		if (len < avail) { avail = len; }
+		count = args[0]->IntegerValue();
 	}
-	char * buf = (char *) malloc(avail * sizeof(char));
-	fread(buf, sizeof(char), avail, f);
-	pos += avail;
-	
-	SAVE_VALUE(3, JS_INT(pos));
+	char * data = NULL;
+	size_t size = afread(&data, count, f);
 	
 	if (args.Length() > 1 && args[1]->IsTrue()) {
-		return char2array(buf, avail);
+		return char2array(data, size);
 	} else {
-		return char2string(buf, avail);
+		return char2string(data, size);
 	}
+	return v8::Undefined();
 }
 
 JS_METHOD(_rewind) {
@@ -227,7 +213,6 @@ JS_METHOD(_rewind) {
 	FILE * f = LOAD_PTR(1, FILE *);
 	rewind(f);
 
-	SAVE_VALUE(3, JS_INT(0));
 	return args.This();
 }
 
@@ -329,6 +314,7 @@ v8::Handle<v8::Value> _copy(char * name1, char * name2) {
 	fclose(f2);
 	return JS_BOOL(true);
 }
+
 JS_METHOD(_movefile) {
 	v8::HandleScope handle_scope;
 	
@@ -372,8 +358,6 @@ JS_METHOD(_copyfile) {
 	}
 }
 
-
-
 JS_METHOD(_tostring) {
 	v8::HandleScope handle_scope;
 	return LOAD_VALUE(0);
@@ -391,7 +375,7 @@ void setup_io(v8::Handle<v8::Object> target) {
 	ft = v8::Persistent<v8::FunctionTemplate>::New(v8::FunctionTemplate::New(_file));
 	ft->SetClassName(JS_STR("File"));
 	v8::Handle<v8::ObjectTemplate> ot = ft->InstanceTemplate();
-	ot->SetInternalFieldCount(4); /* filename, handle, size, position */
+	ot->SetInternalFieldCount(2); /* filename, handle */
 
 	v8::Handle<v8::ObjectTemplate> pt = ft->PrototypeTemplate();
 	pt->Set("open", v8::FunctionTemplate::New(_open));

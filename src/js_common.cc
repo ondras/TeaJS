@@ -1,7 +1,6 @@
 #include <v8.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sstream>
 #include "js_common.h"
 
 v8::Handle<v8::Array> char2array(char * data, int count) {

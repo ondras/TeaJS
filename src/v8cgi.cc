@@ -23,7 +23,7 @@
 // getcwd()
 #ifndef HAVE_GETCWD
 #	include <direct.h>
-#       define getcwd(name) _getcwd(name)
+#       define getcwd(name, bytes) _getcwd(name, bytes)
 #endif
 
 v8::Handle<v8::Array> __onexit;

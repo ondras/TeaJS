@@ -29,7 +29,7 @@
 #	define mkdir(name, mode) _mkdir(name)
 #endif
 
-// mkdir()
+// rmdir()
 #ifndef HAVE_RMDIR
 #	define rmdir(name) _rmdir(name)
 #endif

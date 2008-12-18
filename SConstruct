@@ -59,6 +59,12 @@ if conf.CheckFunc("mkdir"):
 if conf.CheckFunc("rmdir"):
     cppdefines.append("HAVE_RMDIR")
 
+if conf.CheckFunc("chdir"):
+    cppdefines.append("HAVE_CHDIR")
+
+if conf.CheckFunc("getcwd"):
+    cppdefines.append("HAVE_GETCWD")
+
 env = conf.Finish()
 
 cppdefines.append("CONFIG_PATH=" + env["conffile"])

@@ -14,6 +14,16 @@
 #define _STRING(x) #x
 #define STRING(x) _STRING(x)
 
+// chdir()
+#ifndef HAVE_CHDIR
+#       define chdir(name) _chdir(name)
+#endif
+
+// getcwd()
+#ifndef HAVE_GETCWD
+#       define getcwd(name) _getcwd(name)
+#endif
+
 v8::Handle<v8::Array> __onexit;
 
 void die(int code) {

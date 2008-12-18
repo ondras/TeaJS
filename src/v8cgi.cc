@@ -10,6 +10,7 @@
 #include "js_common.h"
 
 #include <sstream>
+#include <libgen.h>
 
 #define _STRING(x) #x
 #define STRING(x) _STRING(x)
@@ -27,6 +28,7 @@ void die(int code) {
 }
 
 v8::Handle<v8::String> read_file(const char* name) {
+	printf("%s",name);
 	FILE* file = fopen(name, "rb");
 	if (file == NULL) return v8::Handle<v8::String>();
 
@@ -130,7 +132,23 @@ int execute_file(const char * str) {
 		report_exception(&try_catch);
 		return 1;
 	} else {
+
+
+		char * old = getcwd(NULL, 0);
+		char * end = strrchr(str, '/');
+		if (end == NULL) {
+			end = strrchr(str, '\\');
+		}
+	
+		if (end != NULL) {
+			int len = end-str;
+			char * base = (char *) malloc(len+1);
+			strncpy(base, str, len);
+    			base[len] = '\0';
+    			chdir(base);
+		}
 		v8::Handle<v8::Value> result = script->Run();
+		chdir(old);
 		if (result.IsEmpty()) {
 			report_exception(&try_catch);
 			return 1;

@@ -24,8 +24,7 @@ v8::Handle<v8::String> char2string(char * data, int count) {
  *   >0 - read `count` bytes
  */ 
 size_t afread(char ** ptr, size_t count, FILE * stream) {
-	size_t limit = 1024;
-	char * buffer = (char *) malloc(limit * sizeof(char));
+	char buffer[1024];
 	size_t size = 0; /* num of received bytes */
 	bool done = false;
 	
@@ -33,7 +32,7 @@ size_t afread(char ** ptr, size_t count, FILE * stream) {
 		case -1: /* whole file */
 			size_t tmp;
 			do {
-				tmp = fread(buffer, sizeof(char), limit, stream);
+				tmp = fread(buffer, sizeof(char), sizeof(buffer), stream);
 				if (tmp) {
 					size += tmp;
 					*ptr = (char *) realloc(*ptr, size);

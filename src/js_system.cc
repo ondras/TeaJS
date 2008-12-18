@@ -45,7 +45,7 @@ JS_METHOD(_system) {
 	return JS_INT(result);
 }
 
-
+/*
 
 JS_METHOD(_sleep) {
 	v8::HandleScope handle_scope;
@@ -61,7 +61,7 @@ JS_METHOD(_usleep) {
 	return v8::Undefined();
 }
 
-
+*/
 void setup_system(char ** envp, v8::Handle<v8::Object> global) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::ObjectTemplate> systemt = v8::ObjectTemplate::New();
@@ -74,8 +74,8 @@ void setup_system(char ** envp, v8::Handle<v8::Object> global) {
 	system->Set(JS_STR("stdin"), v8::FunctionTemplate::New(_stdin)->GetFunction());
 	system->Set(JS_STR("stdout"), v8::FunctionTemplate::New(_stdout)->GetFunction());
 	system->Set(JS_STR("system"), v8::FunctionTemplate::New(_system)->GetFunction());
-	system->Set(JS_STR("sleep"), v8::FunctionTemplate::New(_sleep)->GetFunction());
-	system->Set(JS_STR("usleep"), v8::FunctionTemplate::New(_usleep)->GetFunction());
+//	system->Set(JS_STR("sleep"), v8::FunctionTemplate::New(_sleep)->GetFunction());
+//	system->Set(JS_STR("usleep"), v8::FunctionTemplate::New(_usleep)->GetFunction());
 	system->Set(JS_STR("env"), env);
 	
 	std::string name, value;

@@ -146,9 +146,9 @@ int execute_file(const char * str) {
 
 
 		char * old = getcwd(NULL, 0);
-		char * end = strrchr(str, '/');
+		char * end = strrchr((char *)str, '/');
 		if (end == NULL) {
-			end = strrchr(str, '\\');
+			end = strrchr((char *)str, '\\');
 		}
 	
 		if (end != NULL) {

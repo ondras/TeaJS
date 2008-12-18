@@ -10,7 +10,6 @@
 #include "js_common.h"
 
 #include <sstream>
-#include <libgen.h>
 
 #define _STRING(x) #x
 #define STRING(x) _STRING(x)

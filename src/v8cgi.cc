@@ -127,7 +127,7 @@ void report_exception(v8::TryCatch* try_catch) {
 	fun->Call(context->ToObject(), 1, data);
 }
 
-int execute_file(const char * str) {
+int execute_file(const char * str, bool change) {
 	v8::HandleScope handle_scope;
 	v8::TryCatch try_catch;
 	v8::Handle<v8::String> name = JS_STR(str);
@@ -151,7 +151,7 @@ int execute_file(const char * str) {
 			end = strrchr((char *)str, '\\');
 		}
 	
-		if (end != NULL) {
+		if (end != NULL && change) {
 			int len = end-str;
 			char * base = (char *) malloc(len+1);
 			strncpy(base, str, len);
@@ -178,7 +178,7 @@ int library(char * name) {
 	path += *pfx;
 	path += "/";
 	path += name;
-	return execute_file(path.c_str());
+	return execute_file(path.c_str(), false);
 }
 
 v8::Handle<v8::Value> _include(const v8::Arguments& args) {
@@ -187,7 +187,7 @@ v8::Handle<v8::Value> _include(const v8::Arguments& args) {
 	for (int i = 0; i < args.Length(); i++) {
 		v8::HandleScope handle_scope;
 		v8::String::Utf8Value file(args[i]);
-		result = execute_file(*file);
+		result = execute_file(*file, false);
 		if (result != 0) { ok = false; }
 	}
 	return JS_BOOL(ok);
@@ -233,7 +233,7 @@ int library_autoload() {
 }
 
 void init(char * cfg) {
-	int result = execute_file(cfg);
+	int result = execute_file(cfg, false);
 	if (result) { 
 		printf("Cannot load configuration, quitting...\n");
 		die(1);
@@ -293,13 +293,13 @@ int main(int argc, char ** argv, char ** envp) {
 		v8::Handle<v8::Value> pt = env->ToObject()->Get(JS_STR("PATH_TRANSLATED"));
 		if (pt->IsString()) {
 			v8::String::Utf8Value name(pt);
-			int result = execute_file(*name);
+			int result = execute_file(*name, true);
 			if (result) { die(result); }
 		} else {
 			printf("Nothing to do.\n");
 		}
 	} else {
-		int result = execute_file(argv[argptr]);
+		int result = execute_file(argv[argptr], true);
 		if (result) { die(result); }
 	}
 	die(0);

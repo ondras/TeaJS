@@ -343,11 +343,16 @@ Query.prototype._toStringField = function() {
 				var table = this._table[i].table;
 				for (var j=0;j<fieldset.length;j++) {
 					var field = fieldset[j];
-					var name = (field.name == "*" ? "*" : this._db.qualify(field.name));
+					if (field.name == "*") {
+					    var name = this._db.qualify(table.getName())+".*";
+					} else if (field.name.match(/\(/)) {
+					    var name = field.name;
+					} else {
+					    var name = this._db.qualify(table.getName())+"."+this._db.qualify(field.name);
+					}
 					var alias = field.value;
-					var str = this._db.qualify(table.getName())+"."+name;
-					if (alias) { str += " AS '"+alias+"'"; }
-					arr.push(str);
+					if (alias) { name += " AS '"+alias+"'"; }
+					arr.push(name);
 				}
 			}
 			return arr.join(", ");

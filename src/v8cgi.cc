@@ -39,7 +39,6 @@ void die(int code) {
 }
 
 v8::Handle<v8::String> read_file(const char* name) {
-	printf("%s",name);
 	FILE* file = fopen(name, "rb");
 	if (file == NULL) return v8::Handle<v8::String>();
 

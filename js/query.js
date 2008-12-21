@@ -113,13 +113,8 @@ Query.prototype.where = function(conditionDef) {
 	return this;
 }
 
-Query.prototype.order = function(fieldDef, mode) {
-	var arr = [];
-	for (var i=0;i<arguments.length;i++) {
-		if (i != 1) { arr.push(arguments[i]); }
-	}
-	var str = this._expand.apply(this, arr) + " " + (mode || "ASC");
-	this._order.push(str);
+Query.prototype.order = function(fieldDef) {
+	this._order.push(this._expand.apply(this, arguments));
 	return this;
 }
 

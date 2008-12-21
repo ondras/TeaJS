@@ -1,46 +1,5 @@
-var Table = function(name) {
-	this._name = name;
-}
-
-Table.prototype.select = function() {
-	var q = new Query(Query.SELECT);
-	q.table(this._name);
-	for (var i=0;i<arguments.length;i++) {
-		q.field(arguments[i]);
-	}
-	return q;
-}
-
-Table.prototype.insert = function(values) {
-	var q = new Query(Query.INSERT);
-	q.table(this._name);
-	for (var name in values) {
-		var value = values[name];
-		q.field(name);
-		q.value(value);
-	}
-	return q;
-}
-
-Table.prototype.update = function(values) {
-	var q = new Query(Query.UPDATE);
-	q.table(this._name);
-	for (var name in values) {
-		var value = values[name];
-		q.field(name);
-		q.value(value);
-	}
-	return q;
-}
-
-Table.prototype.delete = function(values) {
-	var q = new Query(Query.DELETE);
-	q.table(this._name);
-	return q;
-}
-
-
 var Query = function(type) {
+	this._cache = {};
 	this._type = type;
 	this._table = [];
 	this._field = []; 
@@ -71,9 +30,13 @@ Query.addRelation = function(t1,f1,t2,f2) {
 Query.findRelation = function(t1, t2, joinfield) {
 	for (var i=0;i<this._relations.length;i++) {
 		var rel = this._relations[i];
-		if (rel[0] != t1 && rel[0] != t2 && rel[2] != t1 && rel[2] != t2) { continue; }
-		if (joinfield && joinfield != rel[1] && joinfield != rel[3]) { continue; }
-		return rel;
+		if (
+		    (rel[0] == t1 && rel[2] == t2) ||
+		    (rel[2] == t1 && rel[0] == t2)
+		) { 
+		    if (joinfield && joinfield != rel[1] && joinfield != rel[3]) { continue; }
+		    return rel;
+		} else { continue; }
 	}
 	return null;
 }
@@ -139,6 +102,7 @@ Query.prototype.having = function(conditionDef) {
 }
 
 Query.prototype.toString = function() {
+	this._cache = {};
 	if (!this._field.length) { this.field("*"); }
 	switch (this._type) {
 		case Query.SELECT: return this._toStringSelect();
@@ -244,7 +208,7 @@ Query.prototype._toStringTable = function() {
 				} else {
 					cache[name] = 1;
 				}
-				var alias = this._qualify(name+"#"+cache[name]);
+				var alias = this._qualify(this._setAlias(name));
 				var full = this._qualify(name) + " AS "+alias;
 				
 				if (!i) {
@@ -260,8 +224,8 @@ Query.prototype._toStringTable = function() {
 						rel = rel || Query.findRelation(name, t2, item.joinfield);
 					}
 					if (rel) {
-						var tmp1 = rel[0] + "#" + cache[rel[0]] + "." + rel[1];
-						var tmp2 = rel[2] + "#" + cache[rel[2]] + "." + rel[3];
+						var tmp1 = this._getAlias(rel[0]) + "." + rel[1];
+						var tmp2 = this._getAlias(rel[2]) + "." + rel[3];
 						str += " ON "+this._qualify(tmp1)+" = "+this._qualify(tmp2);
 					}
 					arr.push(str);
@@ -358,4 +322,62 @@ Query.prototype._expand = function(str) {
 		index++;
 	}
 	return s;
+}
+
+Query.prototype._setAlias = function(name) {
+	if (name in this._cache) {
+		this._cache[name]++;
+	} else {
+		this._cache[name] = 1;
+	}
+	return this._getAlias(name);
+}
+
+Query.prototype._getAlias = function(name) {
+	if (name in this._cache && this._cache[name] > 1) {
+		return name+"#"+this._cache[name];
+	} else {
+		return name;
+	}
+}
+
+var Table = function(name) {
+	this._name = name;
+}
+
+Table.prototype.select = function() {
+	var q = new Query(Query.SELECT);
+	q.table(this._name);
+	for (var i=0;i<arguments.length;i++) {
+		q.field(arguments[i]);
+	}
+	return q;
+}
+
+Table.prototype.insert = function(values) {
+	var q = new Query(Query.INSERT);
+	q.table(this._name);
+	for (var name in values) {
+		var value = values[name];
+		q.field(name);
+		q.value(value);
+	}
+	return q;
+}
+
+Table.prototype.update = function(values) {
+	var q = new Query(Query.UPDATE);
+	q.table(this._name);
+	for (var name in values) {
+		var value = values[name];
+		q.field(name);
+		q.value(value);
+	}
+	return q;
+}
+
+Table.prototype["delete"] = function(values) {
+	var q = new Query(Query.DELETE);
+	q.table(this._name);
+	return q;
 }

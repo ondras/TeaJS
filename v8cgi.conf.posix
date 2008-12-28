@@ -12,3 +12,7 @@ Config["sessionPath"] = "/tmp";
 
 // session lifetime - in seconds
 Config["sessionTime"] = 60*60;
+
+// session domain
+Config["sessionDomain"] = "/";
+

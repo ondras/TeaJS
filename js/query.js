@@ -319,6 +319,15 @@ Query.prototype._expand = function(str) {
 				}
 			break;
 			
+			case "n":
+				if (start) {
+					start = false;
+					s += parseFloat(arguments[argptr++]);
+				} else {
+					s += ch;
+				}
+			break;
+			
 			default:
 				s += ch;
 			break;

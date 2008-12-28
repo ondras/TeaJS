@@ -192,7 +192,11 @@ Query.prototype._toStringWhere = function() {
 }
 
 Query.prototype._toStringGroup = function() {
-	return this._group.join(", ");
+	if (this._group.length) {
+		return "GROUP BY "+this._group.join(", ");
+	} else {
+		return "";
+	}
 }
 
 Query.prototype._toStringTable = function() {

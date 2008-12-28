@@ -36,6 +36,7 @@ HTTPResponse.prototype.error = function(txt) {
 HTTPResponse.prototype.header = function(h) {
     for (var p in h) {
 	if (p.match(/content-type/i)) { this._ct = true; }
+	if (p.match(/location/i)) { this.header({"Status":"302 Found"}); }
 	var str = p+": "+h[p]+"\n";
 	System.stdout(str);
     }
@@ -88,7 +89,7 @@ HTTPRequest.prototype._parseCookie = function() {
 	var eq = row.indexOf("=");
 	var name = row.substring(0,eq);
 	var value = row.substring(eq+1);
-	this.cookie[name] = unescape(value);
+	if (!this.cookie[name]) { this.cookie[name] = unescape(value); }
     }
 }
 
@@ -216,6 +217,7 @@ var HTTPSession = function() {
 
     this._name = Config.sessionCookie || "V8SID";
     this._path = Config.sessionPath || "/tmp";
+    this._domain = Config.sessionDomain || "/";
     if (this._path.charAt(this._path.length-1) != "/") { this._path += "/"; }
     this._lifetime = Config.sessionTime || 60*60;
     this._gc();
@@ -303,7 +305,7 @@ HTTPSession.prototype._gc = function() {
 HTTPSession.prototype._cookie = function() {
     var d = new Date();
     d.setFullYear(100+d.getFullYear());
-    response.cookie(this._name, this._id, d);
+    response.cookie(this._name, this._id, d, this._domain);
 }
 
 HTTPSession.prototype._load = function() {

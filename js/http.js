@@ -43,7 +43,7 @@ HTTPResponse.prototype.header = function(h) {
 }
 
 HTTPResponse.prototype.escape = function(str) {
-	if (!str.toString) { return ""; }
+	if (str === null || !str.toString) { return ""; }
     return str.toString().replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;"); // "
 }
 

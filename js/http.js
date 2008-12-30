@@ -43,7 +43,7 @@ HTTPResponse.prototype.header = function(h) {
 }
 
 HTTPResponse.prototype.escape = function(str) {
-    if (!str) { return ""; }
+	if (!str.toString) { return ""; }
     return str.toString().replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;"); // "
 }
 
@@ -51,12 +51,12 @@ HTTPResponse.prototype.dump = function(obj, depth) {
     var d = depth || 0;
     if (!d) { this.write("<pre>\n"); }
     for (var p in obj) {
-	var val = obj[p];
-	for (var i=0;i<2*d;i++) { this.write(" "); }
-	this.write(p+": "+this.escape(val)+"\n");
-	if (typeof(val) == "object") {
-	    arguments.callee.call(this, val, d+1);
-	}
+		var val = obj[p];
+		for (var i=0;i<2*d;i++) { this.write(" "); }
+		this.write(p+": "+this.escape(val)+"\n");
+		if (typeof(val) == "object") {
+	    	arguments.callee.call(this, val, d+1);
+		}
     }
     if (!d) { this.write("</pre>\n"); }
 }

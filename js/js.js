@@ -18,6 +18,11 @@ String.prototype.trim = function() {
     return this.match(/^\s*(.*?)\s*$/)[1];
 }
 
+Date.prototype._dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+Date.prototype._dayNamesShort = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+Date.prototype._monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+Date.prototype._monthNamesShort = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
 Date.prototype.format = function(str) {
     var result = "";
     for (var i=0;i<str.length;i++) {
@@ -27,9 +32,13 @@ Date.prototype.format = function(str) {
 	    case "j": result += this.getDate(); break;
 	    case "w": result += this.getDay(); break;
 	    case "N": result += this.getDay() || 7; break;
+	    case "D": result += this._dayNamesShort[(this.getDay() || 7)-1]; break;
+	    case "l": result += this._dayNames[(this.getDay() || 7)-1]; break;
 
 	    case "m": result += (this.getMonth()+1).toString().lpad(); break;
 	    case "n": result += (this.getMonth()+1); break;
+	    case "M": result += this._monthNamesShort[this.getMonth()]; break;
+	    case "F": result += this._monthNames[this.getMonth()]; break;
 
 	    case "Y": result += this.getFullYear().toString().lpad(); break;
 	    case "y": result += this.getFullYear().toString().lpad().substring(2); break;
@@ -54,6 +63,7 @@ Date.prototype.format = function(str) {
 
 	    case "U": result += this.getTime()/1000; break; 
 	    case "c": result += arguments.callee.call(this, "Y-m-d")+"T"+arguments.callee.call(this, "H:i:sP"); break; 
+	    case "r": result += arguments.callee.call(this, "D, j M Y H:i:s O"); break; 
 
 
 	    

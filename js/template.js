@@ -1,7 +1,7 @@
 var Template = function(options) {
     this.options = {
-	path:"",
-	suffix:".template"
+		path:"",
+		suffix:".template"
     }
     for (var p in options) { this.options[p] = options[p]; }
 }
@@ -29,15 +29,15 @@ Template.prototype._tokenStatic = function(str) {
 
 Template.prototype._tokenCommand = function(str, command) {
     switch (command) {
-	case "code":
-	    return str+";";
-	break;
-	case "include":
-	    return this._parse(str);
-	break;
-	default:
-	    return "__output += "+str+";";
-	break;
+		case "code":
+	    	return str+";";
+		break;
+		case "include":
+	    	return this._parse(str);
+		break;
+		default:
+	    	return "__output += "+str+";";
+		break;
     }
 }
 
@@ -53,51 +53,51 @@ Template.prototype._process = function(str) {
     var command = "";
     
     while (ptr < str.length) {
-	var ch = str.charAt(ptr);
-	switch (ch) {
-	    case "$":
-		if (!depth && !flag) { /* start of js expression */
-		    flag = true;
-		    arr.push(this._tokenStatic(token));
-		    token = "";
-		} else {
-		    token += ch;
-		}
-	    break;
+		var ch = str.charAt(ptr);
+		switch (ch) {
+	    	case "$":
+				if (!depth && !flag) { /* start of js expression */
+		    		flag = true;
+			    	arr.push(this._tokenStatic(token));
+			    	token = "";
+				} else {
+			    	token += ch;
+				}
+		    break;		
 
-	    case "(":
-		if (flag) { /* start of js expression content */
-		    flag = false;
-		    depth++;
-		    command = token;
-		    token = "";
-		} else if (depth > 0) { /* inside js expression content */
-		    depth++;
-		    token += ch;
-		} else {
-		    token += ch; /* outside js expression */
-		}
-	    break;
+		    case "(":
+				if (flag) { /* start of js expression content */
+			    	flag = false;
+			    	depth++;
+			    	command = token;
+			    	token = "";
+				} else if (depth > 0) { /* inside js expression content */
+			    	depth++;
+			    	token += ch;
+				} else {
+			    	token += ch; /* outside js expression */
+				}
+	   		 break;
 	    
-	    case ")":
-		if (depth > 0) { /* inside js expression */
-		    depth--;
-		    if (depth == 0) { /* end of js expression */
-			arr.push(this._tokenCommand(token, command));
-			token = "";
-		    } else {
-			token += ch;
-		    }
-		} else { /* outside js expression */
-		    token += ch;
-		}
-	    break;
+		    case ")":
+				if (depth > 0) { /* inside js expression */
+			    	depth--;
+			    	if (depth == 0) { /* end of js expression */
+						arr.push(this._tokenCommand(token, command));
+						token = "";
+			    	} else {
+						token += ch;
+			    	}
+				} else { /* outside js expression */
+			    	token += ch;
+				}
+		    break;
 	    
-	    default:
-		token += ch;
-	    break;
-	}
-	ptr++;
+		    default:
+				token += ch;
+		    break;
+		}
+		ptr++;
     }
     arr.push(this._tokenStatic(token));
     return arr.join("");

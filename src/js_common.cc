@@ -34,10 +34,11 @@ size_t afread(char ** ptr, size_t count, FILE * stream) {
 			do {
 				tmp = fread(buffer, sizeof(char), sizeof(buffer), stream);
 				if (tmp) {
+					*ptr = (char *) realloc(*ptr, size+tmp);
+					strncpy((*ptr)+size, buffer, tmp);
 					size += tmp;
-					*ptr = (char *) realloc(*ptr, size);
-					strncpy(*ptr, buffer, tmp);
-				} else { done = true; }
+				}
+				if (tmp != sizeof(buffer)) { done = true; }
 			} while (!done);
 		break;
 		

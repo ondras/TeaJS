@@ -128,22 +128,21 @@ int execute_file(const char * str, bool change) {
 		report_exception(&try_catch);
 		return 1;
 	} else {
-
-
 		char * old = getcwd(NULL, 0);
 		char * end = strrchr((char *)str, '/');
 		if (end == NULL) {
 			end = strrchr((char *)str, '\\');
 		}
-	
 		if (end != NULL && change) {
 			int len = end-str;
 			char * base = (char *) malloc(len+1);
 			strncpy(base, str, len);
-    			base[len] = '\0';
-    			chdir(base);
+    		base[len] = '\0';
+    		chdir(base);
 		}
+		
 		v8::Handle<v8::Value> result = script->Run();
+		
 		chdir(old);
 		if (result.IsEmpty()) {
 			report_exception(&try_catch);

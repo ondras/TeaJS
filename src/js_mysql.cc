@@ -153,13 +153,12 @@ JS_METHOD(_qualify) {
 	int len = args[0]->ToString()->Utf8Length();
 	v8::String::Utf8Value str(args[0]);
 	
-	char * result = (char *) malloc((len+3) * sizeof(char));
+	char * result = (char *) malloc((len+2) * sizeof(char));
 	strncpy(result+1, *str, len);
 	result[0] = '`';
 	result[len+1] = '`';
-	result[len+2] = '\0';
 	
-	return JS_STR(result);
+	return JS_STR(result, len+2);
 }
 
 JS_METHOD(_result) {

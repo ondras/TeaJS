@@ -154,7 +154,7 @@ JS_METHOD(_qualify) {
 	v8::String::Utf8Value str(args[0]);
 	
 	char * result = (char *) malloc((len+3) * sizeof(char));
-	strcpy(result+1, *str);
+	strncpy(result+1, *str, len);
 	result[0] = '`';
 	result[len+1] = '`';
 	result[len+2] = '\0';

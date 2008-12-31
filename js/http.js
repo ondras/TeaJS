@@ -7,9 +7,9 @@ var HTTPResponse = function() {
 
 HTTPResponse.prototype.write = function(str) {
     if (!this._output) {
-	this._output = true;
-	if (!this._ct) { this.header({"Content-type":"text/html"}); }
-	System.stdout("\n");
+		this._output = true;
+		if (!this._ct) { this.header({"Content-type":"text/html"}); }
+		System.stdout("\n");
     }
     System.stdout(str);
 }
@@ -52,6 +52,7 @@ HTTPResponse.prototype.dump = function(obj, depth) {
     if (!d) { this.write("<pre>\n"); }
     for (var p in obj) {
 		var val = obj[p];
+		if (val === null) { val = "[null]"; }
 		for (var i=0;i<2*d;i++) { this.write(" "); }
 		this.write(p+": "+this.escape(val)+"\n");
 		if (typeof(val) == "object") {

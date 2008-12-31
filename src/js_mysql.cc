@@ -58,14 +58,20 @@ JS_METHOD(_query) {
 	
 	MYSQL * conn = LOAD_PTR(0, MYSQL *);
 	MYSQL_RES *res;
-	mysql_query(conn, *q);
+	int code = mysql_real_query(conn, *q, q.length());
+	if (code != 0) { return JS_BOOL(false); }
+	
 	res = mysql_store_result(conn);
 	
 	if (res) {
 		v8::Handle<v8::Value> resargs[] = { v8::External::New((void *) res) };
 		return rest->GetFunction()->NewInstance(1, resargs);
 	} else {
-		return JS_BOOL(false);
+		if (mysql_field_count(conn)) {
+			return JS_BOOL(false);
+		} else {
+			return JS_BOOL(true);
+		}
 	}
 }
 

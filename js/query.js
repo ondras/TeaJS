@@ -103,7 +103,7 @@ Query.prototype.having = function(conditionDef) {
 
 Query.prototype.toString = function() {
 	this._cache = {};
-	if (!this._field.length) { this.field("*"); }
+	if (!this._field.length && this._type == Query.SELECT) { this.field("*"); }
 	switch (this._type) {
 		case Query.SELECT: return this._toStringSelect();
 		case Query.INSERT: return this._toStringInsert();
@@ -235,19 +235,19 @@ Query.prototype._toStringTable = function() {
 					arr.push(str);
 				}
 			}
-			return " FROM "+arr.join(" ");
+			return "FROM "+arr.join(" ");
 		break;
 		
 		case Query.INSERT:
-			return " INTO "+this._qualify(this._table[0].name);
+			return "INTO "+this._qualify(this._table[0].name);
 		break;
 		
 		case Query.UPDATE:
-			return " "+this._qualify(this._table[0].name);
+			return this._qualify(this._table[0].name);
 		break;
 		
 		case Query.DELETE: 
-			return " FROM "+this._qualify(this._table[0].name);
+			return "FROM "+this._qualify(this._table[0].name);
 		break;
 	}
 }
@@ -322,7 +322,9 @@ Query.prototype._expand = function(str) {
 			case "n":
 				if (start) {
 					start = false;
-					s += parseFloat(arguments[argptr++]);
+					var num = parseFloat(arguments[argptr++]);
+					if (isNaN(num)) { num = 0; }
+					s += num;
 				} else {
 					s += ch;
 				}

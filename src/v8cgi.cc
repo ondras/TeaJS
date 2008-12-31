@@ -90,20 +90,6 @@ void report_exception(v8::TryCatch* try_catch) {
 		msgstring += ": ";
 		msgstring += *exception;
 		msgstring += "\n";
-		v8::String::Utf8Value sourceline(message->GetSourceLine());
-		msgstring += *sourceline;
-		msgstring += "\n";
-
-		// Print wavy underline (GetUnderline is deprecated).
-		int start = message->GetStartColumn();
-		for (int i = 0; i < start; i++) {
-			msgstring += " ";
-		}
-		int end = message->GetEndColumn();
-		for (int i = start; i < end; i++) {
-			msgstring += "^";
-		}
-		msgstring += "\n";
 	}
 	
 	int cgi = 0;

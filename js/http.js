@@ -47,19 +47,23 @@ HTTPResponse.prototype.escape = function(str) {
     return str.toString().replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;"); // "
 }
 
-HTTPResponse.prototype.dump = function(obj, depth) {
+HTTPResponse.prototype.dump = function(obj, nowrite, depth) {
+	var result = "";
     var d = depth || 0;
-    if (!d) { this.write("<pre>\n"); }
+	
+    if (!d) { result += "<pre>\n"; }
     for (var p in obj) {
 		var val = obj[p];
 		if (val === null) { val = "[null]"; }
-		for (var i=0;i<2*d;i++) { this.write(" "); }
-		this.write(p+": "+this.escape(val)+"\n");
+		for (var i=0;i<2*d;i++) { result += " "; }
+		result += p+": "+this.escape(val)+"\n";
 		if (typeof(val) == "object") {
-	    	arguments.callee.call(this, val, d+1);
+	    	result += arguments.callee.call(this, val, nowrite, d+1);
 		}
     }
-    if (!d) { this.write("</pre>\n"); }
+    if (!d) { result += "</pre>\n"; }
+	if (!nowrite) { this.write(result); }
+	return result;
 }
 
 var HTTPRequest = function() {

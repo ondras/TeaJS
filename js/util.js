@@ -332,7 +332,13 @@ var Util = {
 
 		return Util.utf8encode(output);
 	},
-    serialize:function(obj) {
+    serialize:function(obj, pretty, depth) {
+		var d = depth || 0;
+		var separator = pretty ? "\n" : "";
+		var indent = pretty ? "  " : "";
+		var prefix = "";
+		if (pretty) { for (var i=0;i<d;i++) { prefix += indent; } }
+		
 		function sanitize(str) {
 		    return str.replace(/"/g, '\\"').replace(/\n/g,"\\n").replace(/\r/g,"\\r"); //'
 		}
@@ -341,29 +347,29 @@ var Util = {
 		    case "number":
 		    case "boolean": return obj.toString();
 		    case "object":
-			if (obj === null) {
-			    return "null";
-			} else if (obj instanceof Number || obj instanceof Boolean || obj instanceof RegExp)  { 
-			    return obj.toString(); 
-			} else if (obj instanceof String) { 
-			    return '"'+sanitize(obj)+'"'; 
-			} else if (obj instanceof Date) { 
-			    return "new Date("+obj.getTime()+")"; 
-			} else if (obj instanceof Array) {
-			    var arr = [];
-			    for (var i=0;i<obj.length;i++) {
-				arr.push(arguments.callee(obj[i]));
-			    }
-			    return "["+arr.join(", ")+"]";
-			} else if (obj instanceof Object) {
-			    var arr = [];
-			    for (var p in obj) {
-				var str = sanitize(p) + ":" + arguments.callee(obj[p]);
-				arr.push(str);
-			    }
-			    return "{"+arr.join(", ")+"}";
-			}
-		    break;
+ 				if (obj === null) {
+				    return "null";
+				} else if (obj instanceof Number || obj instanceof Boolean || obj instanceof RegExp)  { 
+				    return obj.toString(); 
+				} else if (obj instanceof String) { 
+				    return '"'+sanitize(obj)+'"'; 
+				} else if (obj instanceof Date) { 
+				    return "new Date("+obj.getTime()+")"; 
+				} else if (obj instanceof Array) {
+				    var arr = [];
+				    for (var i=0;i<obj.length;i++) {
+						arr.push(prefix+indent+arguments.callee(obj[i], pretty, d+1));
+				    }
+				    return "["+separator+arr.join(","+separator)+separator+prefix+"]";
+				} else if (obj instanceof Object) {
+				    var arr = [];
+				    for (var p in obj) {
+						var str = prefix+indent+sanitize(p) + ":" + arguments.callee(obj[p], pretty, d+1);
+						arr.push(str);
+				    }
+				    return "{"+separator+arr.join(","+separator)+separator+prefix+"}";
+				}
+			break;
 		}
 		return null;
     },

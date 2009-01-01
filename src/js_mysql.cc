@@ -56,6 +56,8 @@ JS_METHOD(_query) {
 	}
 	v8::String::Utf8Value q(args[0]);
 	
+	int qc = args.This()->Get(JS_STR("queryCount"))->ToInteger()->Int32Value();
+	args.This()->Set(JS_STR("queryCount"), JS_INT(qc+1));
 	MYSQL * conn = LOAD_PTR(0, MYSQL *);
 	MYSQL_RES *res;
 	int code = mysql_real_query(conn, *q, q.length());
@@ -140,8 +142,9 @@ JS_METHOD(_escape) {
 	MYSQL * conn = LOAD_PTR(0, MYSQL *);
 
 	int length = mysql_real_escape_string(conn, result, *str, len);
-
-	return JS_STR(result, length);
+	v8::Handle<v8::Value> output = JS_STR(result, length);
+	free(result);
+	return output;
 }
 
 JS_METHOD(_qualify) {
@@ -158,7 +161,9 @@ JS_METHOD(_qualify) {
 	result[0] = '`';
 	result[len+1] = '`';
 	
-	return JS_STR(result, len+2);
+	v8::Handle<v8::Value> output = JS_STR(result, len+2);
+	free(result);
+	return output;
 }
 
 JS_METHOD(_result) {
@@ -257,6 +262,7 @@ void setup_mysql(v8::Handle<v8::Object> target) {
 
 	v8::Handle<v8::ObjectTemplate> ot = ft->InstanceTemplate();
 	ot->SetInternalFieldCount(1); /* connection */
+	ot->Set(JS_STR("queryCount"), JS_INT(0));
 		 
 	v8::Handle<v8::ObjectTemplate> pt = ft->PrototypeTemplate();
 	pt->Set(JS_STR("connect"), v8::FunctionTemplate::New(_connect));

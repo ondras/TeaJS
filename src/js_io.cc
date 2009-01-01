@@ -83,6 +83,7 @@ v8::Handle<v8::Value> list_items(char * name, int type) {
 		} while (_findnext(ptr, info) == 0);
 		_findclose(ptr);
 	}
+	free(info);
 #endif
 	
 	return result;
@@ -243,7 +244,7 @@ JS_METHOD(_write) {
 			}
 		}
 		if (current) { fwrite(buf, sizeof(char), current, f); }
-
+		free(buf);
 	} else {
 		v8::String::Utf8Value data(args[0]);
 		fwrite(*data, sizeof(char), args[0]->ToString()->Utf8Length(), f);
@@ -312,6 +313,7 @@ v8::Handle<v8::Value> _copy(char * name1, char * name2) {
 	
 	fclose(f1);
 	fclose(f2);
+	free(buf);
 	return JS_BOOL(true);
 }
 

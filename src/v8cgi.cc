@@ -139,6 +139,7 @@ int execute_file(const char * str, bool change) {
 			strncpy(base, str, len);
     		base[len] = '\0';
     		chdir(base);
+			free(base);
 		}
 		
 		v8::Handle<v8::Value> result = script->Run();

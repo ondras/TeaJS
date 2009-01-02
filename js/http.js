@@ -83,8 +83,8 @@ HTTPRequest.prototype._decode = function(str) {
     var s = str;
     var err = false;
     try {
-		s = decodeURIComponent(str);
-    } catch(e) {
+		s = decodeURIComponent(str.replace(/\+/g, " "));
+	} catch(e) {
 	//	response.error("Cannot urldecode string");
     } finally {
 		return s;

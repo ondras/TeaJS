@@ -39,10 +39,31 @@ Date.prototype.format = function(str) {
 	    case "n": result += (this.getMonth()+1); break;
 	    case "M": result += this._monthNamesShort[this.getMonth()]; break;
 	    case "F": result += this._monthNames[this.getMonth()]; break;
+		case "t":
+			var t = this.getTime();
+			var m = this.getMonth();
+			var d = new Date(t);
+			var day = 0;
+			do {
+				day = d.getDate();
+				t += 1000 * 60 * 60 * 24;
+				d = new Date(t);
+			} while (m == d.getMonth());
+			result += day;
+		break;
 
+		case "L":
+			var d = new Date(this.getTime());
+			d.setDate(1);
+			d.setMonth(1);
+			d.setDate(29);
+			result += (d.getMonth() == 1 ? "1" : "0");
+		break;
 	    case "Y": result += this.getFullYear().toString().lpad(); break;
 	    case "y": result += this.getFullYear().toString().lpad().substring(2); break;
 
+		case "a": result += (this.getHours() < 12 ? "am" : "pm"); break;
+		case "A": result += (this.getHours() < 12 ? "AM" : "PM"); break;
 	    case "G": result += this.getHours(); break;
 	    case "H": result += this.getHours().toString().lpad(); break;
 	    case "g": result += (this.getHours() % 12)+1; break;
@@ -62,6 +83,7 @@ Date.prototype.format = function(str) {
 	    break;
 
 	    case "U": result += this.getTime()/1000; break; 
+	    case "u": result += "0"; break; 
 	    case "c": result += arguments.callee.call(this, "Y-m-d")+"T"+arguments.callee.call(this, "H:i:sP"); break; 
 	    case "r": result += arguments.callee.call(this, "D, j M Y H:i:s O"); break; 
 

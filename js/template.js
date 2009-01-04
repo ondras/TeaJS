@@ -46,14 +46,13 @@ Template.prototype._process = function(str) {
 
     var token = ""; /* token being processed */
     var char = ""; /* character being processed */
-    var ptr = 0; /* character pointer */
     
     var depth = 0;
     var flag = false; /* in command part */
     var command = "";
     
-    while (ptr < str.length) {
-		var ch = str.charAt(ptr);
+	for (var i=0;i<str.length;i++) {
+		var ch = str.charAt(i);
 		switch (ch) {
 	    	case "$":
 				if (!depth && !flag) { /* start of js expression */
@@ -97,7 +96,10 @@ Template.prototype._process = function(str) {
 				token += ch;
 		    break;
 		}
-		ptr++;
+		if (flag && !token.match(/^[a-z]*$/)) { /* fake dollar alert */
+			flag = false;
+			token = "$"+token;
+		}
     }
     arr.push(this._tokenStatic(token));
     return arr.join("");

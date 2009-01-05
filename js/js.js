@@ -34,6 +34,23 @@ Date.prototype.format = function(str) {
 	    case "N": result += this.getDay() || 7; break;
 	    case "D": result += this._dayNamesShort[(this.getDay() || 7)-1]; break;
 	    case "l": result += this._dayNames[(this.getDay() || 7)-1]; break;
+		case "z":
+			var t = this.getTime();
+			var d = new Date(t);
+			d.setDate(1);
+			d.setMonth(0);
+			var diff = t - d.getTime();
+			result += diff / (1000 * 60 * 60 * 24);
+		break;
+		
+		case "W":
+			var d = new Date(this.getFullYear(), this.getMonth(), this.getDate());
+		    var day = d.getDay() || 7;
+			d.setDate(d.getDate() + (4-day));
+			var year = d.getFullYear();
+			var day = Math.floor((d.getTime() - new Date(year, 0, 1, -6)) / (1000 * 60 * 60 * 24));
+			result += (1 + Math.floor(day / 7)).toString().lpad();
+		break;
 
 	    case "m": result += (this.getMonth()+1).toString().lpad(); break;
 	    case "n": result += (this.getMonth()+1); break;

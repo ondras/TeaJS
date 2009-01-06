@@ -11,4 +11,10 @@
 #define JS_BOOL(val) v8::Boolean::New(val)
 #define JS_METHOD(name) v8::Handle<v8::Value> name(const v8::Arguments& args)
 
+#ifdef _WIN32
+#   define SHARED_INIT() extern "C" __declspec(dllexport) void init(v8::Handle<v8::Object> target)
+#else
+#   define SHARED_INIT() extern "C" void init(v8::Handle<v8::Object> target)
+#endif
+
 #endif

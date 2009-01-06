@@ -16,7 +16,6 @@ else:
     os_string = "posix"
 # endif 
 
-
 # command line options
 opts = Options()
 opts.Add(BoolOption("mysql", "MySQL support", 0))

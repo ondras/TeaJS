@@ -7,9 +7,16 @@
 #include "js_io.h"
 #include "js_common.h"
 #include "js_macros.h"
-#include <dlfcn.h>
-
 #include <sstream>
+
+#ifndef windows
+#	include <dlfcn.h>
+#else
+#	include <windows.h>
+#	define dlopen(x,y) (void*)LoadLibrary(x)
+#	define dlsym(x,y) (void*)GetProcAddress((HMODULE)x,y)
+#	define dlclose(x) FreeLibrary((HMODULE)x)
+#endif
 
 #define _STRING(x) #x
 #define STRING(x) _STRING(x)
@@ -17,13 +24,13 @@
 // chdir()
 #ifndef HAVE_CHDIR
 #	include <direct.h>
-#       define chdir(name) _chdir(name)
+#	define chdir(name) _chdir(name)
 #endif
 
 // getcwd()
 #ifndef HAVE_GETCWD
 #	include <direct.h>
-#       define getcwd(name, bytes) _getcwd(name, bytes)
+#	define getcwd(name, bytes) _getcwd(name, bytes)
 #endif
 
 v8::Handle<v8::Array> __onexit;

@@ -254,7 +254,7 @@ JS_METHOD(_fetchobjects) {
 	return result;
 }
 
-extern "C" void init(v8::Handle<v8::Object> target) {
+SHARED_INIT() {
 	v8::HandleScope handle_scope;
 
 	v8::Handle<v8::FunctionTemplate> ft = v8::FunctionTemplate::New(_mysql);

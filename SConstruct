@@ -59,6 +59,9 @@ if conf.CheckFunc("chdir"):
 if conf.CheckFunc("getcwd"):
     env.Append(CPPDEFINES = "HAVE_GETCWD")
 
+if conf.CheckFunc("sleep"):
+    env.Append(CPPDEFINES = "HAVE_SLEEP")
+
 env = conf.Finish()
 
 env.Append(

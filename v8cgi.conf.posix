@@ -1,4 +1,4 @@
-// put default .js files here
+// put default .js and .so files here
 Config["libraryPath"] = "/usr/lib/v8cgi";
 
 // these will get loaded automatically

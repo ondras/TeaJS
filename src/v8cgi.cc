@@ -171,7 +171,7 @@ int library(char * name) {
 	path += "/";
 	path += name;
 	
-	if (path.find(".so") != std::string::npos) {
+	if (path.find(".so") != std::string::npos || path.find(".dll") != std::string::npos) {
 		void * handle;
 	    if (!(handle = dlopen(path.c_str(), RTLD_LAZY))) {
 			printf("open");

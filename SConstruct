@@ -1,15 +1,6 @@
 import sys
 import os
 
-# default values
-libs = ["v8"]
-libpath = ""
-cpppath = ["src"]
-ccflags = ["-Wall", "-O3"]
-cppdefines = []
-target = "v8cgi"
-linkflags = []
-
 config_path = ""
 mysql_include = ""
 os_string = ""
@@ -25,13 +16,6 @@ else:
     os_string = "posix"
 # endif 
 
-# base source files
-sources = [
-    "v8cgi.cc", 
-    "js_common.cc", 
-    "js_system.cc", 
-    "js_io.cc"
-]
 
 # command line options
 opts = Options()
@@ -43,56 +27,75 @@ opts.Add(("conffile", "Config file", config_path))
 opts.Add(EnumOption("os", "Operating system", os_string, allowed_values = ["windows", "posix"]))
 
 env = Environment(options=opts)
+
+# default values
+env.Append(
+    LIBS = ["v8", "dl"], 
+    CPPPATH = ["src"], 
+    CCFLAGS = ["-Wall", "-O3"], 
+    CPPDEFINES = [],
+    LIBPATH = "",
+    LINKFLAGS = []
+)
+
 Help(opts.GenerateHelpText(env))
 conf = Configure(env)
 
 # adjust variables based on user selection
 if conf.CheckCHeader("unistd.h", include_quotes = "<>"):
-    cppdefines.append("HAVE_UNISTD_H")
+    env.Append(CPPDEFINES = "HAVE_UNISTD_H")
 
 if conf.CheckCHeader("dirent.h", include_quotes = "<>"):
-    cppdefines.append("HAVE_DIRENT_H")
+    env.Append(CPPDEFINES = "HAVE_DIRENT_H")
 
 if conf.CheckFunc("mkdir"):
-    cppdefines.append("HAVE_MKDIR")
+    env.Append(CPPDEFINES = "HAVE_MKDIR")
 
 if conf.CheckFunc("rmdir"):
-    cppdefines.append("HAVE_RMDIR")
+    env.Append(CPPDEFINES = "HAVE_RMDIR")
 
 if conf.CheckFunc("chdir"):
-    cppdefines.append("HAVE_CHDIR")
+    env.Append(CPPDEFINES = "HAVE_CHDIR")
 
 if conf.CheckFunc("getcwd"):
-    cppdefines.append("HAVE_GETCWD")
+    env.Append(CPPDEFINES = "HAVE_GETCWD")
 
 env = conf.Finish()
 
-cppdefines.append("CONFIG_PATH=" + env["conffile"])
-cppdefines.append(env["os"])
-cpppath.append(env["v8path"] + "/include")
+env.Append(
+    CPPDEFINES = ["CONFIG_PATH=" + env["conffile"], env["os"]],
+    CPPPATH = env["v8path"] + "/include",
+    LIBPATH = env["v8path"]
+)
 
 if env["os"] == "posix":
-    libs.append("pthread")
+    env.Append(LIBS = "pthread")
 # if
 
 if env["os"] == "windows":
-    cppdefines.append("USING_V8_SHARED")
-    libpath += os.environ.pop("LIB")
-    libpath += os.environ.pop("LIBPATH")
-    cpppath.append(os.environ.pop("INCLUDE"))
+    env.Append(
+	    CPPDEFINES = "USING_V8_SHARED",
+        LIBPATH = [os.environ.pop("LIB"), os.environ.pop("LIBPATH")],
+        CPPPATH = os.environ.pop("INCLUDE")
+    )
 # if
 
 if env["mysql"] == 1:
-    sources.append("js_mysql.cc")
-    libs.append("mysqlclient")
+    e = env.Clone()
     if env["os"] == "windows":
-	libs.append("wsock32")
-	libs.append("user32")
-	libs.append("advapi32")
-	linkflags.append("/nodefaultlib:\"libcmtd\"")
+        e.Append(
+            LIBS = ["wsock32", "user32", "advapi32"],
+            LINKFLAGS = "/nodefaultlib:\"libcmtd\""
+        )
     # if
-    cpppath.append(env["mysqlpath"])
-    cppdefines.append("HAVE_MYSQL")
+    e.Append(
+        CPPPATH = env["mysqlpath"],
+        LIBS = "mysqlclient"
+    )
+    e.SharedLibrary(
+		target = "lib/mysql", 
+		source = "src/lib/mysql/js_mysql.cc",
+	)
 # if
 
 if env["gd"] == 1:
@@ -101,16 +104,16 @@ if env["gd"] == 1:
     cppdefines.append("HAVE_GD")
 # if
 
-libpath += env["v8path"]
+# base source files
+sources = [
+    "v8cgi.cc", 
+    "js_common.cc", 
+    "js_system.cc", 
+    "js_io.cc"
+]
 sources = [ "src/%s" % s for s in sources ]
 
-Program(
+env.Program(
     source = sources, 
-    target = target, 
-    LIBS=libs, 
-    CPPPATH=cpppath, 
-    CCFLAGS=ccflags, 
-    CPPDEFINES=cppdefines,
-    LIBPATH=libpath,
-    LINKFLAGS=linkflags
+    target = "v8cgi"
 )

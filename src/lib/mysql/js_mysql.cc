@@ -1,5 +1,5 @@
 #include <v8.h>
-#include "js_common.h"
+#include "js_macros.h"
 
 #ifdef windows
 #	include <my_global.h>
@@ -254,7 +254,7 @@ JS_METHOD(_fetchobjects) {
 	return result;
 }
 
-void setup_mysql(v8::Handle<v8::Object> target) {
+extern "C" void init(v8::Handle<v8::Object> target) {
 	v8::HandleScope handle_scope;
 
 	v8::Handle<v8::FunctionTemplate> ft = v8::FunctionTemplate::New(_mysql);

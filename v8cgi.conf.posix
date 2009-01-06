@@ -1,5 +1,5 @@
 // put default .js files here
-Config["libraryPath"] = "/usr/lib/v8cgi/js";
+Config["libraryPath"] = "/usr/lib/v8cgi";
 
 // these will get loaded automatically
 Config["libraryAutoload"] = ["js.js", "util.js"];

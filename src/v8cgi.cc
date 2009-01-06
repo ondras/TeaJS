@@ -5,9 +5,9 @@
 #include <v8.h>
 #include "js_system.h"
 #include "js_io.h"
-#include "js_mysql.h"
-#include "js_gd.h"
 #include "js_common.h"
+#include "js_macros.h"
+#include <dlfcn.h>
 
 #include <sstream>
 
@@ -163,7 +163,24 @@ int library(char * name) {
 	path += *pfx;
 	path += "/";
 	path += name;
-	return execute_file(path.c_str(), false);
+	
+	if (path.find(".so") != std::string::npos) {
+		void * handle;
+	    if (!(handle = dlopen(path.c_str(), RTLD_LAZY))) {
+			printf("open");
+			return 1;
+		}
+		void (*func) (v8::Handle<v8::Object>);
+		if (!(func = reinterpret_cast<void (*)(v8::Handle<v8::Object>)>(dlsym(handle, "init")))) {
+			printf("init");
+			dlclose(handle);
+			return 1;
+		}
+		func(v8::Context::GetCurrent()->Global());
+		return 0;									
+	} else {
+		return execute_file(path.c_str(), false);
+	}
 }
 
 v8::Handle<v8::Value> _include(const v8::Arguments& args) {

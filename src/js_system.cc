@@ -1,6 +1,7 @@
 #include <v8.h>
 #include <sstream>
 #include <js_common.h>
+#include <js_macros.h>
 
 JS_METHOD(_stdin) {
 	v8::HandleScope handle_scope;

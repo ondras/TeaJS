@@ -5,6 +5,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include "js_macros.h"
 #include "js_common.h"
 
 // access()

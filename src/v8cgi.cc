@@ -73,7 +73,31 @@ v8::Handle<v8::String> read_file(const char* name) {
 	return result;
 }
 
-void report_exception(v8::TryCatch* try_catch) {
+void report_error(const char * message, bool fatal) {
+	int cgi = 0;
+	v8::Local<v8::Function> fun;
+	v8::Local<v8::Value> context = v8::Context::GetCurrent()->Global()->Get(JS_STR("response"));
+	if (context->IsObject()) {
+		v8::Local<v8::Value> print = context->ToObject()->Get(JS_STR("error"));
+		if (print->IsObject()) {
+			fun = v8::Local<v8::Function>::Cast(print);
+			cgi = 1;
+		}
+	}
+	if (!cgi) {
+		context = v8::Context::GetCurrent()->Global()->Get(JS_STR("System"));
+		fun = v8::Local<v8::Function>::Cast(context->ToObject()->Get(JS_STR("stdout")));
+	}
+	
+	v8::Handle<v8::Value> data[1];
+	data[0] = JS_STR(message);
+	fun->Call(context->ToObject(), 1, data);
+
+	if (fatal) { die(1); }
+}
+
+
+void handle_exception(v8::TryCatch* try_catch) {
 	v8::HandleScope handle_scope;
 	v8::String::Utf8Value exception(try_catch->Exception());
 	v8::Handle<v8::Message> message = try_catch->Message();
@@ -99,24 +123,7 @@ void report_exception(v8::TryCatch* try_catch) {
 		msgstring += "\n";
 	}
 	
-	int cgi = 0;
-	v8::Local<v8::Function> fun;
-	v8::Local<v8::Value> context = v8::Context::GetCurrent()->Global()->Get(JS_STR("response"));
-	if (context->IsObject()) {
-		v8::Local<v8::Value> print = context->ToObject()->Get(JS_STR("error"));
-		if (print->IsObject()) {
-			fun = v8::Local<v8::Function>::Cast(print);
-			cgi = 1;
-		}
-	}
-	if (!cgi) {
-		context = v8::Context::GetCurrent()->Global()->Get(JS_STR("System"));
-		fun = v8::Local<v8::Function>::Cast(context->ToObject()->Get(JS_STR("stdout")));
-	}
-	
-	v8::Handle<v8::Value> data[1];
-	data[0] = JS_STR(msgstring.c_str());
-	fun->Call(context->ToObject(), 1, data);
+	report_error(msgstring.c_str(), false);
 }
 
 int execute_file(const char * str, bool change) {
@@ -126,13 +133,16 @@ int execute_file(const char * str, bool change) {
 	v8::Handle<v8::String> source = read_file(str);
 
 	if (source.IsEmpty()) {
-		printf("Error reading '%s'\n", str);
+		std::string s = "Error reading '";
+		s += str;
+		s += "'\n";
+		report_error(s.c_str(), false);
 		return 1;
 	}
 	
 	v8::Handle<v8::Script> script = v8::Script::Compile(source, name);
 	if (script.IsEmpty()) {
-		report_exception(&try_catch);
+		handle_exception(&try_catch);
 		return 1;
 	} else {
 		char * old = getcwd(NULL, 0);
@@ -153,7 +163,7 @@ int execute_file(const char * str, bool change) {
 		
 		chdir(old);
 		if (result.IsEmpty()) {
-			report_exception(&try_catch);
+			handle_exception(&try_catch);
 			return 1;
 		}
 	}
@@ -173,14 +183,21 @@ int library(char * name) {
 	
 	if (path.find(".so") != std::string::npos || path.find(".dll") != std::string::npos) {
 		void * handle;
+		std::string error;
 	    if (!(handle = dlopen(path.c_str(), RTLD_LAZY))) {
-			printf("open");
+			error = "Cannot load shared library '";
+			error += path;
+			error += "'\n";
+			report_error(error.c_str(), false);
 			return 1;
 		}
 		void (*func) (v8::Handle<v8::Object>);
 		if (!(func = reinterpret_cast<void (*)(v8::Handle<v8::Object>)>(dlsym(handle, "init")))) {
-			printf("init");
 			dlclose(handle);
+			error = "Cannot initialize shared library '";
+			error += path;
+			error += "'\n";
+			report_error(error.c_str(), false);
 			return 1;
 		}
 		func(v8::Context::GetCurrent()->Global());
@@ -243,15 +260,10 @@ int library_autoload() {
 
 void init(char * cfg) {
 	int result = execute_file(cfg, false);
-	if (result) { 
-		printf("Cannot load configuration, quitting...\n");
-		die(1);
-	}
+	if (result) { report_error("Cannot load configuration, quitting...\n", true); }
+
 	result = library_autoload();
-	if (result) { 
-		printf("Cannot load default libraries, quitting...\n");
-		die(1);
-	}
+	if (result) {  report_error("Cannot load default libraries, quitting...\n", true); }
 }
 
 int main(int argc, char ** argv, char ** envp) {
@@ -297,7 +309,7 @@ int main(int argc, char ** argv, char ** envp) {
 			int result = execute_file(*name, true);
 			if (result) { die(result); }
 		} else {
-			printf("Nothing to do.\n");
+			report_error("Nothing to do.\n", false);
 		}
 	} else {
 		int result = execute_file(argv[argptr], true);

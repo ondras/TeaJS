@@ -29,7 +29,7 @@ env = Environment(options=opts)
 
 # default values
 env.Append(
-    LIBS = ["v8", "dl"], 
+    LIBS = ["v8"], 
     CPPPATH = ["src"], 
     CCFLAGS = ["-Wall", "-O3"], 
     CPPDEFINES = [],
@@ -68,7 +68,7 @@ env.Append(
 )
 
 if env["os"] == "posix":
-    env.Append(LIBS = "pthread")
+    env.Append(LIBS = ["pthread", "dl"])
 # if
 
 if env["os"] == "windows":
@@ -77,6 +77,7 @@ if env["os"] == "windows":
         LIBPATH = [os.environ.pop("LIB"), os.environ.pop("LIBPATH")],
         CPPPATH = os.environ.pop("INCLUDE")
     )
+    env["LIBPATH"] = ";".join(env["LIBPATH"])
 # if
 
 if env["mysql"] == 1:
@@ -84,7 +85,7 @@ if env["mysql"] == 1:
     if env["os"] == "windows":
         e.Append(
             LIBS = ["wsock32", "user32", "advapi32"],
-            LINKFLAGS = "/nodefaultlib:\"libcmtd\""
+            LINKFLAGS = ["/nodefaultlib:\"libcmtd\""]
         )
     # if
     e.Append(

@@ -98,10 +98,10 @@ if env["mysql"] == 1:
 	)
 # if
 
-if env["gd"] == 1:
-    sources.append("js_gd.cc")    
-    libs.append("gd")
-    cppdefines.append("HAVE_GD")
+#if env["gd"] == 1:
+#    sources.append("js_gd.cc")    
+#    libs.append("gd")
+#    cppdefines.append("HAVE_GD")
 # if
 
 # base source files

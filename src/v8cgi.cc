@@ -266,14 +266,6 @@ int main(int argc, char ** argv, char ** envp) {
 	setup_system(envp, context->Global());
 	setup_io(context->Global());	
 	
-	#ifdef HAVE_MYSQL
-	setup_mysql(context->Global());	
-	#endif
-	
-	#ifdef HAVE_GD
-	setup_gd(context->Global());	
-	#endif
-
 	char * cfg = STRING(CONFIG_PATH);
 	int argptr = 0;
 	for (int i = 1; i < argc; i++) {

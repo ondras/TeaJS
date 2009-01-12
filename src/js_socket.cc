@@ -2,18 +2,18 @@
 #include "js_macros.h"
 #include "js_socket.h"
 
+#include <stdlib.h>
 #if HAVE_UNISTD_H
 #  include <unistd.h>
+#  include <sys/socket.h>
+#  include <sys/un.h>
+#  include <sys/param.h>
+#  include <arpa/inet.h>
+#  include <netinet/in.h>
 #else
 #  include <winsock2.h>
 #endif 
 
-#include <stdlib.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <sys/param.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
 #include <netdb.h>
 #include <errno.h>
 #include <string.h>

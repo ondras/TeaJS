@@ -408,7 +408,6 @@ void setup_socket(v8::Handle<v8::Object> target) {
 	ft->Set(JS_STR("getAddrInfo"), v8::FunctionTemplate::New(_getaddrinfo)->GetFunction()); 
 	ft->Set(JS_STR("getNameInfo"), v8::FunctionTemplate::New(_getnameinfo)->GetFunction()); 
 	ft->Set(JS_STR("getHostName"), v8::FunctionTemplate::New(_gethostname)->GetFunction()); 
-	ft->Set(JS_STR("getPeerName"), v8::FunctionTemplate::New(_getpeername)->GetFunction()); 
 	
 	v8::Handle<v8::ObjectTemplate> it = ft->InstanceTemplate();
 	it->SetInternalFieldCount(2); /* sock, peername */

@@ -35,7 +35,8 @@ JS_METHOD(_stdout) {
 		}
 	} else {
 		v8::String::Utf8Value str(args[0]);
-		printf("%s", *str);
+//		printf("%s", *str);
+		fwrite(*str, sizeof(char), str.length(), stdout);
 	}
 	return v8::Undefined();
 }

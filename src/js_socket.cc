@@ -2,7 +2,12 @@
 #include "js_macros.h"
 #include "js_socket.h"
 
-#include <unistd.h>
+#if HAVE_UNISTD_H
+#  include <unistd.h>
+#else
+#  include <winsock2.h>
+#endif 
+
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -12,8 +17,10 @@
 #include <netdb.h>
 #include <errno.h>
 #include <string.h>
-#include <string>
-#include <sstream>
+
+#ifndef INVALID_SOCKET
+#  define INVALID_SOCKET -1
+#endif
 
 typedef union sock_addr {
     struct sockaddr_in in;
@@ -126,7 +133,7 @@ JS_METHOD(_socket) {
 	args.This()->Set(JS_STR("type"), JS_INT(type));
 	args.This()->Set(JS_STR("proto"), JS_INT(proto));									
 	
-	if (s == -1) {
+	if (s == INVALID_SOCKET) {
 		return v8::ThrowException(JS_STR(strerror(errno)));
 	} else {
 		return args.This();
@@ -134,6 +141,7 @@ JS_METHOD(_socket) {
 }
 
 JS_METHOD(_getprotobyname) {
+	v8::HandleScope handle_scope;
 	v8::String::Utf8Value name(args[0]);
 	struct protoent * result = getprotobyname(*name);
 	if (result) {
@@ -144,6 +152,7 @@ JS_METHOD(_getprotobyname) {
 }
 
 JS_METHOD(_getaddrinfo) {
+	v8::HandleScope handle_scope;
 	v8::String::Utf8Value name(args[0]);
 	int family = args[1]->IntegerValue();
 	
@@ -162,6 +171,7 @@ JS_METHOD(_getaddrinfo) {
 }
 
 JS_METHOD(_getnameinfo) {
+	v8::HandleScope handle_scope;
 	v8::String::Utf8Value name(args[0]);
 	int family = args[1]->IntegerValue();
 	if (family == 0) { family = PF_INET; }
@@ -180,6 +190,7 @@ JS_METHOD(_getnameinfo) {
 }
 
 JS_METHOD(_gethostname) {
+	v8::HandleScope handle_scope;
     char * buf = (char *) malloc(sizeof(char)*(MAXHOSTNAMELEN+1));
     gethostname(buf, MAXHOSTNAMELEN);
 	v8::Handle<v8::Value> result = JS_STR(buf);
@@ -188,6 +199,7 @@ JS_METHOD(_gethostname) {
 }
 
 JS_METHOD(_connect) {
+	v8::HandleScope handle_scope;
 	int family = args.This()->Get(JS_STR("family"))->Int32Value();
 	int sock = LOAD_VALUE(0)->Int32Value();
 
@@ -212,6 +224,7 @@ JS_METHOD(_connect) {
 }
 
 JS_METHOD(_bind) {
+	v8::HandleScope handle_scope;
 	int family = args.This()->Get(JS_STR("family"))->Int32Value();
 	int sock = LOAD_VALUE(0)->Int32Value();
 
@@ -234,6 +247,7 @@ JS_METHOD(_bind) {
 }
 
 JS_METHOD(_listen) {
+	v8::HandleScope handle_scope;
 	int sock = LOAD_VALUE(0)->Int32Value();
 
 	int num = args[0]->Int32Value();
@@ -248,10 +262,11 @@ JS_METHOD(_listen) {
 }
 
 JS_METHOD(_accept) {
+	v8::HandleScope handle_scope;
 	int sock = LOAD_VALUE(0)->Int32Value();
 
 	int sock2 = accept(sock, NULL, NULL);
-    if (sock2 == -1) {
+    if (sock2 == INVALID_SOCKET) {
         return v8::ThrowException(JS_STR(strerror(errno)));
     } else {
 		v8::Handle<v8::Value> argv[4];
@@ -266,6 +281,7 @@ JS_METHOD(_accept) {
 }
 
 JS_METHOD(_send) {
+	v8::HandleScope handle_scope;
 	int sock = LOAD_VALUE(0)->Int32Value();
 
 	if (args.Length() < 1) {
@@ -295,6 +311,7 @@ JS_METHOD(_send) {
 }
 
 JS_METHOD(_receive) {
+	v8::HandleScope handle_scope;
 	int sock = LOAD_VALUE(0)->Int32Value();
 	int count = args[0]->Int32Value();
 	int type = args.This()->Get(JS_STR("type"))->Int32Value();
@@ -315,6 +332,7 @@ JS_METHOD(_receive) {
 }
 
 JS_METHOD(_socketclose) {
+	v8::HandleScope handle_scope;
 	int sock = LOAD_VALUE(0)->Int32Value();
 	
 	int result = close(sock);
@@ -326,6 +344,7 @@ JS_METHOD(_socketclose) {
 }
 
 JS_METHOD(_setoption) {
+	v8::HandleScope handle_scope;
 	if (args.Length() != 2) {
 		return v8::ThrowException(JS_STR("Bad argument count. Use 'socket.setOption(name, value)'"));
 	}
@@ -342,6 +361,7 @@ JS_METHOD(_setoption) {
 }
 
 JS_METHOD(_getoption) {
+	v8::HandleScope handle_scope;
 	if (args.Length() < 1) {
 		return v8::ThrowException(JS_STR("Bad argument count. Use 'socket.getOption(name, [length])'"));
 	}
@@ -372,6 +392,7 @@ JS_METHOD(_getoption) {
 }
 
 JS_METHOD(_getpeername) {
+	v8::HandleScope handle_scope;
 	int sock = LOAD_VALUE(0)->Int32Value();
 
 	if (!LOAD_VALUE(1)->IsTrue()) {

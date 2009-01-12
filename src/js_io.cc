@@ -38,8 +38,6 @@
 #define TYPE_FILE 0
 #define TYPE_DIR 1
 
-v8::Persistent<v8::FunctionTemplate> ft;
-
 v8::Handle<v8::Value> list_items(char * name, int type) {
 	v8::Handle<v8::Array> result = v8::Array::New();
 	int cnt = 0;
@@ -355,7 +353,10 @@ JS_METHOD(_copyfile) {
 	v8::Handle<v8::Value> result = _copy(*name, *newname);	
 	if (result->IsTrue()) {
 		v8::Handle<v8::Value> fargs[] = { args[0] };
-		return ft->GetFunction()->NewInstance(1, fargs);
+		
+		v8::Handle<v8::Value> f = v8::Context::GetCurrent()->Global()->Get(JS_STR("File"));
+		v8::Handle<v8::Function> newf = v8::Handle<v8::Function>::Cast(f);
+		return newf->NewInstance(1, fargs);
 	} else {
 		return result;
 	}
@@ -374,8 +375,7 @@ JS_METHOD(_exists) {
 }
 
 void setup_io(v8::Handle<v8::Object> target) {
-
-	ft = v8::Persistent<v8::FunctionTemplate>::New(v8::FunctionTemplate::New(_file));
+	v8::Handle<v8::FunctionTemplate> ft = v8::FunctionTemplate::New(_file);
 	ft->SetClassName(JS_STR("File"));
 	v8::Handle<v8::ObjectTemplate> ot = ft->InstanceTemplate();
 	ot->SetInternalFieldCount(2); /* filename, handle */

@@ -5,6 +5,7 @@
 #include <v8.h>
 #include "js_system.h"
 #include "js_io.h"
+#include "js_socket.h"
 #include "js_common.h"
 #include "js_macros.h"
 #include <sstream>
@@ -275,15 +276,17 @@ int main(int argc, char ** argv, char ** envp) {
 	v8::Context::Scope context_scope(context);
 
 	__onexit = v8::Array::New();
-	context->Global()->Set(JS_STR("library"), v8::FunctionTemplate::New(_library)->GetFunction());
-	context->Global()->Set(JS_STR("include"), v8::FunctionTemplate::New(_include)->GetFunction());
-	context->Global()->Set(JS_STR("exit"), v8::FunctionTemplate::New(_exit)->GetFunction());
-	context->Global()->Set(JS_STR("onexit"), v8::FunctionTemplate::New(_onexit)->GetFunction());
-	context->Global()->Set(JS_STR("global"), context->Global());
-	context->Global()->Set(JS_STR("Config"), v8::Object::New());
+	v8::Handle<v8::Object> g = context->Global();
+	g->Set(JS_STR("library"), v8::FunctionTemplate::New(_library)->GetFunction());
+	g->Set(JS_STR("include"), v8::FunctionTemplate::New(_include)->GetFunction());
+	g->Set(JS_STR("exit"), v8::FunctionTemplate::New(_exit)->GetFunction());
+	g->Set(JS_STR("onexit"), v8::FunctionTemplate::New(_onexit)->GetFunction());
+	g->Set(JS_STR("global"), g);
+	g->Set(JS_STR("Config"), v8::Object::New());
 
-	setup_system(envp, context->Global());
-	setup_io(context->Global());	
+	setup_system(envp, g);
+	setup_io(g);	
+	setup_socket(g);
 	
 	char * cfg = STRING(CONFIG_PATH);
 	int argptr = 0;

@@ -25,7 +25,9 @@ opts.Add(PathOption("v8path", "Directory with V8", "../v8"))
 opts.Add(("conffile", "Config file", config_path))
 opts.Add(EnumOption("os", "Operating system", os_string, allowed_values = ["windows", "posix"]))
 
-env = Environment(options=opts)
+env = Environment(
+	options=opts
+)
 
 # default values
 env.Append(
@@ -109,10 +111,11 @@ if env["mysql"] == 1:
 
 # base source files
 sources = [
-    "v8cgi.cc", 
-    "js_common.cc", 
-    "js_system.cc", 
-    "js_io.cc"
+	"v8cgi.cc", 
+	"js_common.cc", 
+	"js_system.cc",
+	"js_io.cc",
+	"js_socket.cc"
 ]
 sources = [ "src/%s" % s for s in sources ]
 

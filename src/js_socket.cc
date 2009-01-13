@@ -3,20 +3,30 @@
 #include "js_socket.h"
 
 #include <stdlib.h>
-#if HAVE_UNISTD_H
+#include <errno.h>
+#include <string.h>
+
+#ifdef HAVE_WINSOCK
+#  include <winsock2.h>
+#  include <ws2tcpip.h>
+#  define close(s) closesocket(s)
+#  define errno WSAGetLastError()
+#  define h_errno WSAGetLastError()
+#  define ssize_t SSIZE_T
+#else
 #  include <unistd.h>
 #  include <sys/socket.h>
 #  include <sys/un.h>
 #  include <sys/param.h>
 #  include <arpa/inet.h>
 #  include <netinet/in.h>
-#else
-#  include <winsock2.h>
+#  include <netdb.h>
 #endif 
 
-#include <netdb.h>
-#include <errno.h>
-#include <string.h>
+
+#ifndef MAXHOSTNAMELEN
+#  define MAXHOSTNAMELEN 64
+#endif
 
 #ifndef INVALID_SOCKET
 #  define INVALID_SOCKET -1
@@ -26,44 +36,46 @@
 #  define SOCKET_ERROR -1
 #endif
 
-#ifndef HAVE_CLOSE
-#  define close(s) closesocket(s)
-#  define errno WSAGetLastError()
-#  define h_errno WSAGetLastError()
-#endif
-
 typedef union sock_addr {
     struct sockaddr_in in;
+#ifndef HAVE_WINSOCK
     struct sockaddr_un un;
+#endif
     struct sockaddr_in6 in6;
 } sock_addr_t;
 
-inline void create_addr(char * address, int port, int family, sock_addr_t * result, socklen_t * len) {
+inline int create_addr(char * address, int port, int family, sock_addr_t * result, socklen_t * len) {
 	unsigned int length = strlen(address);
     switch (family) {
+#ifndef HAVE_WINSOCK
 		case PF_UNIX: {
 			struct sockaddr_un *addr = (struct sockaddr_un*) result;
 			memset(addr, 0, sizeof(sockaddr_un));
 
 			if (length >= sizeof(addr->sun_path)) {
 				v8::ThrowException(JS_STR("Unix socket path too long"));
-				return;
+				return 1;
 			}
 			addr->sun_family = AF_UNIX;
 			memcpy(addr->sun_path, address, length);
 			addr->sun_path[length] = '\0';
 			*len = length + (sizeof(*addr) - sizeof(addr->sun_path));
 		} break;
+#endif
 		case PF_INET: {
 			struct sockaddr_in *addr = (struct sockaddr_in*) result;
 			memset(addr, 0, sizeof(*addr)); 
 			addr->sin_family = AF_INET;
+
+#ifdef HAVE_WINSOCK
+			int size = sizeof(struct sockaddr_in);
+			int pton_ret = WSAStringToAddress(address, AF_INET, NULL, (sockaddr *) result, &size);
+			if (pton_ret != 0) { return 1; }
+#else 
 			int pton_ret = inet_pton(AF_INET, address, & addr->sin_addr.s_addr);
-			
-			if (pton_ret == 0) {
-				v8::ThrowException(JS_STR("Invalid IP"));
-				return;
-			} 
+			if (pton_ret == 0) { return 1; }
+#endif
+
 			addr->sin_port = htons((short)port);
 			*len = sizeof(*addr);
 		} break;
@@ -71,32 +83,45 @@ inline void create_addr(char * address, int port, int family, sock_addr_t * resu
 			struct sockaddr_in6 *addr = (struct sockaddr_in6*) result;
 			memset(addr, 0, sizeof(*addr));
 			addr->sin6_family = AF_INET6;
+
+#ifdef HAVE_WINSOCK
+			int size = sizeof(struct sockaddr_in6);
+			int pton_ret = WSAStringToAddress(address, AF_INET6, NULL, (sockaddr *) result, &size);
+			if (pton_ret != 0) { return 1; }
+#else 
 			int pton_ret = inet_pton(AF_INET6, address, addr->sin6_addr.s6_addr);
+			if (pton_ret == 0) { return 1; }
+#endif			
 			
-			if (pton_ret == 0) {
-				v8::ThrowException(JS_STR("Invalid IPv6"));
-				return;
-			}
 			addr->sin6_port = htons((short)port);
 			*len = sizeof(*addr);
 		} break;
     }
+	return 0;
 }
 
 
 inline v8::Handle<v8::Value> create_peer(sockaddr * addr) {
     switch (addr->sa_family) {
+#ifndef HAVE_WINSOCK
 		case AF_UNIX: {
 			v8::Handle<v8::Array> result = v8::Array::New(1);
 			sockaddr_un * addr_un = (sockaddr_un *) addr;
 			result->Set(JS_INT(0), JS_STR(addr_un->sun_path));
 			return result;
 		} break;
+#endif
 		case AF_INET6: {
 			v8::Handle<v8::Array> result = v8::Array::New(2);
-			sockaddr_in6 * addr_in6 = (sockaddr_in6 *) addr;
 			char * buf = (char *) malloc(sizeof(char) * INET6_ADDRSTRLEN);
+			sockaddr_in6 * addr_in6 = (sockaddr_in6 *) addr;
+
+#ifdef HAVE_WINSOCK
+			DWORD len = INET6_ADDRSTRLEN;
+			WSAAddressToString(addr, sizeof(struct sockaddr), NULL, buf, &len);
+#else			
 			inet_ntop(AF_INET6, addr_in6->sin6_addr.s6_addr, buf, INET6_ADDRSTRLEN);
+#endif
 			
 			result->Set(JS_INT(0), JS_STR(buf));
 			result->Set(JS_INT(1), JS_INT(ntohs(addr_in6->sin6_port)));
@@ -105,10 +130,15 @@ inline v8::Handle<v8::Value> create_peer(sockaddr * addr) {
 		} break;
 		case AF_INET: {
 			v8::Handle<v8::Array> result = v8::Array::New(2);
-			sockaddr_in * addr_in = (sockaddr_in *) addr;
 			char * buf = (char *) malloc(sizeof(char) * INET_ADDRSTRLEN);
+			sockaddr_in * addr_in = (sockaddr_in *) addr;
+
+#ifdef HAVE_WINSOCK
+			DWORD len = INET_ADDRSTRLEN;
+			WSAAddressToString(addr, sizeof(struct sockaddr), NULL, buf, &len);
+#else			
 			inet_ntop(AF_INET, & addr_in->sin_addr.s_addr, buf, INET_ADDRSTRLEN);
-			
+#endif
 			result->Set(JS_INT(0), JS_STR(buf));
 			result->Set(JS_INT(1), JS_INT(ntohs(addr_in->sin_port)));
 			free(buf);
@@ -190,8 +220,12 @@ JS_METHOD(_getnameinfo) {
     sock_addr_t addr;
     socklen_t len = 0;
 
-	create_addr(*name, 0, family, &addr, &len);
-	int result = getnameinfo((sockaddr *) & addr, len, hostname, NI_MAXHOST, NULL, 0, 0);
+	int result = create_addr(*name, 0, family, &addr, &len);
+	if (result != 0) {
+		return v8::ThrowException(JS_STR("Malformed address"));
+	}
+	
+	result = getnameinfo((sockaddr *) & addr, len, hostname, NI_MAXHOST, NULL, 0, 0);
 	if (result != 0) {
 		return v8::ThrowException(JS_STR(gai_strerror(result)));
 	} else {
@@ -223,9 +257,13 @@ JS_METHOD(_connect) {
 	int port = args[1]->Int32Value();
     sock_addr_t addr;
     socklen_t len = 0;
-    create_addr(* address, port, family, &addr, &len);
+    
+	int result = create_addr(* address, port, family, &addr, &len);
+	if (result != 0) {
+        return v8::ThrowException(JS_STR("Malformed address"));
+	}
 	
-	int result = connect(sock, (sockaddr *) &addr, len);
+	result = connect(sock, (sockaddr *) &addr, len);
     if (result) {
         return v8::ThrowException(JS_STR(strerror(errno)));
     } else {
@@ -246,9 +284,12 @@ JS_METHOD(_bind) {
 	int port = args[1]->Int32Value();
     sock_addr_t addr;
     socklen_t len = 0;
-    create_addr(*address, port, family, &addr, &len);
+    int result = create_addr(*address, port, family, &addr, &len);
+	if (result != 0) {
+		return v8::ThrowException(JS_STR("Malformed address"));
+	}
 
-	int result = bind(sock, (sockaddr *) &addr, len);
+	result = bind(sock, (sockaddr *) &addr, len);
     if (result) {
         return v8::ThrowException(JS_STR(strerror(errno)));
     } else {
@@ -308,7 +349,10 @@ JS_METHOD(_send) {
 		int family = args.This()->Get(JS_STR("family"))->Int32Value();
 		v8::String::Utf8Value address(args[1]);
 		int port = args[2]->Int32Value();
-		create_addr(*address, port, family, &taddr, &len);
+		int r = create_addr(*address, port, family, &taddr, &len);
+		if (r != 0) {
+			return v8::ThrowException(JS_STR("Malformed address"));
+		}
 		target = (sockaddr *) &taddr;
 	}
 	
@@ -362,7 +406,7 @@ JS_METHOD(_setoption) {
 	int name = args[0]->Int32Value();
 	int value = args[1]->Int32Value();
 
-    int result = setsockopt(sock, SOL_SOCKET, name, &value, sizeof(int));
+    int result = setsockopt(sock, SOL_SOCKET, name, (char *) &value, sizeof(int));
 	if (result == 0) {
         return args.This();
     } else {
@@ -392,7 +436,7 @@ JS_METHOD(_getoption) {
     } else {
         unsigned int buf;
         int length = sizeof(buf);
-		int result = getsockopt(sock, SOL_SOCKET, name, &buf, (socklen_t *) &length);
+		int result = getsockopt(sock, SOL_SOCKET, name, (char *) &buf, (socklen_t *) &length);
 		if (result == 0) {
             return JS_INT(buf);
         } else {
@@ -420,6 +464,14 @@ JS_METHOD(_getpeername) {
 }
 
 void setup_socket(v8::Handle<v8::Object> target) {
+	v8::HandleScope handle_scope;
+
+#ifdef HAVE_WINSOCK
+    WSADATA wsaData;
+    WORD wVersionRequested = MAKEWORD(2, 0);
+    WSAStartup(wVersionRequested, &wsaData);
+#endif
+
 	v8::Handle<v8::FunctionTemplate> ft = v8::FunctionTemplate::New(_socket);
 	ft->SetClassName(JS_STR("Socket"));
 	

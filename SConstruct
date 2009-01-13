@@ -49,6 +49,9 @@ if conf.CheckCHeader("unistd.h", include_quotes = "<>"):
 if conf.CheckCHeader("dirent.h", include_quotes = "<>"):
     env.Append(CPPDEFINES = "HAVE_DIRENT_H")
 
+if not conf.CheckFunc("close"):
+    env.Append(CPPDEFINES = "HAVE_WINSOCK")
+
 if conf.CheckFunc("mkdir"):
     env.Append(CPPDEFINES = "HAVE_MKDIR")
 
@@ -64,9 +67,6 @@ if conf.CheckFunc("getcwd"):
 if conf.CheckFunc("sleep"):
     env.Append(CPPDEFINES = "HAVE_SLEEP")
 
-if conf.CheckFunc("close"):
-    env.Append(CPPDEFINES = "HAVE_CLOSE")
-
 env = conf.Finish()
 
 env.Append(
@@ -81,6 +81,7 @@ if env["os"] == "posix":
 
 if env["os"] == "windows":
     env.Append(
+		LIBS = ["ws2_32"],
 	    CPPDEFINES = "USING_V8_SHARED",
         LIBPATH = [os.environ.pop("LIB"), os.environ.pop("LIBPATH")],
         CPPPATH = os.environ.pop("INCLUDE")

@@ -22,6 +22,16 @@
 #  define INVALID_SOCKET -1
 #endif
 
+#ifndef SOCKET_ERROR
+#  define SOCKET_ERROR -1
+#endif
+
+#ifndef HAVE_CLOSE
+#  define close(s) closesocket(s)
+#  define errno WSAGetLastError()
+#  define h_errno WSAGetLastError()
+#endif
+
 typedef union sock_addr {
     struct sockaddr_in in;
     struct sockaddr_un un;
@@ -303,7 +313,7 @@ JS_METHOD(_send) {
 	}
 	
 	ssize_t result = sendto(sock, *data, data.length(), 0, target, len);
-    if (result == -1) {
+    if (result == SOCKET_ERROR) {
         return v8::ThrowException(JS_STR(strerror(errno)));
     } else {
 		return args.This();
@@ -321,7 +331,7 @@ JS_METHOD(_receive) {
     socklen_t len = 0;
 
 	ssize_t result = recvfrom(sock, data, count, 0, (sockaddr *) &addr, &len);
-    if (result == -1) {
+    if (result == SOCKET_ERROR) {
         return v8::ThrowException(JS_STR(strerror(errno)));
     } else {
 		v8::Handle<v8::Value> text = JS_STR(data, result);
@@ -336,7 +346,7 @@ JS_METHOD(_socketclose) {
 	int sock = LOAD_VALUE(0)->Int32Value();
 	
 	int result = close(sock);
-    if (result == -1) {
+    if (result == SOCKET_ERROR) {
         return v8::ThrowException(JS_STR(strerror(errno)));
     } else {
 		return v8::Undefined();

@@ -14,7 +14,7 @@ v8::Persistent<v8::FunctionTemplate> rest;
 JS_METHOD(_mysql) {
 	v8::HandleScope handle_scope;
 	if (args.This()->InternalFieldCount() == 0) {
-		return v8::ThrowException(JS_STR("Invalid call format. Use 'new MySQL()'"));
+		return JS_EXCEPTION("Invalid call format. Use 'new MySQL()'");
 	}
 	SAVE_VALUE(0, JS_BOOL(false));
 	
@@ -24,7 +24,7 @@ JS_METHOD(_mysql) {
 JS_METHOD(_connect) {
 	v8::HandleScope handle_scope;
 	if (args.Length() < 4) {
-		return v8::ThrowException(JS_STR("Invalid call format. Use 'mysql.connect(host, user, pass, db)'"));
+		return JS_EXCEPTION("Invalid call format. Use 'mysql.connect(host, user, pass, db)'");
 	}
 
 	MYSQL *conn;
@@ -49,10 +49,10 @@ JS_METHOD(_query) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::Value> c = LOAD_VALUE(0);
 	if (c->IsFalse()) {
-		return v8::ThrowException(JS_STR("No connection established"));
+		return JS_EXCEPTION("No connection established");
 	}		
 	if (args.Length() < 1) {
-		return v8::ThrowException(JS_STR("No query specified"));
+		return JS_EXCEPTION("No query specified");
 	}
 	v8::String::Utf8Value q(args[0]);
 	
@@ -81,7 +81,7 @@ JS_METHOD(_error) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::Value> c = LOAD_VALUE(0);
 	if (c->IsFalse()) {
-		return v8::ThrowException(JS_STR("No connection established"));
+		return JS_EXCEPTION("No connection established");
 	}
 
 	MYSQL * conn = LOAD_PTR(0, MYSQL *);
@@ -93,7 +93,7 @@ JS_METHOD(_errno) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::Value> c = LOAD_VALUE(0);
 	if (c->IsFalse()) {
-		return v8::ThrowException(JS_STR("No connection established"));
+		return JS_EXCEPTION("No connection established");
 	}
 	
 	MYSQL * conn = LOAD_PTR(0, MYSQL *);
@@ -105,7 +105,7 @@ JS_METHOD(_affectedrows) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::Value> c = LOAD_VALUE(0);
 	if (c->IsFalse()) {
-		return v8::ThrowException(JS_STR("No connection established"));
+		return JS_EXCEPTION("No connection established");
 	}
 		
 	MYSQL * conn = LOAD_PTR(0, MYSQL *)
@@ -117,7 +117,7 @@ JS_METHOD(_insertid) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::Value> c = LOAD_VALUE(0);
 	if (c->IsFalse()) {
-		return v8::ThrowException(JS_STR("No connection established"));
+		return JS_EXCEPTION("No connection established");
 	}
 
 	MYSQL * conn = LOAD_PTR(0, MYSQL *);
@@ -129,10 +129,10 @@ JS_METHOD(_escape) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::Value> c = LOAD_VALUE(0);
 	if (c->IsFalse()) {
-		return v8::ThrowException(JS_STR("No connection established"));
+		return JS_EXCEPTION("No connection established");
 	}
 	if (args.Length() < 1) {
-		return v8::ThrowException(JS_STR("Nothing to escape"));
+		return JS_EXCEPTION("Nothing to escape");
 	}
 	v8::String::Utf8Value str(args[0]);
 	
@@ -150,7 +150,7 @@ JS_METHOD(_escape) {
 JS_METHOD(_qualify) {
 	v8::HandleScope handle_scope;
 	if (args.Length() < 1) {
-		return v8::ThrowException(JS_STR("Nothing to qualify"));
+		return JS_EXCEPTION("Nothing to qualify");
 	}
 
 	int len = args[0]->ToString()->Utf8Length();

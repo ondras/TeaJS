@@ -1,5 +1,10 @@
 #include <v8.h>
 #include <sstream>
+
+#ifdef FASTCGI
+#  include <fcgi_stdio.h>
+#endif
+
 #include <js_common.h>
 #include <js_macros.h>
 
@@ -44,7 +49,7 @@ JS_METHOD(_stdout) {
 JS_METHOD(_system) {
 	v8::HandleScope handle_scope;
 	if (args.Length() != 1) {
-		return v8::ThrowException(JS_STR("Wrong argument count. Use System.system(\"command\")"));
+		return JS_EXCEPTION("Wrong argument count. Use System.system(\"command\")");
 	}
 	
 	v8::String::Utf8Value cmd(args[0]);

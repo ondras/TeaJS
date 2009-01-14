@@ -18,6 +18,7 @@ else:
 
 # command line options
 opts = Options()
+opts.Add(BoolOption("fcgi", "FastCGI support", 0))
 opts.Add(BoolOption("mysql", "MySQL support", 0))
 opts.Add(BoolOption("gd", "GD support", 0))
 opts.Add(PathOption("mysqlpath", "MySQL header path", mysql_include))
@@ -87,6 +88,14 @@ if env["os"] == "windows":
         CPPPATH = os.environ.pop("INCLUDE")
     )
     env["LIBPATH"] = ";".join(env["LIBPATH"])
+# if
+
+if env["fcgi"] == 1:
+	env.Append(
+		LIBS = ["fcgi"],
+		CPPPATH = ["src/fcgi/include"],
+		CPPDEFINES = ["FASTCGI"]
+	)
 # if
 
 if env["mysql"] == 1:

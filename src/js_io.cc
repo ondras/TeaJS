@@ -48,7 +48,7 @@ v8::Handle<v8::Value> list_items(char * name, int type) {
 	int cond = (type == TYPE_FILE ? DT_REG : DT_DIR);
 	
 	dp = opendir(name);
-	if (dp == NULL) { return v8::ThrowException(JS_STR("Directory cannot be opened")); }
+	if (dp == NULL) { return JS_EXCEPTION("Directory cannot be opened"); }
 	while ((ep = readdir(dp))) { 
 		if (ep->d_type == cond) {
 			if (type == TYPE_FILE) {
@@ -91,7 +91,7 @@ v8::Handle<v8::Value> list_items(char * name, int type) {
 JS_METHOD(_directory) {
 	v8::HandleScope handle_scope;
 	if (args.Length() < 1 || args.This()->InternalFieldCount() == 0) {
-		return v8::ThrowException(JS_STR("Invalid call format. Use 'new Directory(name)'"));
+		return JS_EXCEPTION("Invalid call format. Use 'new Directory(name)'");
 	}
 	
 	SAVE_VALUE(0, args[0]);
@@ -111,7 +111,7 @@ JS_METHOD(_create) {
 
 	int result = mkdir(*name, mode);
 	if (result != 0) {
-		return v8::ThrowException(JS_STR("Cannot create directory'"));
+		return JS_EXCEPTION("Cannot create directory");
 	}
 	
 	return args.This();
@@ -132,7 +132,7 @@ JS_METHOD(_listdirectories) {
 JS_METHOD(_file) {
 	v8::HandleScope handle_scope;
 	if (args.Length() < 1 || args.This()->InternalFieldCount() == 0) {
-		return v8::ThrowException(JS_STR("Invalid call format. Use 'new File(name)'"));
+		return JS_EXCEPTION("Invalid call format. Use 'new File(name)'");
 	}
 	
 	SAVE_VALUE(0, args[0]);
@@ -143,20 +143,20 @@ JS_METHOD(_file) {
 JS_METHOD(_open) {
 	v8::HandleScope handle_scope;
 	if (args.Length() < 1) {
-		return v8::ThrowException(JS_STR("Bad argument count. Use 'file.open(mode)'"));
+		return JS_EXCEPTION("Bad argument count. Use 'file.open(mode)'");
 	}
 	v8::String::Utf8Value mode(args[0]);
 	v8::String::Utf8Value name(LOAD_VALUE(0));
 	v8::Handle<v8::Value> file = LOAD_VALUE(1);
 	if (!file->IsFalse()) {
-		return v8::ThrowException(JS_STR("File already opened"));
+		return JS_EXCEPTION("File already opened");
 	}
 	
 	FILE * f;
 	f = fopen(*name, *mode);
 	
 	if (!f) {
-		return v8::ThrowException(JS_STR("Cannot open file"));
+		return JS_EXCEPTION("Cannot open file");
 	}
 	
 	SAVE_PTR(1, f);
@@ -168,7 +168,7 @@ JS_METHOD(_close) {
 	v8::Handle<v8::Value> file = LOAD_VALUE(1);
 	
 	if (file->IsFalse()) {
-		return v8::ThrowException(JS_STR("Cannot close non-opened file"));
+		return JS_EXCEPTION("Cannot close non-opened file");
 	}
 	
 	FILE * f = LOAD_PTR(1, FILE *);
@@ -183,7 +183,7 @@ JS_METHOD(_read) {
 	v8::Handle<v8::Value> file = LOAD_VALUE(1);
 	
 	if (file->IsFalse()) {
-		return v8::ThrowException(JS_STR("File must be opened before reading"));
+		return JS_EXCEPTION("File must be opened before reading");
 	}
 	
 	FILE * f = LOAD_PTR(1, FILE *);
@@ -207,7 +207,7 @@ JS_METHOD(_rewind) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::Value> file = LOAD_VALUE(1);
 	if (file->IsFalse()) {
-		return v8::ThrowException(JS_STR("File must be opened before rewinding"));
+		return JS_EXCEPTION("File must be opened before rewinding");
 	}
 	
 	FILE * f = LOAD_PTR(1, FILE *);
@@ -221,7 +221,7 @@ JS_METHOD(_write) {
 	v8::Handle<v8::Value> file = LOAD_VALUE(1);
 	
 	if (file->IsFalse()) {
-		return v8::ThrowException(JS_STR("File must be opened before writing"));
+		return JS_EXCEPTION("File must be opened before writing");
 	}
 	
 
@@ -257,7 +257,7 @@ JS_METHOD(_removefile) {
 	v8::String::Utf8Value name(LOAD_VALUE(0));
 	
 	if (remove(*name) != 0) {
-		return v8::ThrowException(JS_STR("Cannot remove file"));
+		return JS_EXCEPTION("Cannot remove file");
 	}
 	
 	return args.This();
@@ -268,7 +268,7 @@ JS_METHOD(_removedirectory) {
 	v8::String::Utf8Value name(LOAD_VALUE(0));
 	
 	if (rmdir(*name) != 0) {
-		return v8::ThrowException(JS_STR("Cannot remove directory"));
+		return JS_EXCEPTION("Cannot remove directory");
 	}
 	
 	return args.This();
@@ -301,8 +301,8 @@ v8::Handle<v8::Value> _copy(char * name1, char * name2) {
 	FILE * f1 = fopen(name1, "rb");
 	FILE * f2 = fopen(name2, "wb");
 	
-	if (f1 == NULL) { return v8::ThrowException(JS_STR("Cannot open source file")); }
-	if (f2 == NULL) { return v8::ThrowException(JS_STR("Cannot open target file")); }
+	if (f1 == NULL) { return JS_EXCEPTION("Cannot open source file"); }
+	if (f2 == NULL) { return JS_EXCEPTION("Cannot open target file"); }
 	
 	size_t size = 0;
 	
@@ -320,7 +320,7 @@ JS_METHOD(_movefile) {
 	v8::HandleScope handle_scope;
 	
 	if (args.Length() < 1) {
-	return v8::ThrowException(JS_STR("Bad argument count. Use 'file.rename(newname)'"));
+	return JS_EXCEPTION("Bad argument count. Use 'file.rename(newname)'");
 	}
 	
 	v8::String::Utf8Value name(LOAD_VALUE(0));
@@ -344,7 +344,7 @@ JS_METHOD(_movefile) {
 JS_METHOD(_copyfile) {
 	v8::HandleScope handle_scope;
 	if (args.Length() < 1) {
-		return v8::ThrowException(JS_STR("Bad argument count. Use 'file.copy(newname)'"));
+		return JS_EXCEPTION("Bad argument count. Use 'file.copy(newname)'");
 	}
 	
 	v8::String::Utf8Value name(LOAD_VALUE(0));

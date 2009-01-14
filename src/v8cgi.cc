@@ -74,7 +74,6 @@ void js_exception(v8::TryCatch* try_catch) {
 	v8::Handle<v8::Message> message = try_catch->Message();
 	std::string msgstring = "";
 	std::stringstream ss;
-	std::string tmp;
 
 	if (message.IsEmpty()) {
 		msgstring += *exception;
@@ -84,11 +83,8 @@ void js_exception(v8::TryCatch* try_catch) {
 		int linenum = message->GetLineNumber();
 		msgstring += *filename;
 		msgstring += ":";
-		
 		ss << linenum;
-		ss >> tmp;
-
-		msgstring += tmp;
+		msgstring += ss.str();
 		msgstring += ": ";
 		msgstring += *exception;
 		msgstring += "\n";

@@ -1,7 +1,6 @@
 #include <v8.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <sstream>
 
 #include <string.h>
 #include <stdlib.h>
@@ -63,10 +62,8 @@ v8::Handle<v8::Value> list_items(char * name, int type) {
 	_finddata_t * info = (_finddata_t *) malloc(sizeof(_finddata_t));
 	unsigned int value = (type == TYPE_FILE ? 0 : _A_SUBDIR);
 
-	std::string path;
-	std::stringstream ss;
-	ss << name << "/*";
-	ss >> path;
+	std::string path = name;
+	path += "/*";
 
 	intptr_t ptr = _findfirst(path.c_str(), info);
 	

@@ -1,5 +1,6 @@
 #include <v8.h>
 #include <string>
+#include <stdlib.h>
 
 #ifdef FASTCGI
 #  include <fcgi_stdio.h>

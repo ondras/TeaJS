@@ -41,11 +41,14 @@
 #	define getcwd(name, bytes) _getcwd(name, bytes)
 #endif
 
-v8::Handle<v8::Array> __onexit;
-char * cfgfile = NULL;
-char * execfile = NULL;
-v8::Persistent<v8::Context> context;
-int total = 0;
+v8::Handle<v8::Array> __onexit; /* what to do on exit */
+char * cfgfile = NULL; /* config file */
+char * execfile = NULL; /* command-line specified file */
+
+void ** handles; /* shared libraries */
+int handlecount = 0;
+
+int total = 0; /* fcgi debug */
 
 void js_error(const char * message) {
 	int cgi = 0;
@@ -196,6 +199,11 @@ int js_library(char * name) {
 			js_error(error.c_str());
 			return 1;
 		}
+		
+		handlecount++;
+		handles = (void **) realloc(handles, sizeof(void*) * handlecount);
+		handles[handlecount-1] = handle;
+		
 		func(v8::Context::GetCurrent()->Global());
 		return 0;									
 	} else {
@@ -259,6 +267,13 @@ void main_finish() {
 		fun = v8::Handle<v8::Function>::Cast(__onexit->Get(JS_INT(i)));
 		fun->Call(v8::Context::GetCurrent()->Global(), 0, NULL);
 	}
+	
+	for (int i=0;i<handlecount;i++) {
+		dlclose(handles[i]);
+	}
+	handlecount = 0;
+	free(handles);
+	handles = NULL;
 }
 
 int main_execute() {
@@ -266,7 +281,6 @@ int main_execute() {
 	char * name = execfile;
 
 	if (name == NULL) { // try the PATH_TRANSLATED env var
-		v8::Handle<v8::Context> test = v8::Context::GetCurrent();
 		v8::Handle<v8::Value> sys = v8::Context::GetCurrent()->Global()->Get(JS_STR("System"));
 		v8::Handle<v8::Value> env = sys->ToObject()->Get(JS_STR("env"));
 		v8::Handle<v8::Value> pt = env->ToObject()->Get(JS_STR("PATH_TRANSLATED"));
@@ -287,10 +301,11 @@ int main_execute() {
 
 int main_prepare(char ** envp) {
 	__onexit = v8::Array::New();
-	v8::Handle<v8::Object> g = context->Global();
+	v8::Handle<v8::Object> g = v8::Context::GetCurrent()->Global();
 	g->Set(JS_STR("library"), v8::FunctionTemplate::New(_library)->GetFunction());
 	g->Set(JS_STR("include"), v8::FunctionTemplate::New(_include)->GetFunction());
 	g->Set(JS_STR("onexit"), v8::FunctionTemplate::New(_onexit)->GetFunction());
+	g->Set(JS_STR("total"), JS_INT(total++));
 	g->Set(JS_STR("global"), g);
 	g->Set(JS_STR("Config"), v8::Object::New());
 
@@ -341,7 +356,7 @@ int main_cycle(char ** envp) {
 	int result = 0;
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::ObjectTemplate> global = v8::ObjectTemplate::New();
-	context = v8::Context::New(NULL, global);
+	v8::Handle<v8::Context> context = v8::Context::New(NULL, global);
 	v8::Context::Scope context_scope(context);
 
 	result = main_prepare(envp);

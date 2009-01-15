@@ -190,7 +190,7 @@ int js_autoload() {
 	return 0;
 }
 
-v8::Handle<v8::Value> _include(const v8::Arguments& args) {
+JS_METHOD(_include) {
 	bool ok = true;
 	int result;
 	for (int i = 0; i < args.Length(); i++) {
@@ -202,7 +202,7 @@ v8::Handle<v8::Value> _include(const v8::Arguments& args) {
 	return JS_BOOL(ok);
 }
 
-v8::Handle<v8::Value> _library(const v8::Arguments & args) {
+JS_METHOD(_library) {
 	v8::HandleScope handle_scope;
 	bool ok = true;
 	int result;
@@ -220,7 +220,7 @@ v8::Handle<v8::Value> _library(const v8::Arguments & args) {
 	return JS_BOOL(ok);
 }
 
-v8::Handle<v8::Value> _onexit(const v8::Arguments& args) {
+JS_METHOD(_onexit) {
 	__onexit->Set(JS_INT(__onexit->Length()), args[0]);
 	return v8::Undefined();
 }

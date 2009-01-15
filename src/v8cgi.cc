@@ -6,7 +6,6 @@
 #define STRING(x) _STRING(x)
 
 #include <sstream>
-#include <string.h>
 #include <stdlib.h>
 #include <v8.h>
 #include <map>
@@ -100,7 +99,7 @@ void js_exception(v8::TryCatch* try_catch) {
 v8::Handle<v8::String> js_read(const char* name, bool cache) {
 	std::string n = name;
 	std::map<std::string,std::string>::iterator it;
-		it = sources.find(n);
+	it = sources.find(n);
 	
 	if (cache && it != sources.end()) {
 		return JS_STR(it->second.c_str()); 
@@ -158,23 +157,18 @@ int js_execute(const char * str, bool change, bool cache) {
 		js_exception(&try_catch);
 		return 1;
 	} else {
-		char * old = getcwd(NULL, 0);
-		char * end = strrchr((char *)str, '/');
-		if (end == NULL) {
-			end = strrchr((char *)str, '\\');
-		}
-		if (end != NULL && change) {
-			int len = end-str;
-			char * base = (char *) malloc(len+1);
-			strncpy(base, str, len);
-    		base[len] = '\0';
-    		chdir(base);
-			free(base);
+		std::string oldcwd = getcwd(NULL, 0);
+		std::string newcwd = str;
+		size_t pos = newcwd.find_last_of('/');
+		if (pos == std::string::npos) { pos = newcwd.find_last_of('\\'); }
+		if (pos != std::string::npos && change) {
+			newcwd.erase(pos, newcwd.length()-pos);
+    		chdir(newcwd.c_str());
 		}
 		
 		v8::Handle<v8::Value> result = script->Run();
 		
-		chdir(old);
+		if (change) { chdir(oldcwd.c_str()); }
 		if (result.IsEmpty()) {
 			js_exception(&try_catch);
 			return 1;
@@ -208,10 +202,8 @@ int js_library(char * name) {
 				js_error(error.c_str());
 				return 1;
 			}
-			printf("new");
 			handles[path] = handle;
 		} else {
-			printf("reuse");
 			handle = handles[path];
 		}
 		

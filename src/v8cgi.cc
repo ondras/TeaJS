@@ -19,14 +19,13 @@
 #include "js_socket.h"
 #include "js_common.h"
 #include "js_macros.h"
+#include "js_cache.h"
 
 #ifndef windows
-#	include <dlfcn.h>
+#   include <dlfcn.h>
 #else
-#	include <windows.h>
-#	define dlopen(x,y) (void*)LoadLibrary(x)
-#	define dlsym(x,y) (void*)GetProcAddress((HMODULE)x,y)
-#	define dlclose(x) FreeLibrary((HMODULE)x)
+#   include <windows.h>
+#   define dlsym(x,y) (void*)GetProcAddress((HMODULE)x,y)
 #endif
 
 // chdir()
@@ -44,9 +43,7 @@
 v8::Handle<v8::Array> __onexit; /* what to do on exit */
 const char * cfgfile = NULL; /* config file */
 const char * execfile = NULL; /* command-line specified file */
-
-std::map<std::string,void*> handles; /* shared libraries */
-std::map<std::string,std::string> sources; /* js sources */
+Cache cache;
 
 int total = 0; /* fcgi debug */
 
@@ -96,53 +93,17 @@ void js_exception(v8::TryCatch* try_catch) {
 	js_error(msgstring.c_str());
 }
 
-v8::Handle<v8::String> js_read(const char* name, bool cache) {
+v8::Handle<v8::String> js_read(const char* name) {
 	std::string n = name;
-	std::map<std::string,std::string>::iterator it;
-	it = sources.find(n);
-	
-	if (cache && it != sources.end()) {
-		return JS_STR(it->second.c_str()); 
-	}
-
-	FILE* file = fopen(name, "rb");
-	if (file == NULL) { return v8::Handle<v8::String>(); }
-
-	fseek(file, 0, SEEK_END);
-	size_t size = ftell(file);
-	rewind(file);
-
-	char* chars = new char[size + 1];
-	chars[size] = '\0';
-	for (unsigned int i = 0; i < size;) {
-		size_t read = fread(&chars[i], 1, size - i, file);
-		i += read;
-	}
-	fclose(file);
-
-	/* remove shebang line */	
-	std::string str = chars;
-	if ( str.find('#',0) == 0 && str.find('!',1) == 1 ) {
-		unsigned int pfix = str.find('\n',0);
-		str.erase(0,pfix);
-	};
-	
-	v8::Handle<v8::String> result = JS_STR(str.c_str());
-	
-	if (cache && it == sources.end()) {
-		sources[n] = str;
-	}	
-
-	delete[] chars;
-	return result;
+	std::string source = cache.getJS(n);
+	return JS_STR(source.c_str());
 }
 
-
-int js_execute(const char * str, bool change, bool cache) {
+int js_execute(const char * str, bool change) {
 	v8::HandleScope handle_scope;
 	v8::TryCatch try_catch;
 	v8::Handle<v8::String> name = JS_STR(str);
-	v8::Handle<v8::String> source = js_read(str, cache);
+	v8::Handle<v8::String> source = js_read(str);
 
 	if (source.IsEmpty()) {
 		std::string s = "Error reading '";
@@ -190,28 +151,18 @@ int js_library(char * name) {
 	path += name;
 	
 	if (path.find(".so") != std::string::npos || path.find(".dll") != std::string::npos) {
-		void * handle;
-		
-		std::map<std::string,void*>::iterator it = handles.find(path);
-		if (it == handles.end()) { /* new */
-			handle = dlopen(path.c_str(), RTLD_LAZY);
-			if (!handle) {
-				error = "Cannot load shared library '";
-				error += path;
-				error += "'\n";
-				js_error(error.c_str());
-				return 1;
-			}
-			handles[path] = handle;
-		} else {
-			handle = handles[path];
+		void * handle = cache.getHandle(path);
+		if (handle == NULL) {
+			error = "Cannot load shared library '";
+			error += path;
+			error += "'\n";
+			js_error(error.c_str());
+			return 1;
 		}
-		
+
 		void (*func) (v8::Handle<v8::Object>);
 		func = reinterpret_cast<void (*)(v8::Handle<v8::Object>)>(dlsym(handle, "init"));
 		if (!func) {
-			dlclose(handle);
-			handles.erase(path);
 			error = "Cannot initialize shared library '";
 			error += path;
 			error += "'\n";
@@ -222,7 +173,7 @@ int js_library(char * name) {
 		func(v8::Context::GetCurrent()->Global());
 		return 0;									
 	} else {
-		return js_execute(path.c_str(), false, true);
+		return js_execute(path.c_str(), false);
 	}
 }
 
@@ -245,7 +196,7 @@ v8::Handle<v8::Value> _include(const v8::Arguments& args) {
 	for (int i = 0; i < args.Length(); i++) {
 		v8::HandleScope handle_scope;
 		v8::String::Utf8Value file(args[i]);
-		result = js_execute(*file, true, false);
+		result = js_execute(*file, true);
 		if (result != 0) { ok = false; }
 	}
 	return JS_BOOL(ok);
@@ -275,10 +226,6 @@ v8::Handle<v8::Value> _onexit(const v8::Arguments& args) {
 }
 
 void main_terminate() {	
-	std::map<std::string,void*>::iterator it;
-	for (it=handles.begin() ; it != handles.end(); it++ ) {
-		dlclose(it->second);
-	}
 }
 
 void main_finish() {
@@ -309,7 +256,7 @@ int main_execute() {
 		js_error("Nothing to do.\n");
 		return 1;
 	} else {
-		return js_execute(name, true, false);
+		return js_execute(name, true);
 	}
 	
 }
@@ -328,7 +275,7 @@ int main_prepare(char ** envp) {
 	setup_io(g);	
 	setup_socket(g);
 	
-	if (js_execute(cfgfile, false, true)) { 
+	if (js_execute(cfgfile, false)) { 
 		js_error("Cannot load configuration, quitting...\n");
 		return 1;
 	}

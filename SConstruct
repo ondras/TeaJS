@@ -132,7 +132,8 @@ sources = [
 	"js_common.cc", 
 	"js_system.cc",
 	"js_io.cc",
-	"js_socket.cc"
+	"js_socket.cc",
+	"js_cache.cc"
 ]
 sources = [ "src/%s" % s for s in sources ]
 

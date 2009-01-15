@@ -19,7 +19,7 @@ bool Cache::isCached(std::string filename) {
 	int result = stat(filename.c_str(), &st);
 	if (result != 0) { return false; }	
 
-	Cache::TimeValue::iterator it = modified.find(filename);
+	TimeValue::iterator it = modified.find(filename);
 	if (it == modified.end()) { /* not seen yet */
 		modified[filename] = st.st_mtime;
 		return false; 
@@ -34,10 +34,10 @@ bool Cache::isCached(std::string filename) {
 }
 
 void Cache::erase(std::string filename) {
-	Cache::JSValue::iterator it1 = sources.find(filename);
+	JSValue::iterator it1 = sources.find(filename);
 	if (it1 != sources.end()) { sources.erase(it1); }
 
-	Cache::HandleValue::iterator it2 = handles.find(filename);
+	HandleValue::iterator it2 = handles.find(filename);
 	if (it2 != handles.end()) { 
 		dlclose(it2->second);
 		handles.erase(it2); 
@@ -46,7 +46,7 @@ void Cache::erase(std::string filename) {
 
 std::string Cache::getJS(std::string filename) {
 	if (isCached(filename)) {
-		Cache::JSValue::iterator it = sources.find(filename);
+		JSValue::iterator it = sources.find(filename);
 		return it->second;
 	} else {
 		FILE * file = fopen(filename.c_str(), "rb");
@@ -77,7 +77,7 @@ std::string Cache::getJS(std::string filename) {
 
 void * Cache::getHandle(std::string filename) {
 	if (isCached(filename)) {
-		Cache::HandleValue::iterator it = handles.find(filename);
+		HandleValue::iterator it = handles.find(filename);
 		return it->second;
 	} else {
 		void * handle = dlopen(filename.c_str(), RTLD_LAZY);

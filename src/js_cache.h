@@ -8,13 +8,14 @@ class Cache {
 public:
 	std::string getJS(std::string filename);
 	void* getHandle(std::string filename);
+
 private:
 	typedef std::map<std::string,time_t> TimeValue;
 	typedef std::map<std::string,std::string> JSValue;
 	typedef std::map<std::string,void*> HandleValue;
-	Cache::TimeValue modified;
-	Cache::JSValue sources;
-	Cache::HandleValue handles;
+	TimeValue modified;
+	JSValue sources;
+	HandleValue handles;
 	bool isCached(std::string filename);
 	void erase(std::string filename);
 };

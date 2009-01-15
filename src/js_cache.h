@@ -5,15 +5,18 @@
 #include <map>
 
 class Cache {
-private:
-	std::map<std::string,time_t> modified;
-	std::map<std::string,std::string> sources;
-	std::map<std::string,void*> handles;
-	bool isCached(std::string filename);
-	void erase(std::string filename);
 public:
 	std::string getJS(std::string filename);
 	void* getHandle(std::string filename);
+private:
+	typedef std::map<std::string,time_t> TimeValue;
+	typedef std::map<std::string,std::string> JSValue;
+	typedef std::map<std::string,void*> HandleValue;
+	Cache::TimeValue modified;
+	Cache::JSValue sources;
+	Cache::HandleValue handles;
+	bool isCached(std::string filename);
+	void erase(std::string filename);
 };
 
 #endif

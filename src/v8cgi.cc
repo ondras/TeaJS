@@ -118,7 +118,10 @@ int js_execute(const char * str, bool change) {
 		js_exception(&try_catch);
 		return 1;
 	} else {
-		std::string oldcwd = getcwd(NULL, 0);
+		char * tmp = getcwd(NULL, 0);
+		std::string oldcwd = tmp;
+		free(tmp);
+		
 		std::string newcwd = str;
 		size_t pos = newcwd.find_last_of('/');
 		if (pos == std::string::npos) { pos = newcwd.find_last_of('\\'); }

@@ -68,7 +68,7 @@ if conf.CheckFunc("getcwd"):
 if conf.CheckFunc("sleep"):
     env.Append(CPPDEFINES = "HAVE_SLEEP")
 	
-if not conf.CheckLib('v8'):
+if ((env["os"] != "windows") and not (conf.CheckLib("v8"))):
 	print "Cannot find V8 library, exiting!"
 	Exit(1)
 

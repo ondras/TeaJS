@@ -2,7 +2,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include <string.h>
+#include <string>
 #include <stdlib.h>
 #include "js_macros.h"
 #include "js_common.h"

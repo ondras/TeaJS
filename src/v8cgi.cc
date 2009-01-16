@@ -226,6 +226,11 @@ JS_METHOD(_onexit) {
 	return v8::Undefined();
 }
 
+JS_METHOD(_exit) {
+	v8::Context::GetCurrent()->Exit();
+	return v8::Undefined();
+}
+
 void main_terminate() {	
 }
 
@@ -292,6 +297,7 @@ int main_prepare() {
 	g->Set(JS_STR("library"), v8::FunctionTemplate::New(_library)->GetFunction());
 	g->Set(JS_STR("include"), v8::FunctionTemplate::New(_include)->GetFunction());
 	g->Set(JS_STR("onexit"), v8::FunctionTemplate::New(_onexit)->GetFunction());
+//	g->Set(JS_STR("exit"), v8::FunctionTemplate::New(_exit)->GetFunction());
 	g->Set(JS_STR("total"), JS_INT(total++));
 	g->Set(JS_STR("global"), g);
 	g->Set(JS_STR("Config"), v8::Object::New());

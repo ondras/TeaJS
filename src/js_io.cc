@@ -351,7 +351,7 @@ JS_METHOD(_copyfile) {
 	if (result->IsTrue()) {
 		v8::Handle<v8::Value> fargs[] = { args[0] };
 		
-		v8::Handle<v8::Value> f = v8::Context::GetCurrent()->Global()->Get(JS_STR("File"));
+		v8::Handle<v8::Value> f = JS_GLOBAL->Get(JS_STR("File"));
 		v8::Handle<v8::Function> newf = v8::Handle<v8::Function>::Cast(f);
 		return newf->NewInstance(1, fargs);
 	} else {

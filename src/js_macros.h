@@ -11,6 +11,7 @@
 #define JS_BOOL(val) v8::Boolean::New(val)
 #define JS_METHOD(name) v8::Handle<v8::Value> name(const v8::Arguments& args)
 #define JS_EXCEPTION(reason) v8::ThrowException(JS_STR(reason))
+#define JS_GLOBAL v8::Context::GetCurrent()->Global()
 
 #ifdef _WIN32
 #   define SHARED_INIT() extern "C" __declspec(dllexport) void init(v8::Handle<v8::Object> target)

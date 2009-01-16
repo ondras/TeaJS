@@ -325,7 +325,7 @@ JS_METHOD(_accept) {
 		argv[1] = args.This()->Get(JS_STR("family"));
 		argv[2] = args.This()->Get(JS_STR("type"));
 		argv[3] = args.This()->Get(JS_STR("proto"));
-		v8::Handle<v8::Value> s = v8::Context::GetCurrent()->Global()->Get(JS_STR("Socket"));
+		v8::Handle<v8::Value> s = JS_GLOBAL->Get(JS_STR("Socket"));
 		v8::Handle<v8::Function> news = v8::Handle<v8::Function>::Cast(s);
 		return news->NewInstance(4, argv);
     }

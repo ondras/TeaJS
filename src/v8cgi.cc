@@ -53,7 +53,7 @@ void js_error(const char * message) {
 	v8::Local<v8::Function> fun;
 	v8::Local<v8::Value> context = JS_GLOBAL->Get(JS_STR("response"));
 	if (context->IsObject()) {
-		v8::Local<v8::Value> print = context->ToObject()->Get(JS_STR("error"));
+		v8::Local<v8::Value> print = context->ToObject()->Get(JS_STR("write"));
 		if (print->IsObject()) {
 			fun = v8::Local<v8::Function>::Cast(print);
 			cgi = 1;

@@ -2,7 +2,7 @@
 Config["libraryPath"] = "c:/program files/v8cgi";
 
 // these will get loaded automatically
-Config["libraryAutoload"] = ["js.js", "util.js", "http.js"];
+Config["libraryAutoload"] = ["js.js", "util.js", "html.js", "http.js"];
 
 // name of session cookie
 Config["sessionCookie"] = "V8SID";

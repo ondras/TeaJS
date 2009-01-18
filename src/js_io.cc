@@ -192,17 +192,18 @@ JS_METHOD(_read) {
 	size_t size = 0;
 	if (count == 0) { /* all */
 		size_t tmp;
-		char buf[1024];
+		char * buf = new char[1024];
 		do {
 			tmp = fread(buf, sizeof(char), sizeof(buf), f);
 			size += tmp;
 			data.insert(data.length(), buf, tmp);
 		} while (tmp == sizeof(buf));
+		delete[] buf;
 	} else {
-		char * tmp = (char *) malloc(count * sizeof(char));
+		char * tmp = new char[count];
 		size = fread(tmp, sizeof(char), count, f);
 		data.insert(0, tmp, size);
-		free(tmp);
+		delete[] tmp;
 	}
 	
 	if (args.Length() > 1 && args[1]->IsTrue()) {
@@ -305,7 +306,7 @@ JS_METHOD(_stat) {
 
 v8::Handle<v8::Value> _copy(char * name1, char * name2) {
 	int len = 1024;
-	char * buf = (char *) malloc(len * sizeof(char));
+	char * buf = new char[len];
 	
 	FILE * f1 = fopen(name1, "rb");
 	FILE * f2 = fopen(name2, "wb");
@@ -321,7 +322,7 @@ v8::Handle<v8::Value> _copy(char * name1, char * name2) {
 	
 	fclose(f1);
 	fclose(f2);
-	free(buf);
+	delete[] buf;
 	return JS_BOOL(true);
 }
 

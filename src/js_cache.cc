@@ -63,7 +63,7 @@ std::string Cache::getJS(std::string filename) {
 		fclose(file);
 		std::string source = chars;
 		delete[] chars;
-													  
+
 		/* remove shebang line */
 		if (source.find('#',0) == 0 && source.find('!',1) == 1 ) {
 			unsigned int pfix = source.find('\n',0);

@@ -103,7 +103,9 @@ int js_execute(std::string str, bool change) {
 	v8::TryCatch try_catch;
 	v8::Handle<v8::String> name = JS_STR(str.c_str());
 	v8::Handle<v8::String> source = js_read(str);
-	if (source.IsEmpty()) {
+	
+	v8::String::Utf8Value x(source);
+	if (source->Length() == 0) {
 		std::string s = "Error reading '";
 		s += str;
 		s += "'\n";

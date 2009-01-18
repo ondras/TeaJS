@@ -6,7 +6,6 @@
 #  include <fcgi_stdio.h>
 #endif
 
-#include <js_common.h>
 #include <js_macros.h>
 
 #ifndef HAVE_SLEEP
@@ -22,12 +21,21 @@ JS_METHOD(_stdin) {
 		count = args[0]->IntegerValue();
 	}
 	
-	char * data = NULL;
-	size_t size = afread(&data, count, stdin);
+	std::string data;
+	size_t size = 0;
+	char ch;
+	while (1) {
+		ch = fgetc(stdin);
+		data += ch;
+		size++;
+		if (count > 0 && size == count) { break; }
+		if (count == 0 && ch == '\n') { break; }
+	};
+	
 	if (args.Length() > 1 && args[1]->IsTrue()) {
-		return JS_CHARARRAY(data, size);
+		return JS_CHARARRAY((char *) data.data(), size);
 	} else {
-		return JS_STR(data, size);
+		return JS_STR(data.data(), size);
 	}
 }
 

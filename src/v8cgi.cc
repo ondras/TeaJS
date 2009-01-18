@@ -17,7 +17,6 @@
 #include "js_system.h"
 #include "js_io.h"
 #include "js_socket.h"
-#include "js_common.h"
 #include "js_macros.h"
 #include "js_cache.h"
 

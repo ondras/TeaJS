@@ -134,7 +134,6 @@ if env["gd"] == 1:
 # base source files
 sources = [
 	"v8cgi.cc", 
-	"js_common.cc", 
 	"js_system.cc",
 	"js_io.cc",
 	"js_socket.cc",

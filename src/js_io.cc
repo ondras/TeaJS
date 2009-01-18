@@ -5,7 +5,6 @@
 #include <string>
 #include <stdlib.h>
 #include "js_macros.h"
-#include "js_common.h"
 
 // access()
 #ifdef HAVE_UNISTD_H
@@ -182,22 +181,35 @@ JS_METHOD(_read) {
 	if (file->IsFalse()) {
 		return JS_EXCEPTION("File must be opened before reading");
 	}
-	
 	FILE * f = LOAD_PTR(1, FILE *);
 	
-	size_t count = -1;
+	size_t count = 0;
 	if (args.Length() && args[0]->IsNumber()) {
 		count = args[0]->IntegerValue();
 	}
-	char * data = NULL;
-	size_t size = afread(&data, count, f);
+	
+	std::string data;
+	size_t size = 0;
+	if (count == 0) { /* all */
+		size_t tmp;
+		char buf[1024];
+		do {
+			tmp = fread(buf, sizeof(char), sizeof(buf), f);
+			size += tmp;
+			data.insert(data.length(), buf, tmp);
+		} while (tmp == sizeof(buf));
+	} else {
+		char * tmp = (char *) malloc(count * sizeof(char));
+		size = fread(tmp, sizeof(char), count, f);
+		data.insert(0, tmp, size);
+		free(tmp);
+	}
 	
 	if (args.Length() > 1 && args[1]->IsTrue()) {
-		return JS_CHARARRAY(data, size);
+		return JS_CHARARRAY((char *) data.data(), size);
 	} else {
-		return JS_STR(data, size);
+		return JS_STR(data.data(), size);
 	}
-	return v8::Undefined();
 }
 
 JS_METHOD(_rewind) {

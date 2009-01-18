@@ -103,27 +103,32 @@ if env["fcgi"] == 1:
 # if
 
 if env["mysql"] == 1:
-    e = env.Clone()
-    if env["os"] == "windows":
-        e.Append(
-            LIBS = ["wsock32", "user32", "advapi32"],
-            LINKFLAGS = ["/nodefaultlib:\"libcmtd\""]
-        )
-    # if
-    e.Append(
-        CPPPATH = env["mysqlpath"],
-        LIBS = "mysqlclient"
-    )
-    e.SharedLibrary(
+	e = env.Clone()
+	if env["os"] == "windows":
+		e.Append(
+			LIBS = ["wsock32", "user32", "advapi32"],
+			LINKFLAGS = ["/nodefaultlib:\"libcmtd\""]
+		)
+	# if
+	e.Append(
+		CPPPATH = env["mysqlpath"],
+		LIBS = "mysqlclient"
+	)
+	e.SharedLibrary(
 		target = "lib/mysql", 
 		source = "src/lib/mysql/js_mysql.cc",
 	)
 # if
 
-#if env["gd"] == 1:
-#    sources.append("js_gd.cc")    
-#    libs.append("gd")
-#    cppdefines.append("HAVE_GD")
+if env["gd"] == 1:
+	e = env.Clone()
+	e.Append(
+		LIBS = ["gd"]
+	)
+	e.SharedLibrary(
+		target = "lib/gd", 
+		source = "src/lib/gd/js_gd.cc",
+	)
 # if
 
 # base source files

@@ -25,9 +25,9 @@ JS_METHOD(_stdin) {
 	char * data = NULL;
 	size_t size = afread(&data, count, stdin);
 	if (args.Length() > 1 && args[1]->IsTrue()) {
-		return char2array(data, size);
+		return JS_CHARARRAY(data, size);
 	} else {
-		return char2string(data, size);
+		return JS_STR(data, size);
 	}
 }
 

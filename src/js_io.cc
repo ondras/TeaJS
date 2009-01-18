@@ -193,9 +193,9 @@ JS_METHOD(_read) {
 	size_t size = afread(&data, count, f);
 	
 	if (args.Length() > 1 && args[1]->IsTrue()) {
-		return char2array(data, size);
+		return JS_CHARARRAY(data, size);
 	} else {
-		return char2string(data, size);
+		return JS_STR(data, size);
 	}
 	return v8::Undefined();
 }

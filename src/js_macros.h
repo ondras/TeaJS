@@ -19,4 +19,14 @@
 #   define SHARED_INIT() extern "C" void init(v8::Handle<v8::Object> target)
 #endif
 
+inline v8::Handle<v8::Array> JS_CHARARRAY(char * data, int count) {
+	v8::Handle<v8::Array> arr = v8::Array::New(count);
+	char ch;
+	for (int i=0;i<count;i++) {
+		ch = data[i];
+		arr->Set(v8::Integer::New(i), v8::Integer::New((int)((unsigned char)data[i])));
+	}
+	return arr;
+}
+
 #endif

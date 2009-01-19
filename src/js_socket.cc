@@ -113,7 +113,7 @@ inline v8::Handle<v8::Value> create_peer(sockaddr * addr) {
 #endif
 		case AF_INET6: {
 			v8::Handle<v8::Array> result = v8::Array::New(2);
-			char * buf = (char *) malloc(sizeof(char) * INET6_ADDRSTRLEN);
+			char * buf = new char[INET6_ADDRSTRLEN];
 			sockaddr_in6 * addr_in6 = (sockaddr_in6 *) addr;
 
 #ifdef HAVE_WINSOCK
@@ -125,12 +125,12 @@ inline v8::Handle<v8::Value> create_peer(sockaddr * addr) {
 			
 			result->Set(JS_INT(0), JS_STR(buf));
 			result->Set(JS_INT(1), JS_INT(ntohs(addr_in6->sin6_port)));
-			free(buf);
+			delete[] buf;
 			return result;
 		} break;
 		case AF_INET: {
 			v8::Handle<v8::Array> result = v8::Array::New(2);
-			char * buf = (char *) malloc(sizeof(char) * INET_ADDRSTRLEN);
+			char * buf = new char[INET_ADDRSTRLEN];
 			sockaddr_in * addr_in = (sockaddr_in *) addr;
 
 #ifdef HAVE_WINSOCK
@@ -141,7 +141,7 @@ inline v8::Handle<v8::Value> create_peer(sockaddr * addr) {
 #endif
 			result->Set(JS_INT(0), JS_STR(buf));
 			result->Set(JS_INT(1), JS_INT(ntohs(addr_in->sin_port)));
-			free(buf);
+			delete[] buf;
 			return result;
 		} break;
 	}
@@ -235,10 +235,10 @@ JS_METHOD(_getnameinfo) {
 
 JS_METHOD(_gethostname) {
 	v8::HandleScope handle_scope;
-    char * buf = (char *) malloc(sizeof(char)*(MAXHOSTNAMELEN+1));
+    char * buf = new char[MAXHOSTNAMELEN+1];
     gethostname(buf, MAXHOSTNAMELEN);
 	v8::Handle<v8::Value> result = JS_STR(buf);
-	free(buf);
+	delete[] buf;
 	return result;
 }
 
@@ -370,16 +370,17 @@ JS_METHOD(_receive) {
 	int count = args[0]->Int32Value();
 	int type = args.This()->Get(JS_STR("type"))->Int32Value();
 	
-	char * data = (char *) malloc(count * sizeof(char));
+	char * data = new char[count];
     sock_addr_t addr;
     socklen_t len = 0;
 
 	ssize_t result = recvfrom(sock, data, count, 0, (sockaddr *) &addr, &len);
     if (result == SOCKET_ERROR) {
+		delete[] data;
         return JS_EXCEPTION(strerror(errno));
     } else {
 		v8::Handle<v8::Value> text = JS_STR(data, result);
-		free(data);
+		delete[] data;
 		if (type == SOCK_DGRAM) { SAVE_VALUE(1, create_peer((sockaddr *) &addr)); }
 		return text;
     }
@@ -424,13 +425,14 @@ JS_METHOD(_getoption) {
 
     if (args.Length() == 2) {
 		int length = args[1]->Int32Value();
-        char * buf = (char *) malloc(length * sizeof(char));
+        char * buf = new char[length];
 		int result = getsockopt(sock, SOL_SOCKET, name, buf, (socklen_t *) &length);
 		if (result == 0) {
 			v8::Handle<v8::Value> response = JS_STR(buf, length);
-			free(buf);
-            return JS_STR(buf, length);
+			delete[] buf;
+            return response;
         } else {
+			delete[] buf;
 			return JS_EXCEPTION(strerror(errno));
         }
     } else {

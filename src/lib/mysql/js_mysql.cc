@@ -7,7 +7,7 @@
 
 #include <mysql.h>
 #include <stdlib.h>
-#include <string.h>
+#include <string>
 
 v8::Persistent<v8::FunctionTemplate> rest;
 
@@ -137,13 +137,13 @@ JS_METHOD(_escape) {
 	v8::String::Utf8Value str(args[0]);
 	
 	int len = args[0]->ToString()->Utf8Length();
-	char * result = (char *) malloc((2*len+1) * sizeof(char));
+	char * result = new char[2*len + 1];
 	
 	MYSQL * conn = LOAD_PTR(0, MYSQL *);
 
 	int length = mysql_real_escape_string(conn, result, *str, len);
 	v8::Handle<v8::Value> output = JS_STR(result, length);
-	free(result);
+	delete[] result;
 	return output;
 }
 
@@ -153,16 +153,12 @@ JS_METHOD(_qualify) {
 		return JS_EXCEPTION("Nothing to qualify");
 	}
 
-	int len = args[0]->ToString()->Utf8Length();
 	v8::String::Utf8Value str(args[0]);
+	std::string result = "`";
+	result += *str;
+	result += "`";
 	
-	char * result = (char *) malloc((len+2) * sizeof(char));
-	strncpy(result+1, *str, len);
-	result[0] = '`';
-	result[len+1] = '`';
-	
-	v8::Handle<v8::Value> output = JS_STR(result, len+2);
-	free(result);
+	v8::Handle<v8::Value> output = JS_STR(result.c_str());
 	return output;
 }
 

@@ -44,12 +44,13 @@ JS_METHOD(_stdout) {
 	if (args[0]->IsArray()) {
 		v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(args[0]);
 		uint32_t len = arr->Length();
+		std::string data;
 		for (unsigned int i=0;i<len;i++) {
-			printf("%c", (char) arr->Get(JS_INT(i))->IntegerValue());
+			data += (char) arr->Get(JS_INT(i))->IntegerValue();
 		}
+		fwrite((void *) data.data(), sizeof(char), len, stdout);
 	} else {
 		v8::String::Utf8Value str(args[0]);
-//		printf("%s", *str);
 		fwrite(*str, sizeof(char), str.length(), stdout);
 	}
 	return v8::Undefined();

@@ -244,7 +244,7 @@ JS_METHOD(_write) {
 		
 		int max = 4096;
 		int current = 0;
-		char * buf = (char *) malloc(max * sizeof(char));
+		char * buf = new char[max];
 		for (unsigned int i=0;i<len;i++) {
 			buf[current++] = (char) arr->Get(JS_INT(i))->IntegerValue();
 			if (current == max) {
@@ -253,7 +253,7 @@ JS_METHOD(_write) {
 			}
 		}
 		if (current) { fwrite(buf, sizeof(char), current, f); }
-		free(buf);
+		delete[] buf;
 	} else {
 		v8::String::Utf8Value data(args[0]);
 		fwrite(*data, sizeof(char), args[0]->ToString()->Utf8Length(), f);

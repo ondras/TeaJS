@@ -46,7 +46,7 @@ JS_METHOD(_stdout) {
 		uint32_t len = arr->Length();
 		std::string data;
 		for (unsigned int i=0;i<len;i++) {
-			data += (char) arr->Get(JS_INT(i))->IntegerValue();
+			data += (char) arr->Get(JS_INT(i))->Int32Value();
 		}
 		fwrite((void *) data.data(), sizeof(char), len, stdout);
 	} else {

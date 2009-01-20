@@ -19,8 +19,8 @@ else:
 # command line options
 opts = Options()
 opts.Add(BoolOption("fcgi", "FastCGI support", 0))
-opts.Add(BoolOption("mysql", "MySQL support", 0))
-opts.Add(BoolOption("gd", "GD support", 0))
+opts.Add(BoolOption("mysql", "MySQL support", 1))
+opts.Add(BoolOption("gd", "GD support", 1))
 opts.Add(("mysqlpath", "MySQL header path", mysql_include))
 opts.Add(PathOption("v8path", "Directory with V8", "../v8"))
 opts.Add(("conffile", "Config file", config_path))

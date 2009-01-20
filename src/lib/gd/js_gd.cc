@@ -809,8 +809,8 @@ SHARED_INIT() {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::FunctionTemplate> ft = v8::FunctionTemplate::New(_image);
 	ft->SetClassName(JS_STR("Image"));
-	ft->Set(JS_STR("Truecolor"), JS_INT(GD_TRUECOLOR));
-	ft->Set(JS_STR("Palette"), JS_INT(GD_PALETTE));
+	ft->Set(JS_STR("TRUECOLOR"), JS_INT(GD_TRUECOLOR));
+	ft->Set(JS_STR("PALETTE"), JS_INT(GD_PALETTE));
 	ft->Set(JS_STR("MAXCOLORS"), JS_INT(gdMaxColors));
 	ft->Set(JS_STR("JPEG"), JS_INT(GD_JPEG));
 	ft->Set(JS_STR("PNG"), JS_INT(GD_PNG));

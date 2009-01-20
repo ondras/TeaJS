@@ -84,13 +84,12 @@ if env["os"] == "posix":
 # if
 
 if env["os"] == "windows":
-    env.Append(
+	env.Append(
 		LIBS = ["ws2_32"],
-	    CPPDEFINES = "USING_V8_SHARED",
-        LIBPATH = [os.environ.pop("LIB"), os.environ.pop("LIBPATH")],
-        CPPPATH = os.environ.pop("INCLUDE")
-    )
-    env["LIBPATH"] = ";".join(env["LIBPATH"])
+		CPPDEFINES = "USING_V8_SHARED",
+		LIBPATH = os.environ["LIBPATH"].split(";"),
+		CPPPATH = os.environ["INCLUDE"].split(";")
+	)
 # if
 
 if env["fcgi"] == 1:

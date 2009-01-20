@@ -11,11 +11,13 @@ if sys.platform.find("win") != -1:
 	gd_include = ""
 	config_path = "c:/v8cgi.conf"
 	os_string = "windows"
+	libgdname = "bgd"
 else:
 	mysql_include = "/usr/include/mysql"
 	gd_include = "/usr/include"
 	config_path = "/etc/v8cgi.conf"
 	os_string = "posix"
+	libgdname = "gd"
 # endif 
 
 # command line options
@@ -128,7 +130,7 @@ if env["gd"] == 1:
 	e = env.Clone()
 	e.Append(
 		CPPPATH = env["gdpath"],
-		LIBS = ["gd"]
+		LIBS = [libgdname]
 	)
 	e.SharedLibrary(
 		target = "lib/gd", 

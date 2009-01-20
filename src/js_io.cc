@@ -49,9 +49,10 @@ v8::Handle<v8::Value> list_items(char * name, int type) {
 	if (dp == NULL) { return JS_EXCEPTION("Directory cannot be opened"); }
 	while ((ep = readdir(dp))) { 
 		if (ep->d_type == cond) {
+			std::string name = ep->d_name;
 			if (type == TYPE_FILE) {
 				result->Set(JS_INT(cnt++), JS_STR(ep->d_name));
-			} else if (strcmp(ep->d_name, ".") != 0 && strcmp(ep->d_name, "..") != 0) {
+			} else if (name.find(".") != std::string::npos && name.find("..") != std::string::npos) {
 				result->Set(JS_INT(cnt++), JS_STR(ep->d_name));
 			}
 		}
@@ -69,9 +70,10 @@ v8::Handle<v8::Value> list_items(char * name, int type) {
 	if (ptr != -1L) {
 		do {
 			if ((info->attrib & _A_SUBDIR) == value) {
+				std::string name = info->name;
 				if (type == TYPE_FILE) {
 					result->Set(JS_INT(cnt++), JS_STR(info->name));
-				} else if (strcmp(info->name, ".") != 0 && strcmp(info->name, "..") != 0) {
+				} else if (name.find(".") != std::string::npos && name.find("..") != std::string::npos) {
 					result->Set(JS_INT(cnt++), JS_STR(info->name));
 				}
 			}

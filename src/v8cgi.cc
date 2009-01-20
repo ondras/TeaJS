@@ -327,8 +327,9 @@ int main_initialize(int argc, char ** argv) {
 	int argptr = 0;
 	for (int i = 1; i < argc; i++) {
 		const char* str = argv[i];
+		std::string sstr = str;
 		argptr = i;
-		if (strcmp(str, "-c") == 0 && i + 1 < argc) {
+		if (sstr.find("-c") == 0 && i + 1 < argc) {
 			cfgfile = argv[i+1];
 			argptr = 0;
 			i++;

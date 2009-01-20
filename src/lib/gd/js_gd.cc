@@ -835,6 +835,7 @@ SHARED_INIT() {
 
 	v8::Handle<v8::ObjectTemplate> pt = ft->PrototypeTemplate();
 	pt->Set(JS_STR("save"), v8::FunctionTemplate::New(_save));
+	
 	pt->Set(JS_STR("colorAllocate"), v8::FunctionTemplate::New(_colorallocate));
 	pt->Set(JS_STR("colorAllocateAlpha"), v8::FunctionTemplate::New(_colorallocatealpha));
 	pt->Set(JS_STR("colorClosest"), v8::FunctionTemplate::New(_colorclosest));

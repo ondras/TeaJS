@@ -7,13 +7,15 @@ os_string = ""
 
 # platform-based default values
 if sys.platform.find("win") != -1:
-    mysql_include = "c:/"
-    config_path = "c:/v8cgi.conf"
-    os_string = "windows"
+	mysql_include = "c:/"
+	gd_include = ""
+	config_path = "c:/v8cgi.conf"
+	os_string = "windows"
 else:
-    mysql_include = "/usr/include/mysql"
-    config_path = "/etc/v8cgi.conf"
-    os_string = "posix"
+	mysql_include = "/usr/include/mysql"
+	gd_include = "/usr/include"
+	config_path = "/etc/v8cgi.conf"
+	os_string = "posix"
 # endif 
 
 # command line options
@@ -22,6 +24,8 @@ opts.Add(BoolOption("fcgi", "FastCGI support", 0))
 opts.Add(BoolOption("mysql", "MySQL support", 1))
 opts.Add(BoolOption("gd", "GD support", 1))
 opts.Add(("mysqlpath", "MySQL header path", mysql_include))
+opts.Add(("gdpath", "GD header path", gd_include))
+
 opts.Add(PathOption("v8path", "Directory with V8", "../v8"))
 opts.Add(("conffile", "Config file", config_path))
 opts.Add(EnumOption("os", "Operating system", os_string, allowed_values = ["windows", "posix"]))
@@ -123,6 +127,7 @@ if env["mysql"] == 1:
 if env["gd"] == 1:
 	e = env.Clone()
 	e.Append(
+		CPPPATH = env["gdpath"],
 		LIBS = ["gd"]
 	)
 	e.SharedLibrary(

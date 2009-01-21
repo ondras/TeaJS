@@ -93,9 +93,8 @@ if env["os"] == "windows":
 # if
 
 if env["fcgi"] == 1:
-	libname = ("libfcgi" if env["os"] == "windows" else "fcgi")
 	env.Append(
-		LIBS = ["libfcgi"],
+		LIBS = ["fcgi"],
 		CPPPATH = ["src/fcgi/include"],
 		CPPDEFINES = ["FASTCGI"]
 	)
@@ -121,7 +120,7 @@ if env["mysql"] == 1:
 
 if env["gd"] == 1:
 	e = env.Clone()
-	libname = ("bgd" if env["os"] == "windows" else "gd")
+	libname = ("gd", "bgd")[env["os"] == "windows"]
 	e.Append(
 		LIBS = [libname]
 	)

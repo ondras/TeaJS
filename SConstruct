@@ -86,7 +86,7 @@ if env["os"] == "posix":
 if env["os"] == "windows":
 	env.Append(
 		LIBS = ["ws2_32"],
-		CPPDEFINES = "USING_V8_SHARED",
+		CPPDEFINES = ["USING_V8_SHARED", "WIN32"],
 		LIBPATH = os.environ["LIBPATH"].split(";"),
 		CPPPATH = os.environ["INCLUDE"].split(";")
 	)

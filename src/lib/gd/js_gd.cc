@@ -20,7 +20,6 @@
 	v8::Handle<v8::Object> __second = args[0]->ToObject(); \
 	gdImagePtr ptr2 = reinterpret_cast<gdImagePtr>(v8::Handle<v8::External>::Cast(__second->GetInternalField(0))->Value())
 
-
 gdPointPtr gdPoints(v8::Handle<v8::Array> arr) {
 	unsigned int len = arr->Length();
 	gdPointPtr points = new gdPoint[len];
@@ -46,12 +45,14 @@ JS_METHOD(_image) {
 	
 	int x = args[1]->Int32Value();
 	int y = args[2]->Int32Value();
-	FILE * f = NULL;
-
+	
+	void * data = NULL;
+	size_t size = 0;
+	
 	if (type == GD_JPEG || type == GD_PNG || type == GD_GIF) {
 		v8::String::Utf8Value name(args[1]);
-		f = fopen(*name, "rb");
-		if (f == NULL) { return JS_EXCEPTION("Cannot open file"); }
+		data = my_read(*name, &size);
+		if (data == NULL) { return JS_EXCEPTION("Cannot open file"); }
 	}
 
 	switch (type) {
@@ -62,20 +63,20 @@ JS_METHOD(_image) {
 			ptr = gdImageCreate(x, y);
 		break;
 		case GD_JPEG:
-			ptr = gdImageCreateFromJpeg(f);
+			ptr = gdImageCreateFromJpegPtr(size, data);
 		break;
 		case GD_PNG:
-			ptr = gdImageCreateFromPng(f);
+			ptr = gdImageCreateFromPngPtr(size, data);
 		break;
 		case GD_GIF:
-			ptr = gdImageCreateFromGif(f);
+			ptr = gdImageCreateFromGifPtr(size, data);
 		break;
 		default:
 			return JS_EXCEPTION("Unknown image type");
 		break;
 	}
 	
-	if (f != NULL) { fclose(f); }
+	my_free(data, size);
 	SAVE_PTR(0, ptr);
 	return args.This();
 }
@@ -118,51 +119,36 @@ JS_METHOD(_save) {
 	int q = args[2]->Int32Value();
 	if (q == 0) { q = 95; }
 
+	int size = 0;
+	void * data = NULL;
+	switch (type) {
+		case GD_JPEG:
+			data = gdImageJpegPtr(ptr, &size, q);
+		break;
+		
+		case GD_GIF:
+			data = gdImageGifPtr(ptr, &size);
+		break;
+
+		case GD_PNG:
+			data = gdImagePngPtr(ptr, &size);
+		break;
+
+		default:
+			return JS_EXCEPTION("Unknown image type");
+		break;
+	}
 
 	if (tofile) {
 		v8::String::Utf8Value name(args[1]);
-		FILE * f = fopen(*name, "wb");
-		if (f == NULL) { return JS_EXCEPTION("Cannot open file"); }
-		switch (type) {
-			case GD_JPEG:
-				gdImageJpeg(ptr, f, q);
-			break;
-			
-			case GD_GIF:
-				gdImageGif(ptr, f);
-			break;
-
-			case GD_PNG:
-				gdImagePng(ptr, f);
-			break;
-
-			default:
-				return JS_EXCEPTION("Unknown image type");
-			break;
-		}
-		if (f != NULL) { fclose(f); }
+		int result = my_write(*name, (void *)data, size);
+		gdFree(data);
+		if (result == -1) { return JS_EXCEPTION("Cannot open file"); }
 		return v8::Undefined();
 	} else {
-		int size = 0;
-		void * data = NULL;
-		switch (type) {
-			case GD_JPEG:
-				data = gdImageJpegPtr(ptr, &size, q);
-			break;
-			
-			case GD_GIF:
-				data = gdImageGifPtr(ptr, &size);
-			break;
-
-			case GD_PNG:
-				data = gdImagePngPtr(ptr, &size);
-			break;
-
-			default:
-				return JS_EXCEPTION("Unknown image type");
-			break;
-		}
-		return JS_CHARARRAY((char *)data, size);
+		v8::Handle<v8::Array> arr = JS_CHARARRAY((char *)data, size);
+		gdFree(data);
+		return arr;
 	}
 }
 

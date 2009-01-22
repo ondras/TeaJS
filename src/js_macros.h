@@ -1,6 +1,12 @@
 #ifndef _JS_MACROS_H
 #define _JS_MACROS_H
 
+#include <sys/mman.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <string.h>
+
 #define SAVE_PTR(index, ptr) args.This()->SetInternalField(index, v8::External::New((void *)ptr)); 
 #define LOAD_PTR(index, type) reinterpret_cast<type>(v8::Handle<v8::External>::Cast(args.This()->GetInternalField(index))->Value());
 #define SAVE_VALUE(index, val) args.This()->SetInternalField(index, val)
@@ -29,4 +35,31 @@ inline v8::Handle<v8::Array> JS_CHARARRAY(char * data, int count) {
 	return arr;
 }
 
+inline void * my_read(char * name, size_t * size) {
+	int f = open(name, O_RDONLY);
+	if (f == -1) { return NULL; }
+	*size = lseek(f, 0, SEEK_END);
+	void * data = mmap(0, *size, PROT_READ, MAP_SHARED, f, 0);
+	close(f);
+	return data;
+}
+
+inline void my_free(void * data, size_t size) {
+	munmap(data, size);
+}
+
+inline int my_write(char * name, void * data, size_t size) {
+	int f = open(name, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+	if (f == -1) { return -1; }
+	lseek(f, size - 1, SEEK_SET);
+	write(f, "", 1);
+		
+	void * dst = mmap(0, size, PROT_WRITE, MAP_SHARED, f, 0);
+	memcpy(dst, data, size);
+	munmap(dst, size);
+	close(f);
+	return 0;
+}
+
 #endif
+

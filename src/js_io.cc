@@ -307,24 +307,14 @@ JS_METHOD(_stat) {
 }
 
 v8::Handle<v8::Value> _copy(char * name1, char * name2) {
-	int len = 1024;
-	char * buf = new char[len];
-	
-	FILE * f1 = fopen(name1, "rb");
-	FILE * f2 = fopen(name2, "wb");
-	
-	if (f1 == NULL) { return JS_EXCEPTION("Cannot open source file"); }
-	if (f2 == NULL) { return JS_EXCEPTION("Cannot open target file"); }
-	
 	size_t size = 0;
+	void * data = my_read(name1, &size);
+	if (data == NULL) { return JS_EXCEPTION("Cannot open source file"); }
 	
-	while ((size = fread(buf, sizeof(char), len, f1))) {
-		fwrite(buf, sizeof(char), size, f2);
-	}
+	int result = my_write(name2, data, size);
+	my_free(data, size);
 	
-	fclose(f1);
-	fclose(f2);
-	delete[] buf;
+	if (result == -1) { return JS_EXCEPTION("Cannot open target file"); }
 	return JS_BOOL(true);
 }
 

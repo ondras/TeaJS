@@ -49,6 +49,9 @@ if conf.CheckCHeader("unistd.h", include_quotes = "<>"):
 if conf.CheckCHeader("dirent.h", include_quotes = "<>"):
     env.Append(CPPDEFINES = "HAVE_DIRENT_H")
 
+if conf.CheckCHeader("sys/mman.h", include_quotes = "<>"):
+    env.Append(CPPDEFINES = "HAVE_MMAN_H")
+
 if not conf.CheckFunc("close"):
     env.Append(CPPDEFINES = "HAVE_WINSOCK")
 

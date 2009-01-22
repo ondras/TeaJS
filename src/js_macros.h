@@ -1,11 +1,14 @@
 #ifndef _JS_MACROS_H
 #define _JS_MACROS_H
 
-#include <sys/mman.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <string.h>
+#ifdef HAVE_MMAN_H
+#  include <sys/mman.h>
+#  include <sys/types.h>
+#  include <unistd.h>
+#  include <fcntl.h>
+#  include <string.h>
+#else
+#endif
 
 #define SAVE_PTR(index, ptr) args.This()->SetInternalField(index, v8::External::New((void *)ptr)); 
 #define LOAD_PTR(index, type) reinterpret_cast<type>(v8::Handle<v8::External>::Cast(args.This()->GetInternalField(index))->Value());

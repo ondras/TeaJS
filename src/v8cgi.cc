@@ -162,8 +162,11 @@ int js_library(char * name) {
 			return 1;
 		}
 
-		void (*func) (v8::Handle<v8::Object>);
-		func = reinterpret_cast<void (*)(v8::Handle<v8::Object>)>(dlsym(handle, "init"));
+		typedef void (*funcdef)(v8::Handle<v8::Object>);
+		typedef funcdef (*dlsym_t)(void *, const char *);
+		funcdef func;
+		func = ((dlsym_t)(dlsym))(handle, "init");	
+		
 		if (!func) {
 			error = "Cannot initialize shared library '";
 			error += path;

@@ -312,7 +312,7 @@ v8::Handle<v8::Value> _copy(char * name1, char * name2) {
 	if (data == NULL) { return JS_EXCEPTION("Cannot open source file"); }
 	
 	int result = my_write(name2, data, size);
-	my_free(data, size);
+	my_free((char *)data, size);
 	
 	if (result == -1) { return JS_EXCEPTION("Cannot open target file"); }
 	return JS_BOOL(true);

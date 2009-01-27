@@ -76,7 +76,7 @@ JS_METHOD(_image) {
 		break;
 	}
 	
-	my_free(data, size);
+	my_free((char *)data, size);
 	SAVE_PTR(0, ptr);
 	return args.This();
 }

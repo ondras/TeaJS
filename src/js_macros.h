@@ -61,7 +61,7 @@ inline void * my_read(char * name, size_t * size) {
 	return data;
 }
 
-inline void my_free(void * data, size_t size) {
+inline void my_free(char * data, size_t size) {
 #ifdef HAVE_MMAP_H
 	munmap(data, size);
 #else

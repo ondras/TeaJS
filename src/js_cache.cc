@@ -73,7 +73,7 @@ std::string Cache::getJS(std::string filename) {
 		sources[filename] = source;
 		return source;
 	}
-};
+}
 
 void * Cache::getHandle(std::string filename) {
 	if (isCached(filename)) {
@@ -85,4 +85,4 @@ void * Cache::getHandle(std::string filename) {
 		handles[filename] = handle;
 		return handle;
 	}
-};
+}

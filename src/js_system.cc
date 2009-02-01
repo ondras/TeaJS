@@ -6,12 +6,16 @@
 #  include <fcgi_stdio.h>
 #endif
 
-#include <js_macros.h>
+#include "js_macros.h"
+#include "js_system.h"
 
 #ifndef HAVE_SLEEP
 #	include <windows.h>
 #	define sleep(num) { Sleep(num * 1000); }
 #endif
+
+reader_func_t reader;
+writer_func_t writer;
 
 JS_METHOD(_stdin) {
 	v8::HandleScope handle_scope;
@@ -25,7 +29,7 @@ JS_METHOD(_stdin) {
 	size_t size = 0;
 	char ch;
 	while (1) {
-		ch = fgetc(stdin);
+		reader(&ch, 1);
 		data += ch;
 		size++;
 		if (count > 0 && size == count) { break; }
@@ -48,10 +52,10 @@ JS_METHOD(_stdout) {
 		for (unsigned int i=0;i<len;i++) {
 			data += (char) arr->Get(JS_INT(i))->Int32Value();
 		}
-		fwrite((void *) data.data(), sizeof(char), len, stdout);
+		writer((char *) data.data(), len);
 	} else {
 		v8::String::Utf8Value str(args[0]);
-		fwrite(*str, sizeof(char), str.length(), stdout);
+		writer(*str, str.length());
 	}
 	return v8::Undefined();
 }
@@ -85,7 +89,10 @@ JS_METHOD(_usleep) {
 }
 
 */
-void setup_system(char ** envp, v8::Handle<v8::Object> global) {
+void setup_system(v8::Handle<v8::Object> global, char ** envp, reader_func_t reader_func, writer_func_t writer_func) {
+	reader = reader_func;
+	writer = writer_func;
+	
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::ObjectTemplate> systemt = v8::ObjectTemplate::New();
 	v8::Handle<v8::Object> system = systemt->NewInstance();
@@ -106,7 +113,8 @@ void setup_system(char ** envp, v8::Handle<v8::Object> global) {
 	int i,j;
 	char ch;
 	
-	for(i = 0; envp[i] != NULL; i++) {
+	if (envp == NULL) { return; }
+	for (i = 0; envp[i] != NULL; i++) {
 		done = false;
 		name = "";
 		value = "";

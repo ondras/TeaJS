@@ -1,6 +1,16 @@
 import sys
 import os
 
+# base source files
+sources = [
+	"js_system.cc",
+	"js_io.cc",
+	"js_socket.cc",
+	"js_cache.cc",
+	"js_app.cc"
+]
+sources = [ "src/%s" % s for s in sources ]
+
 config_path = ""
 mysql_include = ""
 os_string = ""
@@ -21,6 +31,7 @@ opts = Options()
 opts.Add(BoolOption("fcgi", "FastCGI support", 0))
 opts.Add(BoolOption("mysql", "MySQL support", 1))
 opts.Add(BoolOption("gd", "GD support", 1))
+opts.Add(BoolOption("module", "Apache module", 1))
 opts.Add(("mysqlpath", "MySQL header path", mysql_include))
 
 opts.Add(PathOption("v8path", "Directory with V8", "../v8"))
@@ -133,16 +144,22 @@ if env["gd"] == 1:
 	)
 # if
 
-# base source files
-sources = [
-	"v8cgi.cc", 
-	"js_system.cc",
-	"js_io.cc",
-	"js_socket.cc",
-	"js_cache.cc"
-]
-sources = [ "src/%s" % s for s in sources ]
 
+if env["module"] == 1:
+	e = env.Clone()
+	e.Append(
+		CPPPATH = ["/usr/include/apache2", "/usr/include/apr-1.0"]
+	)
+	s = []
+	s[:] = sources[:]
+	s.append("src/mod_v8cgi.cc")
+	e.SharedLibrary(
+		target = "mod_v8cgi", 
+		source = s
+	)
+# if
+
+sources.append("src/v8cgi.cc")
 env.Program(
     source = sources, 
     target = "v8cgi"

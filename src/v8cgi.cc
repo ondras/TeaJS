@@ -8,6 +8,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "js_app.h"
 
 extern char ** environ;
@@ -20,8 +21,8 @@ size_t writer_function(char * data, size_t amount) {
 	return fwrite((void *) data, sizeof(char), amount, stdout);
 }
 
-void error_function(char * data) {
-	printf(data);
+void error_function(char * data, char * file, int line) {
+	fwrite((void *) data, sizeof(char), strlen(data), stderr);
 }
 
 int main(int argc, char ** argv) {

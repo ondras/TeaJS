@@ -92,7 +92,7 @@ if conf.CheckFunc("sleep"):
 	
 if ((env["os"] != "windows") and not (conf.CheckLib("v8"))):
 	print "Cannot find V8 library, exiting!"
-	Exit(1)
+# if
 
 env = conf.Finish()
 

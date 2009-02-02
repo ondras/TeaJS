@@ -155,7 +155,8 @@ if env["module"] == 1:
 	s.append("src/mod_v8cgi.cc")
 	e.SharedLibrary(
 		target = "mod_v8cgi", 
-		source = s
+		source = s,
+		SHLIBPREFIX=""
 	)
 # if
 

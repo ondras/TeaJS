@@ -14,14 +14,20 @@ sources = [ "src/%s" % s for s in sources ]
 config_path = ""
 mysql_include = ""
 os_string = ""
+apache_include = ""
+apr_include = ""
 
 # platform-based default values
 if sys.platform.find("win") != -1 and sys.platform.find("darwin") == -1:
 	mysql_include = "c:/"
+	apache_include = "c:/"
+	apr_include = "c:/"
 	config_path = "c:/v8cgi.conf"
 	os_string = "windows"
 else:
 	mysql_include = "/usr/include/mysql"
+	apache_include = "/usr/include/apache2"
+	apr_include = "/usr/include/apr-1.0"
 	config_path = "/etc/v8cgi.conf"
 	os_string = "posix"
 # endif 
@@ -32,11 +38,14 @@ opts.Add(BoolOption("fcgi", "FastCGI support", 0))
 opts.Add(BoolOption("mysql", "MySQL support", 1))
 opts.Add(BoolOption("gd", "GD support", 1))
 opts.Add(BoolOption("module", "Apache module", 1))
+
 opts.Add(("mysqlpath", "MySQL header path", mysql_include))
+opts.Add(("apachepath", "Apache header path", apache_include))
+opts.Add(("aprpath", "APR header path", apr_include))
 
 opts.Add(PathOption("v8path", "Directory with V8", "../v8"))
-opts.Add(("conffile", "Config file", config_path))
 opts.Add(EnumOption("os", "Operating system", os_string, allowed_values = ["windows", "posix"]))
+opts.Add(("conffile", "Config file", config_path))
 
 env = Environment(options=opts)
 
@@ -148,7 +157,7 @@ if env["gd"] == 1:
 if env["module"] == 1:
 	e = env.Clone()
 	e.Append(
-		CPPPATH = ["/usr/include/apache2", "/usr/include/apr-1.0"]
+		CPPPATH = [env["apachepath"], env["aprpath"]]
 	)
 	s = []
 	s[:] = sources[:]

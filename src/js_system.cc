@@ -16,7 +16,8 @@
 
 static reader_func_t reader;
 static writer_func_t writer;
-static error_func_t err;
+static error_func_t error;
+static header_func_t header;
 
 JS_METHOD(_stdin) {
 	v8::HandleScope handle_scope;
@@ -66,7 +67,15 @@ JS_METHOD(_stderr) {
 	v8::String::Utf8Value str(args[0]);
 	v8::String::Utf8Value f(args[1]);
 	int line = args[2]->Int32Value();
-	err(*str, *f, line);
+	error(*str, *f, line);
+	return v8::Undefined();
+}
+
+JS_METHOD(_header) {
+	v8::HandleScope handle_scope;
+	v8::String::Utf8Value name(args[0]);
+	v8::String::Utf8Value value(args[1]);
+	header(*name, *value);
 	return v8::Undefined();
 }
 
@@ -99,10 +108,18 @@ JS_METHOD(_usleep) {
 }
 
 */
-void setup_system(v8::Handle<v8::Object> global, char ** envp, reader_func_t reader_func, writer_func_t writer_func, error_func_t error_func) {
+void setup_system(
+	v8::Handle<v8::Object> global, 
+	char ** envp, 
+	reader_func_t reader_func, 
+	writer_func_t writer_func, 
+	error_func_t error_func,
+	header_func_t header_func
+) {
 	reader = reader_func;
 	writer = writer_func;
-	err = error_func;
+	error = error_func;
+	header = header_func;
 	
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::ObjectTemplate> systemt = v8::ObjectTemplate::New();
@@ -115,6 +132,7 @@ void setup_system(v8::Handle<v8::Object> global, char ** envp, reader_func_t rea
 	system->Set(JS_STR("stdin"), v8::FunctionTemplate::New(_stdin)->GetFunction());
 	system->Set(JS_STR("stdout"), v8::FunctionTemplate::New(_stdout)->GetFunction());
 	system->Set(JS_STR("stderr"), v8::FunctionTemplate::New(_stderr)->GetFunction());
+	system->Set(JS_STR("header"), v8::FunctionTemplate::New(_header)->GetFunction());
 	system->Set(JS_STR("system"), v8::FunctionTemplate::New(_system)->GetFunction());
 	system->Set(JS_STR("sleep"), v8::FunctionTemplate::New(_sleep)->GetFunction());
 //	system->Set(JS_STR("usleep"), v8::FunctionTemplate::New(_usleep)->GetFunction());

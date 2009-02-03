@@ -14,10 +14,10 @@
 #	define sleep(num) { Sleep(num * 1000); }
 #endif
 
-static reader_func_t reader;
-static writer_func_t writer;
-static error_func_t error;
-static header_func_t header;
+static v8cgi_App::reader_func_t reader;
+static v8cgi_App::writer_func_t writer;
+static v8cgi_App::error_func_t error;
+static v8cgi_App::header_func_t header;
 
 JS_METHOD(_stdin) {
 	v8::HandleScope handle_scope;
@@ -111,10 +111,10 @@ JS_METHOD(_usleep) {
 void setup_system(
 	v8::Handle<v8::Object> global, 
 	char ** envp, 
-	reader_func_t reader_func, 
-	writer_func_t writer_func, 
-	error_func_t error_func,
-	header_func_t header_func
+	v8cgi_App::reader_func_t reader_func, 
+	v8cgi_App::writer_func_t writer_func, 
+	v8cgi_App::error_func_t error_func,
+	v8cgi_App::header_func_t header_func
 ) {
 	reader = reader_func;
 	writer = writer_func;

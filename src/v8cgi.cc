@@ -31,13 +31,19 @@ void header_function(const char * name, const char * value) {
 
 int main(int argc, char ** argv) {
 	int result = 0;
-	result = app_initialize(argc, argv, reader_function, writer_function, error_function, header_function);
+	v8cgi_App app;
+	app.setReader((v8cgi_App::reader_func_t) reader_function);
+	app.setWriter(writer_function);
+	app.setError(error_function);
+	app.setHeader(header_function);
+	
+	result = app.init(argc, argv);
 	if (result) { exit(1); }
 
 #ifdef FASTCGI
 	while (FCGI_Accept() >= 0) {
 #endif
-	result = app_cycle(environ);
+	result = app.execute(environ);
 	
 #ifdef FASTCGI
 	FCGI_SetExitStatus(result);
@@ -47,6 +53,5 @@ int main(int argc, char ** argv) {
 	}
 #endif
 
-	app_terminate();
 	return result;
 }

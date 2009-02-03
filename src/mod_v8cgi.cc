@@ -15,6 +15,7 @@
 
 extern char ** environ;
 static request_rec * request;
+static v8cgi_App app;
 
 size_t reader_function(char * destination, size_t amount) {
 	return ap_get_client_block(request, destination, amount);
@@ -81,7 +82,7 @@ static int mod_v8cgi_handler(request_rec *r) {
 		strncpy(&(envp[i][len1+1]), elts[i].val, len2);
     }
 
-	int result = app_cycle(envp);
+	int result = app.execute(envp);
 	
 	for (int i=0;i<arr->nelts;i++) {
 		free(envp[i]);
@@ -97,7 +98,11 @@ static int mod_v8cgi_handler(request_rec *r) {
 
 static int mod_v8cgi_init_handler(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp, server_rec *s) {
     ap_add_version_component(p, "mod_v8cgi");
-	app_initialize(0, NULL, reader_function, writer_function, error_function, header_function);
+	app.setReader(reader_function);
+	app.setWriter(writer_function);
+	app.setError(error_function);
+	app.setHeader(header_function);
+	app.init(0, NULL);
     return OK;
 }
 

@@ -353,18 +353,18 @@ int v8cgi_App::prepare(char ** envp) {
 	return 0;
 }
 
-void v8cgi_App::setReader(v8cgi_App::reader_func_t reader) {
-	this->reader = reader;
+size_t v8cgi_App::reader(char * destination, size_t amount) {
+	return fread((void *) destination, sizeof(char), amount, stdin);
 }
 
-void v8cgi_App::setWriter(v8cgi_App::writer_func_t writer) {
-	this->writer = writer;
+size_t v8cgi_App::writer(const char * data, size_t amount) {
+	return fwrite((void *) data, sizeof(char), amount, stdout);
 }
 
-void v8cgi_App::setError(v8cgi_App::error_func_t error) {
-	this->error = error;
+void v8cgi_App::error(const char * data, const char * file, int line) {
+	fwrite((void *) data, sizeof(char), strlen(data), stderr);
 }
 
-void v8cgi_App::setHeader(v8cgi_App::header_func_t header) {
-	this->header = header;
+void v8cgi_App::header(const char * name, const char * value) {
+	printf("%s: %s\n", name, value);
 }

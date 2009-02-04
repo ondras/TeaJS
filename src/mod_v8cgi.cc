@@ -13,42 +13,50 @@
 
 #include "js_app.h"
 
-extern char ** environ;
-static request_rec * request;
-static v8cgi_App app;
-
-size_t reader_function(char * destination, size_t amount) {
-	return ap_get_client_block(request, destination, amount);
-}
-
-size_t writer_function(const char * data, size_t amount) {
-	return ap_rwrite(data, amount, request);
-}
-
-void error_function(const char * data, const char * file, int line) {
-	ap_log_rerror(file, line, APLOG_DEBUG, 1, request, "%s", data);
-}
-
-void header_function(const char * name, const char * value) {
-	if (strcasecmp(name, "content-type") == 0) {
-  		char * ct =  (char *) apr_palloc(request->pool, strlen(value)+1);
-		strcpy(ct, value);
-  		request->content_type = ct;
-	} else if (strcasecmp(name, "status") == 0) {
-  		char * line =  (char *) apr_palloc(request->pool, strlen(value)+1);
-		strcpy(line, value);
-		request->status_line = line;
-		request->status = atoi(value);
-	} else {
-		apr_table_set(request->headers_out, name, value);
+class v8cgi_Module : public v8cgi_App {
+public:
+	size_t reader(char * destination, size_t amount) {
+		return ap_get_client_block(this->request, destination, amount);
 	}
-}
+
+	size_t writer(const char * data, size_t amount) {
+		return ap_rwrite(data, amount, this->request);
+	}
+
+	void writer(const char * data, const char * file, int line) {
+		ap_log_rerror(file, line, APLOG_DEBUG, 1, this->request, "%s", data);
+	}
+
+	void header(const char * name, const char * value) {
+		if (strcasecmp(name, "content-type") == 0) {
+			char * ct =  (char *) apr_palloc(request->pool, strlen(value)+1);
+			strcpy(ct, value);
+			this->request->content_type = ct;
+		} else if (strcasecmp(name, "status") == 0) {
+			char * line =  (char *) apr_palloc(request->pool, strlen(value)+1);
+			strcpy(line, value);
+			this->request->status_line = line;
+			this->request->status = atoi(value);
+		} else {
+			apr_table_set(this->request->headers_out, name, value);
+		}
+	}
+	
+	int execute(char ** envp, request_rec * request) {
+		this->request = request;
+		return v8cgi_App::execute(envp);
+	}
+	
+private:
+	request_rec * request;
+};
+
+static v8cgi_Module app;
 
 static int mod_v8cgi_handler(request_rec *r) {
     const apr_array_header_t *arr;
     const apr_table_entry_t *elts;
 
-	request = r;
     if (!r->handler || strcmp(r->handler, "v8cgi-script")) { return DECLINED; }
 
 	ap_setup_client_block(r, REQUEST_CHUNKED_DECHUNK);
@@ -82,7 +90,7 @@ static int mod_v8cgi_handler(request_rec *r) {
 		strncpy(&(envp[i][len1+1]), elts[i].val, len2);
     }
 
-	int result = app.execute(envp);
+	int result = app.execute(envp, r);
 	
 	for (int i=0;i<arr->nelts;i++) {
 		free(envp[i]);
@@ -98,10 +106,6 @@ static int mod_v8cgi_handler(request_rec *r) {
 
 static int mod_v8cgi_init_handler(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp, server_rec *s) {
     ap_add_version_component(p, "mod_v8cgi");
-	app.setReader(reader_function);
-	app.setWriter(writer_function);
-	app.setError(error_function);
-	app.setHeader(header_function);
 	app.init(0, NULL);
     return OK;
 }

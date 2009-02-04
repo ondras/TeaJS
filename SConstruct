@@ -34,10 +34,11 @@ else:
 
 # command line options
 opts = Options()
-opts.Add(BoolOption("fcgi", "FastCGI support", 0))
-opts.Add(BoolOption("mysql", "MySQL support", 1))
-opts.Add(BoolOption("gd", "GD support", 1))
-opts.Add(BoolOption("module", "Apache module", 1))
+opts.Add(BoolOption("mysql", "MySQL library", 1))
+opts.Add(BoolOption("gd", "GD library", 1))
+opts.Add(BoolOption("module", "Build Apache module", 1))
+opts.Add(BoolOption("cgi", "Build CGI binray", 1))
+opts.Add(BoolOption("fcgi", "FastCGI support (for CGI binary)", 0))
 
 opts.Add(("mysqlpath", "MySQL header path", mysql_include))
 opts.Add(("apachepath", "Apache header path", apache_include))
@@ -169,8 +170,11 @@ if env["module"] == 1:
 	)
 # if
 
-sources.append("src/v8cgi.cc")
-env.Program(
-    source = sources, 
-    target = "v8cgi"
-)
+if env["cgi"] == 1:
+	sources.append("src/v8cgi.cc")
+	env.Program(
+		source = sources, 
+		target = "v8cgi"
+	)
+# if
+

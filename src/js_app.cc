@@ -40,9 +40,6 @@
 #	define getcwd(name, bytes) _getcwd(name, bytes)
 #endif
 
-#define GLOBAL_PROTO v8::Handle<v8::Object>::Cast(JS_GLOBAL->GetPrototype())
-#define APP_PTR reinterpret_cast<v8cgi_App *>(v8::Handle<v8::External>::Cast(GLOBAL_PROTO->GetInternalField(0))->Value());
-
 JS_METHOD(_include) {
 	v8::HandleScope handle_scope;
 	v8cgi_App * app = APP_PTR;
@@ -69,12 +66,6 @@ JS_METHOD(_onexit) {
 JS_METHOD(_exit) {
 	v8::Context::GetCurrent()->Exit();
 	return v8::Undefined();
-}
-
-v8cgi_App::v8cgi_App() {
-}
-
-v8cgi_App::~v8cgi_App() {
 }
 
 int v8cgi_App::init(int argc, char ** argv) {
@@ -180,7 +171,6 @@ int v8cgi_App::execfile(std::string str, bool change) {
 	v8::Handle<v8::String> name = JS_STR(str.c_str());
 	v8::Handle<v8::String> source = this->read(str);
 	
-	v8::String::Utf8Value x(source);
 	if (source->Length() == 0) {
 		std::string s = "Error reading '";
 		s += str;
@@ -346,7 +336,7 @@ int v8cgi_App::prepare(char ** envp) {
 	g->Set(JS_STR("global"), g);
 	g->Set(JS_STR("Config"), v8::Object::New());
 
-	setup_system(g, envp, this->reader, this->writer, this->error, this->header);
+	setup_system(g, envp);
 	setup_io(g);	
 	setup_socket(g);
 	

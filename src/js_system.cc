@@ -14,13 +14,9 @@
 #	define sleep(num) { Sleep(num * 1000); }
 #endif
 
-static v8cgi_App::reader_func_t reader;
-static v8cgi_App::writer_func_t writer;
-static v8cgi_App::error_func_t error;
-static v8cgi_App::header_func_t header;
-
 JS_METHOD(_stdin) {
 	v8::HandleScope handle_scope;
+	v8cgi_App * app = APP_PTR;
 
 	size_t count = 0;
 	if (args.Length() && args[0]->IsNumber()) {
@@ -31,7 +27,7 @@ JS_METHOD(_stdin) {
 	size_t size = 0;
 	char ch;
 	while (1) {
-		reader(&ch, 1);
+		app->reader(&ch, 1);
 		data += ch;
 		size++;
 		if (count > 0 && size == count) { break; }
@@ -47,6 +43,7 @@ JS_METHOD(_stdin) {
 
 JS_METHOD(_stdout) {
 	v8::HandleScope handle_scope;
+	v8cgi_App * app = APP_PTR;
 	if (args[0]->IsArray()) {
 		v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(args[0]);
 		uint32_t len = arr->Length();
@@ -54,28 +51,30 @@ JS_METHOD(_stdout) {
 		for (unsigned int i=0;i<len;i++) {
 			data += (char) arr->Get(JS_INT(i))->Int32Value();
 		}
-		writer((char *) data.data(), len);
+		app->writer((char *) data.data(), len);
 	} else {
 		v8::String::Utf8Value str(args[0]);
-		writer(*str, str.length());
+		app->writer(*str, str.length());
 	}
 	return v8::Undefined();
 }
 
 JS_METHOD(_stderr) {
 	v8::HandleScope handle_scope;
+	v8cgi_App * app = APP_PTR;
 	v8::String::Utf8Value str(args[0]);
 	v8::String::Utf8Value f(args[1]);
 	int line = args[2]->Int32Value();
-	error(*str, *f, line);
+	app->error(*str, *f, line);
 	return v8::Undefined();
 }
 
 JS_METHOD(_header) {
 	v8::HandleScope handle_scope;
+	v8cgi_App * app = APP_PTR;
 	v8::String::Utf8Value name(args[0]);
 	v8::String::Utf8Value value(args[1]);
-	header(*name, *value);
+	app->header(*name, *value);
 	return v8::Undefined();
 }
 
@@ -108,19 +107,7 @@ JS_METHOD(_usleep) {
 }
 
 */
-void setup_system(
-	v8::Handle<v8::Object> global, 
-	char ** envp, 
-	v8cgi_App::reader_func_t reader_func, 
-	v8cgi_App::writer_func_t writer_func, 
-	v8cgi_App::error_func_t error_func,
-	v8cgi_App::header_func_t header_func
-) {
-	reader = reader_func;
-	writer = writer_func;
-	error = error_func;
-	header = header_func;
-	
+void setup_system(v8::Handle<v8::Object> global, char ** envp) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::ObjectTemplate> systemt = v8::ObjectTemplate::New();
 	v8::Handle<v8::Object> system = systemt->NewInstance();

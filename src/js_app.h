@@ -10,8 +10,6 @@
 
 class v8cgi_App {
 public:
-	v8cgi_App();
-	~v8cgi_App();
 	int init(int argc, char ** argv);
 	int execute(char ** envp);
 	void addOnExit(v8::Handle<v8::Value>);
@@ -27,13 +25,12 @@ public:
 	void setWriter(v8cgi_App::writer_func_t);
 	void setError(v8cgi_App::error_func_t);
 	void setHeader(v8cgi_App::header_func_t);
-
-private:
 	v8cgi_App::reader_func_t reader;
 	v8cgi_App::writer_func_t writer; 
 	v8cgi_App::error_func_t error; 
 	v8cgi_App::header_func_t header; 
 
+private:
 	v8::Handle<v8::Array> onexit; /* what to do on exit */
 	std::string cfgfile; /* config file */
 	std::string mainfile; /* command-line specified file */

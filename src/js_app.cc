@@ -23,8 +23,10 @@
 
 #ifndef windows
 #   include <dlfcn.h>
+#	define DLSYM dlsym
 #else
 #   include <windows.h>
+#	define DLSYM GetProcAddress
 #   define dlsym(x,y) (void*)GetProcAddress((HMODULE)x,y)
 #endif
 
@@ -231,7 +233,7 @@ int v8cgi_App::library(char * name) {
 		typedef void (*funcdef)(v8::Handle<v8::Object>);
 		typedef funcdef (*dlsym_t)(void *, const char *);
 		funcdef func;
-		func = ((dlsym_t)(dlsym))(handle, "init");	
+		func = ((dlsym_t)(DLSYM))(handle, "init");	
 		
 		if (!func) {
 			error = "Cannot initialize shared library '";

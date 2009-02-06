@@ -160,6 +160,12 @@ if env["module"] == 1:
 	e.Append(
 		CPPPATH = [env["apachepath"], env["aprpath"]]
 	)
+	if env["os"] == "windows":
+		e.Append(
+			LIBS = ["libapr-1", "libhttpd"]
+		)
+	# if
+	
 	s = []
 	s[:] = sources[:]
 	s.append("src/mod_v8cgi.cc")

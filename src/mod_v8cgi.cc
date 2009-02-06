@@ -120,6 +120,7 @@ static void mod_v8cgi_register_hooks(apr_pool_t *p ) {
     ap_hook_child_init(mod_v8cgi_child_init, NULL, NULL, APR_HOOK_MIDDLE);
 }
 
+extern "C" {
 module AP_MODULE_DECLARE_DATA v8cgi_module = {
     STANDARD20_MODULE_STUFF,
     NULL,
@@ -129,3 +130,4 @@ module AP_MODULE_DECLARE_DATA v8cgi_module = {
     NULL,
     mod_v8cgi_register_hooks,
 };
+}

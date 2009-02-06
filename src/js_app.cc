@@ -89,7 +89,10 @@ int v8cgi_App::init(int argc, char ** argv) {
 	if (argptr) { this->mainfile = argv[argptr]; }
 	FILE* file = fopen(this->cfgfile.c_str(), "rb");
 	if (file == NULL) { 
-		this->error("Invalid configuration file.\n", __FILE__, __LINE__ );
+		std::string err = "Invalid configuration file (";
+		err += this->cfgfile;
+		err += ").\n";
+		this->error(err.c_str(), __FILE__, __LINE__ );
 		return 1;
 	}
 	fclose(file);

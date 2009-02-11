@@ -13,8 +13,7 @@ public:
 	int init(int argc, char ** argv);
 	int execute(char ** envp);
 	void addOnExit(v8::Handle<v8::Value>);
-	int library(char * name);
-	int execfile(std::string str, bool change);
+	int include(std::string str);
 	virtual ~v8cgi_App() {};
 	
 	virtual size_t reader (char * destination, size_t size);
@@ -26,6 +25,7 @@ private:
 	v8::Handle<v8::Array> onexit; /* what to do on exit */
 	std::string cfgfile; /* config file */
 	std::string mainfile; /* command-line specified file */
+	std::string cwd;
 	Cache cache;
 	
 	int prepare(char ** envp);
@@ -36,6 +36,14 @@ private:
 	void exception(v8::TryCatch* try_catch);
 	v8::Handle<v8::String> read(std::string name);
 	int autoload();
+	
+	std::string findname(std::string name);
+	void save_cwd();
+	void restore_cwd();
+	std::string dirname(std::string filename);
+	int include_js(std::string filename);
+	int include_dso(std::string filename);
+	bool exists(std::string filename);
 };
 
 #endif

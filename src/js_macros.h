@@ -1,6 +1,15 @@
 #ifndef _JS_MACROS_H
 #define _JS_MACROS_H
 
+// access()
+#ifdef HAVE_UNISTD_H
+#	include <unistd.h>
+#else
+#	include <io.h>
+#	define F_OK 0
+#	define access(path,mode) _access(path,mode)
+#endif
+
 #ifdef HAVE_MMAN_H
 #  include <sys/mman.h>
 #  include <sys/types.h>

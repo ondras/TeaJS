@@ -7,6 +7,7 @@
 
 #include <sstream>
 #include <stdlib.h>
+#include <string.h>
 #include <v8.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -263,8 +264,8 @@ std::string v8cgi_App::findname(std::string name) {
 	v8::Handle<v8::Value> prefix = config->ToObject()->Get(JS_STR("libraryPath"));
 	v8::String::Utf8Value pfx(prefix);
 	
-	char * paths[] = { "", *pfx};
-	char * suffixes[] = {"js", "so", "dll"};
+	const char * paths[] = { "", *pfx};
+	const char * suffixes[] = {"js", "so", "dll"};
 	std::string path = "";
 	std::string path2 = "";
 	

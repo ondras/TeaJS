@@ -283,5 +283,5 @@ SHARED_INIT() {
 	resproto->Set(JS_STR("fetchArrays"), v8::FunctionTemplate::New(_fetcharrays));
 	resproto->Set(JS_STR("fetchObjects"), v8::FunctionTemplate::New(_fetchobjects));
 
-	target->Set(JS_STR("MySQL"), ft->GetFunction());
+	exports->Set(JS_STR("MySQL"), ft->GetFunction());
 }

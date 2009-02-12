@@ -233,8 +233,19 @@ int v8cgi_App::include_dso(std::string filename) {
 		return 1;
 	}
 	
-	func(JS_GLOBAL);
+	v8::Handle<v8::Object> exports = v8::Object::New();
+	func(exports);
+	this->populate_global(exports);
 	return 0;									
+}
+
+void v8cgi_App::populate_global(v8::Handle<v8::Object> exports) {
+	v8::HandleScope handle_scope;
+	v8::Handle<v8::Array> names = exports->GetPropertyNames();
+	for (unsigned i=0;i<names->Length();i++) {
+		v8::Handle<v8::Value> name = names->Get(JS_INT(i));
+		JS_GLOBAL->Set(name, exports->Get(name));
+	}
 }
 
 void v8cgi_App::save_cwd() {

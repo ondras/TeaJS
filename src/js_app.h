@@ -38,6 +38,7 @@ private:
 	int autoload();
 	
 	std::string findname(std::string name);
+	void populate_global(v8::Handle<v8::Object> exports);
 	void save_cwd();
 	void restore_cwd();
 	std::string dirname(std::string filename);

@@ -33,9 +33,9 @@
 #define APP_PTR reinterpret_cast<v8cgi_App *>(v8::Handle<v8::External>::Cast(GLOBAL_PROTO->GetInternalField(0))->Value());
 
 #ifdef _WIN32
-#   define SHARED_INIT() extern "C" __declspec(dllexport) void init(v8::Handle<v8::Object> target)
+#   define SHARED_INIT() extern "C" __declspec(dllexport) void init(v8::Handle<v8::Object> exports)
 #else
-#   define SHARED_INIT() extern "C" void init(v8::Handle<v8::Object> target)
+#   define SHARED_INIT() extern "C" void init(v8::Handle<v8::Object> exports)
 #endif
 
 inline v8::Handle<v8::Array> JS_CHARARRAY(char * data, int count) {

@@ -879,5 +879,5 @@ SHARED_INIT() {
 	pt->Set(JS_STR("squareToCircle"), v8::FunctionTemplate::New(_squaretocircle));
 	pt->Set(JS_STR("sharpen"), v8::FunctionTemplate::New(_sharpen));
 
-	target->Set(JS_STR("Image"), ft->GetFunction());		 
+	exports->Set(JS_STR("Image"), ft->GetFunction());		 
 }

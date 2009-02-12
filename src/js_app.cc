@@ -122,7 +122,10 @@ int v8cgi_App::include(std::string str) {
 	}
 
 	int result;
-	if (filename.find(".so") != std::string::npos || filename.find(".dll") != std::string::npos) {
+	size_t index = filename.find_last_of(".");
+	std::string ext = filename.substr(index+1);
+	
+	if (ext == "so" || ext == "dll") {
 		result = this->include_dso(filename);
 	} else {
 		result = this->include_js(filename);

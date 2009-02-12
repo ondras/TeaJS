@@ -8,7 +8,8 @@
 #include <sstream>
 #include <stdlib.h>
 #include <v8.h>
-#include <map>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #ifdef FASTCGI
 #  include <fcgi_stdio.h>
@@ -113,14 +114,14 @@ void v8cgi_App::addOnExit(v8::Handle<v8::Value> what) {
 
 int v8cgi_App::include(std::string str) {
 	std::string filename = this->findname(str);
-	if (filename.length() == 0) {
-		std::string s = "Cannot find file '";
+	if (filename == "") {
+		std::string s = "Cannot find '";
 		s += str;
 		s += "'\n";
 		this->report_error(s.c_str());
 		return 1;
 	}
-
+	
 	int result;
 	size_t index = filename.find_last_of(".");
 	std::string ext = filename.substr(index+1);
@@ -184,9 +185,7 @@ int v8cgi_App::include_js(std::string filename) {
 	v8::HandleScope handle_scope;
 	v8::TryCatch try_catch;
 
-	std::string sourcestr = this->cache.getJS(filename);
-	v8::Handle<v8::String> source = JS_STR(sourcestr.c_str());
-	
+	v8::Handle<v8::String> source = JS_STR(this->cache.getJS(filename).c_str());
 	if (source->Length() == 0) {
 		std::string s = "Error reading '";
 		s += filename;
@@ -286,7 +285,10 @@ std::string v8cgi_App::findname(std::string name) {
 }
 
 bool v8cgi_App::exists(std::string filename) {
-	return (access(filename.c_str(), F_OK) == 0);
+	struct stat st;
+	if (stat(filename.c_str(), &st) != 0) { return false; } /* does not exist */
+	if (st.st_mode & S_IFDIR) { return false; } /* is directory */
+	return true;
 }
 
 std::string v8cgi_App::dirname(std::string filename) {
@@ -370,7 +372,7 @@ int v8cgi_App::go(char ** envp) {
 		error("Nothing to do.\n", __FILE__, __LINE__);
 		return 1;
 	} else {
-		return this->include_js(this->mainfile);
+		return this->include(this->mainfile);
 	}
 }
 

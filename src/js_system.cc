@@ -7,6 +7,7 @@
 #endif
 
 #include "js_macros.h"
+#include "js_common.h"
 #include "js_system.h"
 
 #ifndef HAVE_SLEEP

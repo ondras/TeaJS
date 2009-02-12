@@ -1,5 +1,6 @@
 #include <v8.h>
 #include "js_macros.h"
+#include "js_common.h"
 
 #include <gd.h>
 #define GD_TRUECOLOR 0

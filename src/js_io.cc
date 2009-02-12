@@ -5,6 +5,16 @@
 #include <string>
 #include <stdlib.h>
 #include "js_macros.h"
+#include "js_common.h"
+
+// access()
+#ifdef HAVE_UNISTD_H
+#	include <unistd.h>
+#else
+#	include <io.h>
+#	define F_OK 0
+#	define access(path,mode) _access(path,mode)
+#endif
 
 // directory listing
 #ifdef HAVE_DIRENT_H

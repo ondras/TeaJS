@@ -48,8 +48,15 @@ JS_METHOD(_include) {
 	v8::HandleScope handle_scope;
 	v8cgi_App * app = APP_PTR;
 	v8::String::Utf8Value file(args[0]);
-	int result = app->include(*file);
+	int result = app->include(*file, true);
 	return JS_BOOL(!result);
+}
+
+JS_METHOD(_require) {
+	v8::HandleScope handle_scope;
+	v8cgi_App * app = APP_PTR;
+	v8::String::Utf8Value file(args[0]);
+	return app->require(*file, true);
 }
 
 JS_METHOD(_onexit) {
@@ -113,26 +120,39 @@ void v8cgi_App::addOnExit(v8::Handle<v8::Value> what) {
 	this->onexit->Set(JS_INT(this->onexit->Length()), what);
 }
 
-int v8cgi_App::include(std::string str) {
+int v8cgi_App::include(std::string str, bool populate) {
+	v8::HandleScope handle_scope;
+	v8::Handle<v8::Value> exports = this->require(str, populate);
+	
+	int result = (exports->IsNull() ? 1 : 0);
+	if (populate && !result) {
+		v8::Persistent<v8::Object> exp = v8::Persistent<v8::Object>::New(exports->ToObject());
+		this->populate_global(exp);
+		exp.Dispose();
+	}
+	return result;
+}
+
+v8::Handle<v8::Value> v8cgi_App::require(std::string str, bool wrap) {
+	v8::HandleScope handle_scope;
 	std::string filename = this->findname(str);
 	if (filename == "") {
 		std::string s = "Cannot find '";
 		s += str;
 		s += "'\n";
 		this->report_error(s.c_str());
-		return 1;
+		return v8::Null();
 	}
 	
-	int result;
+	v8::Handle<v8::Value> exports;
 	size_t index = filename.find_last_of(".");
 	std::string ext = filename.substr(index+1);
 	
 	if (ext == "so" || ext == "dll") {
-		result = this->include_dso(filename);
+		return this->include_dso(filename);
 	} else {
-		result = this->include_js(filename);
+		return this->include_js(filename, wrap);
 	}
-	return result;
 }
 
 
@@ -182,23 +202,25 @@ void v8cgi_App::exception(v8::TryCatch* try_catch) {
 	this->report_error(msgstring.c_str());
 }
 
-int v8cgi_App::include_js(std::string filename) {
+v8::Handle<v8::Value> v8cgi_App::include_js(std::string filename, bool wrap) {
 	v8::HandleScope handle_scope;
 	v8::TryCatch try_catch;
 
-	v8::Handle<v8::String> source = JS_STR(this->cache.getJS(filename).c_str());
-	if (source->Length() == 0) {
+	std::string source = this->cache.getJS(filename);
+	if (source.length() == 0) {
 		std::string s = "Error reading '";
 		s += filename;
 		s += "'\n";
 		this->report_error(s.c_str());
-		return 1;
+		return v8::Null();
 	}
 	
-	v8::Handle<v8::Script> script = v8::Script::Compile(source, JS_STR(filename.c_str()));
+	if (wrap) { source = this->wrap(source); }
+	
+	v8::Handle<v8::Script> script = v8::Script::Compile(JS_STR(source.c_str()), JS_STR(filename.c_str()));
 	if (script.IsEmpty()) {
 		this->exception(&try_catch);
-		return 1;
+		return v8::Null();
 	} else {
 		this->save_cwd();
 		chdir(this->dirname(filename).c_str());
@@ -206,13 +228,13 @@ int v8cgi_App::include_js(std::string filename) {
 		this->restore_cwd();
 		if (result.IsEmpty()) {
 			this->exception(&try_catch);
-			return 1;
+			return v8::Null();
 		}
+		return result;
 	}
-	return 0;
 }
 
-int v8cgi_App::include_dso(std::string filename) {
+v8::Handle<v8::Value> v8cgi_App::include_dso(std::string filename) {
 	v8::HandleScope handle_scope;
 	void * handle = this->cache.getHandle(filename);
 	if (handle == NULL) {
@@ -220,7 +242,7 @@ int v8cgi_App::include_dso(std::string filename) {
 		error += filename;
 		error += "'\n";
 		this->report_error(error.c_str());
-		return 1;
+		return v8::Null();
 	}
 
 	typedef void (*funcdef)(v8::Handle<v8::Object>);
@@ -233,13 +255,20 @@ int v8cgi_App::include_dso(std::string filename) {
 		error += filename;
 		error += "'\n";
 		this->report_error(error.c_str());
-		return 1;
+		return v8::Null();
 	}
 	
 	v8::Handle<v8::Object> exports = v8::Object::New();
 	func(exports);
-	this->populate_global(exports);
-	return 0;									
+	return exports;		
+}
+
+std::string v8cgi_App::wrap(std::string original) {
+	std::string result = "";
+	result += "(function() { var exports = {}; (function(exports){";
+	result += original;
+	result += "})(exports); return exports; })()";
+	return result;
 }
 
 void v8cgi_App::populate_global(v8::Handle<v8::Object> exports) {
@@ -247,7 +276,7 @@ void v8cgi_App::populate_global(v8::Handle<v8::Object> exports) {
 	v8::Handle<v8::Array> names = exports->GetPropertyNames();
 	for (unsigned i=0;i<names->Length();i++) {
 		v8::Handle<v8::Value> name = names->Get(JS_INT(i));
-		JS_GLOBAL->Set(name, exports->Get(name));
+		JS_GLOBAL->Set(name, exports->Get(name));		
 	}
 }
 
@@ -310,7 +339,7 @@ int v8cgi_App::autoload() {
 		v8::Handle<v8::Value> item = list->Get(JS_INT(i));
 		v8::String::Utf8Value name(item);
 		std::string filename = *name;
-		if (this->include(filename)) { return 1; }
+		if (this->include(filename, true)) { return 1; }
 	}
 	return 0;
 }
@@ -373,7 +402,7 @@ int v8cgi_App::go(char ** envp) {
 		error("Nothing to do.\n", __FILE__, __LINE__);
 		return 1;
 	} else {
-		return this->include(this->mainfile);
+		return this->include(this->mainfile, false);
 	}
 }
 
@@ -382,8 +411,8 @@ int v8cgi_App::prepare(char ** envp) {
 	v8::Handle<v8::Object> g = JS_GLOBAL;
 	
 	GLOBAL_PROTO->SetInternalField(0, v8::External::New((void *)this)); 
-	
 	g->Set(JS_STR("include"), v8::FunctionTemplate::New(_include)->GetFunction());
+	g->Set(JS_STR("require"), v8::FunctionTemplate::New(_require)->GetFunction());
 	g->Set(JS_STR("onexit"), v8::FunctionTemplate::New(_onexit)->GetFunction());
 //	g->Set(JS_STR("exit"), v8::FunctionTemplate::New(_exit)->GetFunction());
 	g->Set(JS_STR("global"), g);
@@ -393,7 +422,7 @@ int v8cgi_App::prepare(char ** envp) {
 	setup_io(g);	
 	setup_socket(g);
 	
-	if (this->include(cfgfile)) { 
+	if (this->include(cfgfile, false)) { 
 		error("Cannot load configuration, quitting...\n", __FILE__, __LINE__);
 		return 1;
 	}

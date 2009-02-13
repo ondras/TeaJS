@@ -10,11 +10,12 @@
 
 class v8cgi_App {
 public:
+	virtual ~v8cgi_App() {};
 	int init(int argc, char ** argv);
 	int execute(char ** envp);
 	void addOnExit(v8::Handle<v8::Value>);
-	int include(std::string str);
-	virtual ~v8cgi_App() {};
+	int include(std::string str, bool populate);
+	v8::Handle<v8::Value> require(std::string str, bool wrap);
 	
 	virtual size_t reader (char * destination, size_t size);
 	virtual size_t writer (const char * source, size_t size);
@@ -34,16 +35,16 @@ private:
 	void http();
 	void report_error(const char * message);
 	void exception(v8::TryCatch* try_catch);
-	v8::Handle<v8::String> read(std::string name);
 	int autoload();
 	
 	std::string findname(std::string name);
 	void populate_global(v8::Handle<v8::Object> exports);
 	void save_cwd();
 	void restore_cwd();
+	std::string wrap(std::string original);
 	std::string dirname(std::string filename);
-	int include_js(std::string filename);
-	int include_dso(std::string filename);
+	v8::Handle<v8::Value> include_js(std::string filename, bool wrap);
+	v8::Handle<v8::Value> include_dso(std::string filename);
 	bool exists(std::string filename);
 };
 

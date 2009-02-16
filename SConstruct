@@ -7,7 +7,8 @@ sources = [
 	"js_io.cc",
 	"js_socket.cc",
 	"js_cache.cc",
-	"js_app.cc"
+	"js_app.cc",
+	"js_path.cc"
 ]
 sources = [ "src/%s" % s for s in sources ]
 

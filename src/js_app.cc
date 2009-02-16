@@ -9,8 +9,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <v8.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 
 #ifdef FASTCGI
 #  include <fcgi_stdio.h>
@@ -22,6 +20,7 @@
 #include "js_socket.h"
 #include "js_macros.h"
 #include "js_cache.h"
+#include "js_path.h"
 
 #ifndef windows
 #   include <dlfcn.h>
@@ -62,7 +61,9 @@ JS_METHOD(_require) {
 JS_METHOD(_onexit) {
 	v8::HandleScope handle_scope;
 	v8cgi_App * app = APP_PTR;
-	app->addOnExit(args[0]);
+
+	v8::Persistent<v8::Function> fun  = v8::Persistent<v8::Function>::New(v8::Handle<v8::Function>::Cast(args[0]));
+	app->onexit.push_back(fun);
 	return v8::Undefined();
 }
 
@@ -116,20 +117,12 @@ int v8cgi_App::execute(char ** envp) {
 	return result;
 }
 
-void v8cgi_App::addOnExit(v8::Handle<v8::Value> what) {
-	this->onexit->Set(JS_INT(this->onexit->Length()), what);
-}
-
 int v8cgi_App::include(std::string str, bool populate) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::Value> exports = this->require(str, populate);
 	
 	int result = (exports->IsNull() ? 1 : 0);
-	if (populate && !result) {
-		v8::Persistent<v8::Object> exp = v8::Persistent<v8::Object>::New(exports->ToObject());
-		this->populate_global(exp);
-		exp.Dispose();
-	}
+	if (populate && !result) { this->populate_global(exports->ToObject()); }
 	return result;
 }
 
@@ -144,17 +137,30 @@ v8::Handle<v8::Value> v8cgi_App::require(std::string str, bool wrap) {
 		return v8::Null();
 	}
 	
-	v8::Handle<v8::Value> exports;
+	v8cgi_App::exportmap::iterator it = this->exports.find(filename);
+	if (it != this->exports.end()) { /* use cached version */
+		return this->exports[filename];
+	}
+	
+	this->paths.push(path_dirname(filename));
+	chdir(this->paths.top().c_str());
+	
+	v8::Handle<v8::Value> data;
 	size_t index = filename.find_last_of(".");
 	std::string ext = filename.substr(index+1);
-	
 	if (ext == "so" || ext == "dll") {
-		return this->include_dso(filename);
+		data = this->include_dso(filename);
 	} else {
-		return this->include_js(filename, wrap);
+		data = this->include_js(filename, wrap);
 	}
-}
 
+	this->paths.pop();
+	chdir(this->paths.top().c_str());
+	v8::Persistent<v8::Value> exports = v8::Persistent<v8::Value>::New(data);
+	this->exports[filename] = exports;
+	
+	return exports;
+}
 
 void v8cgi_App::report_error(const char * message) {
 	int cgi = 0;
@@ -222,10 +228,7 @@ v8::Handle<v8::Value> v8cgi_App::include_js(std::string filename, bool wrap) {
 		this->exception(&try_catch);
 		return v8::Null();
 	} else {
-		this->save_cwd();
-		chdir(this->dirname(filename).c_str());
 		v8::Handle<v8::Value> result = script->Run();
-		this->restore_cwd();
 		if (result.IsEmpty()) {
 			this->exception(&try_catch);
 			return v8::Null();
@@ -280,54 +283,27 @@ void v8cgi_App::populate_global(v8::Handle<v8::Object> exports) {
 	}
 }
 
-void v8cgi_App::save_cwd() {
-	this->cwd = getcwd(NULL, 0);
-}
-
-void v8cgi_App::restore_cwd() {
-	chdir(this->cwd.c_str());
-}
-
 std::string v8cgi_App::findname(std::string name) {
 	v8::Handle<v8::Value> config = JS_GLOBAL->Get(JS_STR("Config"));
 	v8::Handle<v8::Value> prefix = config->ToObject()->Get(JS_STR("libraryPath"));
 	v8::String::Utf8Value pfx(prefix);
 	
-	const char * paths[] = { "", *pfx};
+	std::string paths[] = { this->paths.top(), std::string(*pfx) };
 	const char * suffixes[] = {"js", "so", "dll"};
 	std::string path = "";
 	std::string path2 = "";
 	
 	for (int i=0;i<2;i++) {
-		path = "";
-		path += paths[i];
-		if (strlen(paths[i]) > 0) { path += "/"; }
-		path += name;
-		if (this->exists(path)) { return path; }
+		path = path_normalize(name, paths[i]);
+		if (path_exists(path)) { return path; }
 		for (int j=0;j<3;j++) {
 			path2 = path;
 			path2 += ".";
 			path2 += suffixes[j];
-			if (this->exists(path2)) { return path2; }
+			if (path_exists(path2)) { return path2; }
 		}
 	}
 	return std::string("");
-}
-
-bool v8cgi_App::exists(std::string filename) {
-	struct stat st;
-	if (stat(filename.c_str(), &st) != 0) { return false; } /* does not exist */
-	if (st.st_mode & S_IFDIR) { return false; } /* is directory */
-	return true;
-}
-
-std::string v8cgi_App::dirname(std::string filename) {
-	size_t pos = filename.find_last_of('/');
-	if (pos == std::string::npos) { pos = filename.find_last_of('\\'); }
-	if (pos != std::string::npos) {
-		filename.erase(pos, filename.length()-pos);
-	}
-	return filename;
 }
 
 int v8cgi_App::autoload() {
@@ -346,12 +322,22 @@ int v8cgi_App::autoload() {
 
 void v8cgi_App::finish() {
 	v8::HandleScope handle_scope;
-	uint32_t max = this->onexit->Length();
-	v8::Handle<v8::Function> fun;
-	for (unsigned int i=0;i<max;i++) {
-		fun = v8::Handle<v8::Function>::Cast(this->onexit->Get(JS_INT(i)));
-		fun->Call(JS_GLOBAL, 0, NULL);
+	
+	/* callbacks */
+	for (unsigned int i=0; i<this->onexit.size(); i++) {
+		this->onexit[i]->Call(JS_GLOBAL, 0, NULL);
+		this->onexit[i].Dispose();
 	}
+
+	/* export cache */
+	v8cgi_App::exportmap::iterator it;
+	for (it=this->exports.begin(); it != this->exports.end(); it++) {
+		it->second.Dispose();
+	}
+	this->exports.clear();
+	
+	/* paths */
+	this->paths.pop();
 }
 
 void v8cgi_App::http() { /* prepare global request and response objects */
@@ -407,7 +393,8 @@ int v8cgi_App::go(char ** envp) {
 }
 
 int v8cgi_App::prepare(char ** envp) {
-	this->onexit = v8::Array::New();
+	std::string current = getcwd(NULL, 0);
+	this->paths.push(current);
 	v8::Handle<v8::Object> g = JS_GLOBAL;
 	
 	GLOBAL_PROTO->SetInternalField(0, v8::External::New((void *)this)); 

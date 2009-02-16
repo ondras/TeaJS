@@ -8,6 +8,7 @@
 
 #include "js_macros.h"
 #include "js_common.h"
+#include "js_app.h"
 #include "js_system.h"
 
 #ifndef HAVE_SLEEP
@@ -90,7 +91,6 @@ JS_METHOD(_system) {
 	return JS_INT(result);
 }
 
-
 JS_METHOD(_sleep) {
 	v8::HandleScope handle_scope;
 	int num = args[0]->Int32Value();
@@ -99,15 +99,14 @@ JS_METHOD(_sleep) {
 }
 
 /* 
-
 JS_METHOD(_usleep) {
 	v8::HandleScope handle_scope;
 	int num = args[0]->Int32Value();
 	usleep(num);
 	return v8::Undefined();
 }
-
 */
+
 void setup_system(v8::Handle<v8::Object> global, char ** envp) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::ObjectTemplate> systemt = v8::ObjectTemplate::New();
@@ -123,7 +122,7 @@ void setup_system(v8::Handle<v8::Object> global, char ** envp) {
 	system->Set(JS_STR("header"), v8::FunctionTemplate::New(_header)->GetFunction());
 	system->Set(JS_STR("system"), v8::FunctionTemplate::New(_system)->GetFunction());
 	system->Set(JS_STR("sleep"), v8::FunctionTemplate::New(_sleep)->GetFunction());
-//	system->Set(JS_STR("usleep"), v8::FunctionTemplate::New(_usleep)->GetFunction());
+/*	system->Set(JS_STR("usleep"), v8::FunctionTemplate::New(_usleep)->GetFunction()); */
 	system->Set(JS_STR("env"), env);
 	
 	std::string name, value;

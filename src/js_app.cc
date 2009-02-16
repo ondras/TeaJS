@@ -122,7 +122,11 @@ int v8cgi_App::include(std::string str, bool populate) {
 	v8::Handle<v8::Value> exports = this->require(str, populate);
 	
 	int result = (exports->IsNull() ? 1 : 0);
-	if (populate && !result) { this->populate_global(exports->ToObject()); }
+	if (populate && !result) { 
+		v8::Persistent<v8::Object> obj = v8::Persistent<v8::Object>::New(exports->ToObject());
+		this->populate_global(obj); 
+		obj.Dispose();
+	}
 	return result;
 }
 
@@ -158,7 +162,6 @@ v8::Handle<v8::Value> v8cgi_App::require(std::string str, bool wrap) {
 	chdir(this->paths.top().c_str());
 	v8::Persistent<v8::Value> exports = v8::Persistent<v8::Value>::New(data);
 	this->exports[filename] = exports;
-	
 	return exports;
 }
 
@@ -322,12 +325,12 @@ int v8cgi_App::autoload() {
 
 void v8cgi_App::finish() {
 	v8::HandleScope handle_scope;
-	
 	/* callbacks */
 	for (unsigned int i=0; i<this->onexit.size(); i++) {
 		this->onexit[i]->Call(JS_GLOBAL, 0, NULL);
 		this->onexit[i].Dispose();
 	}
+	this->onexit.clear();
 
 	/* export cache */
 	v8cgi_App::exportmap::iterator it;

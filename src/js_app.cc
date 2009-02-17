@@ -147,7 +147,6 @@ v8::Handle<v8::Value> v8cgi_App::require(std::string str, bool wrap) {
 	}
 	
 	this->paths.push(path_dirname(filename));
-	chdir(this->paths.top().c_str());
 	
 	v8::Handle<v8::Value> data;
 	size_t index = filename.find_last_of(".");
@@ -159,7 +158,6 @@ v8::Handle<v8::Value> v8cgi_App::require(std::string str, bool wrap) {
 	}
 
 	this->paths.pop();
-	chdir(this->paths.top().c_str());
 	v8::Persistent<v8::Value> exports = v8::Persistent<v8::Value>::New(data);
 	this->exports[filename] = exports;
 	return exports;

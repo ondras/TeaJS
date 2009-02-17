@@ -3,10 +3,9 @@
 
 #ifdef HAVE_MMAN_H
 #  include <sys/mman.h>
-#  include <sys/types.h>
+#  include <string.h>
 #  include <unistd.h>
 #  include <fcntl.h>
-#  include <string.h>
 #endif
 
 inline v8::Handle<v8::Array> JS_CHARARRAY(char * data, int count) {
@@ -20,7 +19,7 @@ inline v8::Handle<v8::Array> JS_CHARARRAY(char * data, int count) {
 }
 
 inline void * my_read(char * name, size_t * size) {
-#ifdef HAVE_MMAP_H
+#ifdef HAVE_MMAN_H
 	int f = open(name, O_RDONLY);
 	if (f == -1) { return NULL; }
 	*size = lseek(f, 0, SEEK_END);
@@ -44,7 +43,7 @@ inline void * my_read(char * name, size_t * size) {
 }
 
 inline void my_free(char * data, size_t size) {
-#ifdef HAVE_MMAP_H
+#ifdef HAVE_MMAN_H
 	munmap(data, size);
 #else
 	delete[] data;
@@ -52,7 +51,7 @@ inline void my_free(char * data, size_t size) {
 }
 
 inline int my_write(char * name, void * data, size_t size) {
-#ifdef HAVE_MMAP_H
+#ifdef HAVE_MMAN_H
 	int f = open(name, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	if (f == -1) { return -1; }
 	lseek(f, size - 1, SEEK_SET);
@@ -62,6 +61,7 @@ inline int my_write(char * name, void * data, size_t size) {
 	memcpy(dst, data, size);
 	munmap(dst, size);
 	close(f);
+
 #else
 	FILE * f = fopen(name, "wb");
 	if (f == NULL) { return -1; }

@@ -53,7 +53,7 @@ v8::Handle<v8::Value> list_items(char * name, int type) {
 			std::string name = ep->d_name;
 			if (type == TYPE_FILE) {
 				result->Set(JS_INT(cnt++), JS_STR(ep->d_name));
-			} else if (name.find(".") != std::string::npos && name.find("..") != std::string::npos) {
+			} else if (name != "." && name != "..") {
 				result->Set(JS_INT(cnt++), JS_STR(ep->d_name));
 			}
 		}
@@ -74,7 +74,7 @@ v8::Handle<v8::Value> list_items(char * name, int type) {
 				std::string name = info->name;
 				if (type == TYPE_FILE) {
 					result->Set(JS_INT(cnt++), JS_STR(info->name));
-				} else if (name.find(".") != std::string::npos && name.find("..") != std::string::npos) {
+				} else if (name != "." && name != "..") {
 					result->Set(JS_INT(cnt++), JS_STR(info->name));
 				}
 			}

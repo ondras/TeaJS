@@ -6,6 +6,7 @@
 #  include <fcgi_stdio.h>
 #endif
 
+#include <stdlib.h>
 #include "js_app.h"
 
 extern char ** environ;

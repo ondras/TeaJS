@@ -157,7 +157,7 @@ v8::Handle<v8::Value> v8cgi_App::require(std::string str, bool wrap) {
 	this->paths.pop();
 	v8::Persistent<v8::Value> exports = v8::Persistent<v8::Value>::New(data);
 	this->exports[filename] = exports;
-	return handle_scope.Close(exports);
+	return handle_scope.Close(data);
 }
 
 void v8cgi_App::report_error(const char * message) {

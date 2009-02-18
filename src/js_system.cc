@@ -17,7 +17,6 @@
 #endif
 
 JS_METHOD(_stdin) {
-	v8::HandleScope handle_scope;
 	v8cgi_App * app = APP_PTR;
 
 	size_t count = 0;
@@ -44,7 +43,6 @@ JS_METHOD(_stdin) {
 }
 
 JS_METHOD(_stdout) {
-	v8::HandleScope handle_scope;
 	v8cgi_App * app = APP_PTR;
 	if (args[0]->IsArray()) {
 		v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(args[0]);
@@ -62,7 +60,6 @@ JS_METHOD(_stdout) {
 }
 
 JS_METHOD(_stderr) {
-	v8::HandleScope handle_scope;
 	v8cgi_App * app = APP_PTR;
 	v8::String::Utf8Value str(args[0]);
 	v8::String::Utf8Value f(args[1]);
@@ -72,7 +69,6 @@ JS_METHOD(_stderr) {
 }
 
 JS_METHOD(_header) {
-	v8::HandleScope handle_scope;
 	v8cgi_App * app = APP_PTR;
 	v8::String::Utf8Value name(args[0]);
 	v8::String::Utf8Value value(args[1]);
@@ -81,7 +77,6 @@ JS_METHOD(_header) {
 }
 
 JS_METHOD(_system) {
-	v8::HandleScope handle_scope;
 	if (args.Length() != 1) {
 		return JS_EXCEPTION("Wrong argument count. Use System.system(\"command\")");
 	}
@@ -92,7 +87,6 @@ JS_METHOD(_system) {
 }
 
 JS_METHOD(_sleep) {
-	v8::HandleScope handle_scope;
 	int num = args[0]->Int32Value();
 	sleep(num);
 	return v8::Undefined();

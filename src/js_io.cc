@@ -38,6 +38,7 @@
 #define TYPE_DIR 1
 
 v8::Handle<v8::Value> list_items(char * name, int type) {
+	v8::HandleScope handle_scope;
 	v8::Handle<v8::Array> result = v8::Array::New();
 	int cnt = 0;
 
@@ -84,11 +85,10 @@ v8::Handle<v8::Value> list_items(char * name, int type) {
 	free(info);
 #endif
 	
-	return result;
+	return handle_scope.Close(result);
 }
 
 JS_METHOD(_directory) {
-	v8::HandleScope handle_scope;
 	if (args.Length() < 1 || args.This()->InternalFieldCount() == 0) {
 		return JS_EXCEPTION("Invalid call format. Use 'new Directory(name)'");
 	}
@@ -98,8 +98,6 @@ JS_METHOD(_directory) {
 }
 
 JS_METHOD(_create) {
-	v8::HandleScope handle_scope;
-
 	v8::String::Utf8Value name(LOAD_VALUE(0));
 	int mode;
 	if (args.Length() == 0) { 
@@ -117,19 +115,16 @@ JS_METHOD(_create) {
 }
 
 JS_METHOD(_listfiles) {
-	v8::HandleScope handle_scope;
 	v8::String::Utf8Value name(LOAD_VALUE(0));
 	return list_items(*name, TYPE_FILE);
 }
 
 JS_METHOD(_listdirectories) {
-	v8::HandleScope handle_scope;
 	v8::String::Utf8Value name(LOAD_VALUE(0));
 	return list_items(*name, TYPE_DIR);
 }
 
 JS_METHOD(_file) {
-	v8::HandleScope handle_scope;
 	if (args.Length() < 1 || args.This()->InternalFieldCount() == 0) {
 		return JS_EXCEPTION("Invalid call format. Use 'new File(name)'");
 	}
@@ -140,7 +135,6 @@ JS_METHOD(_file) {
 }
 
 JS_METHOD(_open) {
-	v8::HandleScope handle_scope;
 	if (args.Length() < 1) {
 		return JS_EXCEPTION("Bad argument count. Use 'file.open(mode)'");
 	}
@@ -163,7 +157,6 @@ JS_METHOD(_open) {
 }
 		
 JS_METHOD(_close) {
-	v8::HandleScope handle_scope;
 	v8::Handle<v8::Value> file = LOAD_VALUE(1);
 	
 	if (file->IsFalse()) {
@@ -178,7 +171,6 @@ JS_METHOD(_close) {
 }
 
 JS_METHOD(_read) {
-	v8::HandleScope handle_scope;
 	v8::Handle<v8::Value> file = LOAD_VALUE(1);
 	
 	if (file->IsFalse()) {
@@ -217,7 +209,6 @@ JS_METHOD(_read) {
 }
 
 JS_METHOD(_rewind) {
-	v8::HandleScope handle_scope;
 	v8::Handle<v8::Value> file = LOAD_VALUE(1);
 	if (file->IsFalse()) {
 		return JS_EXCEPTION("File must be opened before rewinding");
@@ -230,7 +221,6 @@ JS_METHOD(_rewind) {
 }
 
 JS_METHOD(_write) {
-	v8::HandleScope handle_scope;
 	v8::Handle<v8::Value> file = LOAD_VALUE(1);
 	
 	if (file->IsFalse()) {
@@ -266,7 +256,6 @@ JS_METHOD(_write) {
 }
 
 JS_METHOD(_removefile) {
-	v8::HandleScope handle_scope;
 	v8::String::Utf8Value name(LOAD_VALUE(0));
 	
 	if (remove(*name) != 0) {
@@ -277,7 +266,6 @@ JS_METHOD(_removefile) {
 }
 
 JS_METHOD(_removedirectory) {
-	v8::HandleScope handle_scope;
 	v8::String::Utf8Value name(LOAD_VALUE(0));
 	
 	if (rmdir(*name) != 0) {
@@ -288,8 +276,6 @@ JS_METHOD(_removedirectory) {
 }
 
 JS_METHOD(_stat) {
-	v8::HandleScope handle_scope;
-	
 	v8::String::Utf8Value name(LOAD_VALUE(0));
 	struct stat st;
 	if (stat(*name, &st) == 0) {
@@ -320,10 +306,8 @@ v8::Handle<v8::Value> _copy(char * name1, char * name2) {
 }
 
 JS_METHOD(_movefile) {
-	v8::HandleScope handle_scope;
-	
 	if (args.Length() < 1) {
-	return JS_EXCEPTION("Bad argument count. Use 'file.rename(newname)'");
+		return JS_EXCEPTION("Bad argument count. Use 'file.rename(newname)'");
 	}
 	
 	v8::String::Utf8Value name(LOAD_VALUE(0));
@@ -345,7 +329,6 @@ JS_METHOD(_movefile) {
 }
 
 JS_METHOD(_copyfile) {
-	v8::HandleScope handle_scope;
 	if (args.Length() < 1) {
 		return JS_EXCEPTION("Bad argument count. Use 'file.copy(newname)'");
 	}
@@ -366,18 +349,18 @@ JS_METHOD(_copyfile) {
 }
 
 JS_METHOD(_tostring) {
-	v8::HandleScope handle_scope;
 	return LOAD_VALUE(0);
 }
 
 JS_METHOD(_exists) {
-	v8::HandleScope handle_scope;
 	v8::String::Utf8Value name(LOAD_VALUE(0));
 	int result = access(*name, F_OK);
 	return JS_BOOL(result == 0);
 }
 
 void setup_io(v8::Handle<v8::Object> target) {
+	v8::HandleScope handle_scope;
+	
 	v8::Handle<v8::FunctionTemplate> ft = v8::FunctionTemplate::New(_file);
 	ft->SetClassName(JS_STR("File"));
 	v8::Handle<v8::ObjectTemplate> ot = ft->InstanceTemplate();
@@ -412,6 +395,5 @@ void setup_io(v8::Handle<v8::Object> target) {
 	pt->Set("remove", v8::FunctionTemplate::New(_removedirectory));
 	pt->Set("stat", v8::FunctionTemplate::New(_stat));
 
-	target->Set(JS_STR("Directory"), dt->GetFunction());			
-	
+	target->Set(JS_STR("Directory"), dt->GetFunction());
 }

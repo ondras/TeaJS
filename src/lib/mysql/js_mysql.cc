@@ -12,7 +12,6 @@
 v8::Persistent<v8::FunctionTemplate> rest;
 
 JS_METHOD(_mysql) {
-	v8::HandleScope handle_scope;
 	if (args.This()->InternalFieldCount() == 0) {
 		return JS_EXCEPTION("Invalid call format. Use 'new MySQL()'");
 	}
@@ -22,7 +21,6 @@ JS_METHOD(_mysql) {
 }
 
 JS_METHOD(_connect) {
-	v8::HandleScope handle_scope;
 	if (args.Length() < 4) {
 		return JS_EXCEPTION("Invalid call format. Use 'mysql.connect(host, user, pass, db)'");
 	}
@@ -46,7 +44,6 @@ JS_METHOD(_connect) {
 }
 
 JS_METHOD(_query) {
-	v8::HandleScope handle_scope;
 	v8::Handle<v8::Value> c = LOAD_VALUE(0);
 	if (c->IsFalse()) {
 		return JS_EXCEPTION("No connection established");
@@ -78,7 +75,6 @@ JS_METHOD(_query) {
 }
 
 JS_METHOD(_error) {
-	v8::HandleScope handle_scope;
 	v8::Handle<v8::Value> c = LOAD_VALUE(0);
 	if (c->IsFalse()) {
 		return JS_EXCEPTION("No connection established");
@@ -90,7 +86,6 @@ JS_METHOD(_error) {
 }
 
 JS_METHOD(_errno) {
-	v8::HandleScope handle_scope;
 	v8::Handle<v8::Value> c = LOAD_VALUE(0);
 	if (c->IsFalse()) {
 		return JS_EXCEPTION("No connection established");
@@ -102,7 +97,6 @@ JS_METHOD(_errno) {
 }
 
 JS_METHOD(_affectedrows) {
-	v8::HandleScope handle_scope;
 	v8::Handle<v8::Value> c = LOAD_VALUE(0);
 	if (c->IsFalse()) {
 		return JS_EXCEPTION("No connection established");
@@ -114,7 +108,6 @@ JS_METHOD(_affectedrows) {
 }
 
 JS_METHOD(_insertid) {
-	v8::HandleScope handle_scope;
 	v8::Handle<v8::Value> c = LOAD_VALUE(0);
 	if (c->IsFalse()) {
 		return JS_EXCEPTION("No connection established");
@@ -126,7 +119,6 @@ JS_METHOD(_insertid) {
 }
 
 JS_METHOD(_escape) {
-	v8::HandleScope handle_scope;
 	v8::Handle<v8::Value> c = LOAD_VALUE(0);
 	if (c->IsFalse()) {
 		return JS_EXCEPTION("No connection established");
@@ -148,7 +140,6 @@ JS_METHOD(_escape) {
 }
 
 JS_METHOD(_qualify) {
-	v8::HandleScope handle_scope;
 	if (args.Length() < 1) {
 		return JS_EXCEPTION("Nothing to qualify");
 	}
@@ -163,27 +154,23 @@ JS_METHOD(_qualify) {
 }
 
 JS_METHOD(_result) {
-	v8::HandleScope handle_scope;
 	SAVE_VALUE(0, args[0]);
 	return args.This();
 }
 
 JS_METHOD(_numrows) {
-	v8::HandleScope handle_scope;
 	MYSQL_RES * res = LOAD_PTR(0, MYSQL_RES *);
 
 	return JS_INT(mysql_num_rows(res));
 }
 
 JS_METHOD(_numfields) {
-	v8::HandleScope handle_scope;
 	MYSQL_RES * res = LOAD_PTR(0, MYSQL_RES *);
 
 	return JS_INT(mysql_num_fields(res));
 }
 
 JS_METHOD(_fetchnames) {
-	v8::HandleScope handle_scope;
 	MYSQL_RES * res = LOAD_PTR(0, MYSQL_RES *);
 
 	int cnt = mysql_num_fields(res);
@@ -198,7 +185,6 @@ JS_METHOD(_fetchnames) {
 }
 
 JS_METHOD(_fetcharrays) {
-	v8::HandleScope handle_scope;
 	MYSQL_RES * res = LOAD_PTR(0, MYSQL_RES *);
 	mysql_data_seek(res, 0);
 
@@ -224,7 +210,6 @@ JS_METHOD(_fetcharrays) {
 }
 
 JS_METHOD(_fetchobjects) {
-	v8::HandleScope handle_scope;
 	MYSQL_RES * res = LOAD_PTR(0, MYSQL_RES *);
 	mysql_data_seek(res, 0);
 
@@ -252,7 +237,6 @@ JS_METHOD(_fetchobjects) {
 
 SHARED_INIT() {
 	v8::HandleScope handle_scope;
-
 	v8::Handle<v8::FunctionTemplate> ft = v8::FunctionTemplate::New(_mysql);
 	ft->SetClassName(JS_STR("MySQL"));
 

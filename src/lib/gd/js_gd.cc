@@ -22,6 +22,7 @@
 	gdImagePtr ptr2 = reinterpret_cast<gdImagePtr>(v8::Handle<v8::External>::Cast(__second->GetInternalField(0))->Value())
 
 gdPointPtr gdPoints(v8::Handle<v8::Array> arr) {
+	v8::HandleScope handle_scope;
 	unsigned int len = arr->Length();
 	gdPointPtr points = new gdPoint[len];
 	v8::Handle<v8::Object> item;
@@ -36,7 +37,6 @@ gdPointPtr gdPoints(v8::Handle<v8::Array> arr) {
 }
 
 JS_METHOD(_image) {
-	v8::HandleScope handle_scope;
 	if (args.This()->InternalFieldCount() == 0) {
 		return JS_EXCEPTION("Invalid call format. Use 'new Image(type, params)'");
 	}
@@ -85,14 +85,12 @@ JS_METHOD(_image) {
 /**/
 
 JS_METHOD(_truecolor) {
-	v8::HandleScope handle_scope;
 	GD_RGB;
 	int result = gdTrueColor(r, g, b);
 	return JS_INT(result);
 }
 
 JS_METHOD(_truecoloralpha) {
-	v8::HandleScope handle_scope;
 	GD_RGBA;
 	int result = gdTrueColorAlpha(r, g, b, a);
 	return JS_INT(result);
@@ -101,14 +99,12 @@ JS_METHOD(_truecoloralpha) {
 /**/
 
 JS_METHOD(_destroy) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	gdImageDestroy(ptr);
 	return v8::Undefined();
 }
 
 JS_METHOD(_save) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 
 	if (args.Length() < 1) {
@@ -154,7 +150,6 @@ JS_METHOD(_save) {
 }
 
 JS_METHOD(_colorallocate) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	GD_RGB;
 	
@@ -167,7 +162,6 @@ JS_METHOD(_colorallocate) {
 }
 
 JS_METHOD(_colorallocatealpha) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	GD_RGBA;
 	
@@ -180,7 +174,6 @@ JS_METHOD(_colorallocatealpha) {
 }
 
 JS_METHOD(_colorclosest) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	GD_RGB;
 	
@@ -193,7 +186,6 @@ JS_METHOD(_colorclosest) {
 }
 
 JS_METHOD(_colorclosestalpha) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	GD_RGBA;
 	
@@ -206,7 +198,6 @@ JS_METHOD(_colorclosestalpha) {
 }
 
 JS_METHOD(_colorclosesthwb) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	GD_RGB;
 	
@@ -219,7 +210,6 @@ JS_METHOD(_colorclosesthwb) {
 }
 
 JS_METHOD(_colorexact) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	GD_RGB;
 	
@@ -228,7 +218,6 @@ JS_METHOD(_colorexact) {
 }
 
 JS_METHOD(_colorresolve) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	GD_RGB;
 	
@@ -237,7 +226,6 @@ JS_METHOD(_colorresolve) {
 }
 
 JS_METHOD(_colorresolvealpha) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	GD_RGBA;
 	
@@ -246,7 +234,6 @@ JS_METHOD(_colorresolvealpha) {
 }
 
 JS_METHOD(_colorstotal) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	
 	int result = gdImageColorsTotal(ptr);
@@ -254,7 +241,6 @@ JS_METHOD(_colorstotal) {
 }
 
 JS_METHOD(_red) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	int c = args[0]->Int32Value();
 	
@@ -263,7 +249,6 @@ JS_METHOD(_red) {
 }
 
 JS_METHOD(_green) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	int c = args[0]->Int32Value();
 	
@@ -272,7 +257,6 @@ JS_METHOD(_green) {
 }
 
 JS_METHOD(_blue) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	int c = args[0]->Int32Value();
 	
@@ -281,7 +265,6 @@ JS_METHOD(_blue) {
 }
 
 JS_METHOD(_getinterlaced) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	
 	int result = gdImageGetInterlaced(ptr);
@@ -289,7 +272,6 @@ JS_METHOD(_getinterlaced) {
 }
 
 JS_METHOD(_gettransparent) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	
 	int result = gdImageGetTransparent(ptr);
@@ -297,7 +279,6 @@ JS_METHOD(_gettransparent) {
 }
 
 JS_METHOD(_colordeallocate) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	int c = args[0]->Int32Value();
 	
@@ -306,7 +287,6 @@ JS_METHOD(_colordeallocate) {
 }
 
 JS_METHOD(_colortransparent) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	int c = args[0]->Int32Value();
 	
@@ -315,7 +295,6 @@ JS_METHOD(_colortransparent) {
 }
 
 JS_METHOD(_alpha) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	int c = args[0]->Int32Value();
 	
@@ -324,7 +303,6 @@ JS_METHOD(_alpha) {
 }
 
 JS_METHOD(_getpixel) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	int x = args[0]->Int32Value();
 	int y = args[1]->Int32Value();
@@ -334,7 +312,6 @@ JS_METHOD(_getpixel) {
 }
 
 JS_METHOD(_boundssafe) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	int x = args[0]->Int32Value();
 	int y = args[1]->Int32Value();
@@ -344,7 +321,6 @@ JS_METHOD(_boundssafe) {
 }
 
 JS_METHOD(_sx) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	
 	int result = gdImageSX(ptr);
@@ -352,7 +328,6 @@ JS_METHOD(_sx) {
 }
 
 JS_METHOD(_sy) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	
 	int result = gdImageSY(ptr);
@@ -360,7 +335,6 @@ JS_METHOD(_sy) {
 }
 
 JS_METHOD(_imagetruecolor) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	
 	int result = gdImageTrueColor(ptr);
@@ -370,7 +344,6 @@ JS_METHOD(_imagetruecolor) {
 /**/
 
 JS_METHOD(_setpixel) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	GD_COLOR(2);
 	int x = args[0]->Int32Value();
@@ -381,7 +354,6 @@ JS_METHOD(_setpixel) {
 }
 
 JS_METHOD(_line) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	GD_COLOR(4);
 	int x1 = args[0]->Int32Value();
@@ -394,7 +366,6 @@ JS_METHOD(_line) {
 }
 
 JS_METHOD(_polygon) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	GD_COLOR(1);
 	
@@ -406,7 +377,6 @@ JS_METHOD(_polygon) {
 }
 
 JS_METHOD(_openpolygon) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	GD_COLOR(1);
 	
@@ -418,7 +388,6 @@ JS_METHOD(_openpolygon) {
 }
 
 JS_METHOD(_rectangle) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	GD_COLOR(4);
 	
@@ -432,7 +401,6 @@ JS_METHOD(_rectangle) {
 }
 
 JS_METHOD(_filledrectangle) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	GD_COLOR(4);
 	
@@ -446,7 +414,6 @@ JS_METHOD(_filledrectangle) {
 }
 
 JS_METHOD(_filledpolygon) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	GD_COLOR(1);
 	
@@ -458,7 +425,6 @@ JS_METHOD(_filledpolygon) {
 }
 
 JS_METHOD(_arc) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	GD_COLOR(6);
 	int cx = args[0]->Int32Value();
@@ -473,7 +439,6 @@ JS_METHOD(_arc) {
 }
 
 JS_METHOD(_filledarc) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	GD_COLOR(6);
 	int cx = args[0]->Int32Value();
@@ -489,7 +454,6 @@ JS_METHOD(_filledarc) {
 }
 
 JS_METHOD(_filledellipse) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	GD_COLOR(4);
 	int cx = args[0]->Int32Value();
@@ -502,7 +466,6 @@ JS_METHOD(_filledellipse) {
 }
 
 JS_METHOD(_filltoborder) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	GD_COLOR(3);
 	int x = args[0]->Int32Value();
@@ -514,7 +477,6 @@ JS_METHOD(_filltoborder) {
 }
 
 JS_METHOD(_fill) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	GD_COLOR(2);
 	int x = args[0]->Int32Value();
@@ -525,7 +487,6 @@ JS_METHOD(_fill) {
 }
 
 JS_METHOD(_setantialiased) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	GD_COLOR(0);
 	
@@ -534,7 +495,6 @@ JS_METHOD(_setantialiased) {
 }
 
 JS_METHOD(_setantialiaseddontblend) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	GD_COLOR(0);
 	int color2 = args[1]->Int32Value();
@@ -544,7 +504,6 @@ JS_METHOD(_setantialiaseddontblend) {
 }
 
 JS_METHOD(_setbrush) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	GD_SECOND;
 	
@@ -553,7 +512,6 @@ JS_METHOD(_setbrush) {
 }
 
 JS_METHOD(_settile) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	GD_SECOND;
 	
@@ -562,7 +520,6 @@ JS_METHOD(_settile) {
 }
 
 JS_METHOD(_setstyle) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(args[0]);
 	unsigned int len = arr->Length();
@@ -579,7 +536,6 @@ JS_METHOD(_setstyle) {
 }
 
 JS_METHOD(_setthickness) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	int t = args[0]->Int32Value();
 	 
@@ -588,7 +544,6 @@ JS_METHOD(_setthickness) {
 }
 
 JS_METHOD(_alphablending) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	int mode = args[0]->Int32Value();
 	 
@@ -597,7 +552,6 @@ JS_METHOD(_alphablending) {
 }
 
 JS_METHOD(_savealpha) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	int mode = args[0]->Int32Value();
 	 
@@ -606,7 +560,6 @@ JS_METHOD(_savealpha) {
 }
 
 JS_METHOD(_setclip) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	int x1 = args[0]->Int32Value();
 	int y1 = args[1]->Int32Value();
@@ -618,7 +571,6 @@ JS_METHOD(_setclip) {
 }
 
 JS_METHOD(_getclip) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	int x1 = 0;
 	int y1 = 0;
@@ -636,7 +588,6 @@ JS_METHOD(_getclip) {
 }
 
 JS_METHOD(_string) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	GD_COLOR(0);
 
@@ -661,7 +612,6 @@ JS_METHOD(_string) {
 }
 
 JS_METHOD(_copy) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	GD_SECOND;
 	
@@ -677,7 +627,6 @@ JS_METHOD(_copy) {
 }
 
 JS_METHOD(_copyresized) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	GD_SECOND;
 	
@@ -695,7 +644,6 @@ JS_METHOD(_copyresized) {
 }
 
 JS_METHOD(_copyresampled) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	GD_SECOND;
 	
@@ -713,7 +661,6 @@ JS_METHOD(_copyresampled) {
 }
 
 JS_METHOD(_copyrotated) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	GD_SECOND;
 	
@@ -730,7 +677,6 @@ JS_METHOD(_copyrotated) {
 }
 
 JS_METHOD(_copymerge) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	GD_SECOND;
 	
@@ -747,7 +693,6 @@ JS_METHOD(_copymerge) {
 }
 
 JS_METHOD(_copymergegray) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	GD_SECOND;
 	
@@ -764,7 +709,6 @@ JS_METHOD(_copymergegray) {
 }
 
 JS_METHOD(_copypalette) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	GD_SECOND;
 	
@@ -773,7 +717,6 @@ JS_METHOD(_copypalette) {
 }
 
 JS_METHOD(_squaretocircle) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	
 	int radius = args[0]->Int32Value();
@@ -782,7 +725,6 @@ JS_METHOD(_squaretocircle) {
 }
 
 JS_METHOD(_sharpen) {
-	v8::HandleScope handle_scope;
 	GD_PTR;
 	
 	int pct = args[0]->Int32Value();

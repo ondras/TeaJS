@@ -44,7 +44,6 @@
 #endif
 
 JS_METHOD(_include) {
-	v8::HandleScope handle_scope;
 	v8cgi_App * app = APP_PTR;
 	v8::String::Utf8Value file(args[0]);
 	int result = app->include(*file, true);
@@ -52,14 +51,12 @@ JS_METHOD(_include) {
 }
 
 JS_METHOD(_require) {
-	v8::HandleScope handle_scope;
 	v8cgi_App * app = APP_PTR;
 	v8::String::Utf8Value file(args[0]);
 	return app->require(*file, true);
 }
 
 JS_METHOD(_onexit) {
-	v8::HandleScope handle_scope;
 	v8cgi_App * app = APP_PTR;
 
 	v8::Persistent<v8::Function> fun  = v8::Persistent<v8::Function>::New(v8::Handle<v8::Function>::Cast(args[0]));
@@ -102,8 +99,8 @@ int v8cgi_App::init(int argc, char ** argv) {
 }
 
 int v8cgi_App::execute(char ** envp) {
-	int result;
 	v8::HandleScope handle_scope;
+	int result;
 	v8::Handle<v8::ObjectTemplate> globaltemplate = v8::ObjectTemplate::New();
 	globaltemplate->SetInternalFieldCount(1);
 	v8::Handle<v8::Context> context = v8::Context::New(NULL, globaltemplate);
@@ -160,7 +157,7 @@ v8::Handle<v8::Value> v8cgi_App::require(std::string str, bool wrap) {
 	this->paths.pop();
 	v8::Persistent<v8::Value> exports = v8::Persistent<v8::Value>::New(data);
 	this->exports[filename] = exports;
-	return exports;
+	return handle_scope.Close(exports);
 }
 
 void v8cgi_App::report_error(const char * message) {
@@ -234,7 +231,7 @@ v8::Handle<v8::Value> v8cgi_App::include_js(std::string filename, bool wrap) {
 			this->exception(&try_catch);
 			return v8::Null();
 		}
-		return result;
+		return handle_scope.Close(result);
 	}
 }
 
@@ -264,7 +261,7 @@ v8::Handle<v8::Value> v8cgi_App::include_dso(std::string filename) {
 	
 	v8::Handle<v8::Object> exports = v8::Object::New();
 	func(exports);
-	return exports;		
+	return handle_scope.Close(exports);	
 }
 
 std::string v8cgi_App::wrap(std::string original) {

@@ -31,18 +31,6 @@
 #   define dlsym(x,y) (void*)GetProcAddress((HMODULE)x,y)
 #endif
 
-// chdir()
-#ifndef HAVE_CHDIR
-#	include <direct.h>
-#	define chdir(name) _chdir(name)
-#endif
-
-// getcwd()
-#ifndef HAVE_GETCWD
-#	include <direct.h>
-#	define getcwd(name, bytes) _getcwd(name, bytes)
-#endif
-
 JS_METHOD(_include) {
 	v8cgi_App * app = APP_PTR;
 	v8::String::Utf8Value file(args[0]);
@@ -98,7 +86,7 @@ int v8cgi_App::init(int argc, char ** argv) {
 	return 0;
 }
 
-int v8cgi_App::execute(char ** envp) {
+int v8cgi_App::execute(char ** envp, bool change) {
 	v8::HandleScope handle_scope;
 	int result;
 	v8::Handle<v8::ObjectTemplate> globaltemplate = v8::ObjectTemplate::New();
@@ -106,10 +94,17 @@ int v8cgi_App::execute(char ** envp) {
 	v8::Handle<v8::Context> context = v8::Context::New(NULL, globaltemplate);
 	v8::Context::Scope context_scope(context);
 	
-	result = this->prepare(envp);
+	result = this->prepare(envp); /* prepare JS environment */
+	if (result == 0) { result = this->findmain(); } /* try to locate main file */
 	if (result == 0) {
-		result = this->go(envp);
+		if (change) { path_chdir(path_dirname(this->mainfile)); } /* if requested, chdir */
+		std::string current = path_getcwd(); /* add current path to stack */
+		this->paths.push(current);
+		result = this->process(); /* go! */
+	} else {
+		error("Nothing to do.\n", __FILE__, __LINE__);
 	}
+	
 	this->finish();
 	return result;
 }
@@ -286,7 +281,8 @@ std::string v8cgi_App::findname(std::string name) {
 	v8::Handle<v8::Value> prefix = config->ToObject()->Get(JS_STR("libraryPath"));
 	v8::String::Utf8Value pfx(prefix);
 	
-	std::string paths[] = { this->paths.top(), std::string(*pfx) };
+	std::string current = (this->paths.empty() ? "" : this->paths.top());
+	std::string paths[] = { current, std::string(*pfx) };
 	const char * suffixes[] = {"js", "so", "dll"};
 	std::string path = "";
 	std::string path2 = "";
@@ -335,7 +331,9 @@ void v8cgi_App::finish() {
 	this->exports.clear();
 	
 	/* paths */
-	this->paths.pop();
+	while (!this->paths.empty()) {
+		this->paths.pop();
+	}
 }
 
 void v8cgi_App::http() { /* prepare global request and response objects */
@@ -363,12 +361,8 @@ void v8cgi_App::http() { /* prepare global request and response objects */
 	JS_GLOBAL->Set(JS_STR("response"), resf->NewInstance(2, resargs));
 }
 
-int v8cgi_App::go(char ** envp) {
-	v8::HandleScope handle_scope;
-	
-	this->http(); /* setup builtin request and response, if running as CGI */
-	
-	if (this->mainfile.length() == 0) { // try the PATH_TRANSLATED env var
+int v8cgi_App::findmain() {
+	if (this->mainfile.length() == 0) { /* try the PATH_TRANSLATED env var */
 		v8::Handle<v8::Value> sys = JS_GLOBAL->Get(JS_STR("System"));
 		v8::Handle<v8::Value> env = sys->ToObject()->Get(JS_STR("env"));
 		v8::Handle<v8::Value> pt = env->ToObject()->Get(JS_STR("PATH_TRANSLATED"));
@@ -382,17 +376,15 @@ int v8cgi_App::go(char ** envp) {
 		}
 	}
 	
-	if (this->mainfile.length() == 0) {
-		error("Nothing to do.\n", __FILE__, __LINE__);
-		return 1;
-	} else {
-		return this->include(this->mainfile, false);
-	}
+	return (this->mainfile.length() == 0 ? 1 : 0);
+}
+
+int v8cgi_App::process() {
+	this->http(); /* setup builtin request and response, if running as CGI */
+	return this->include(this->mainfile, false);
 }
 
 int v8cgi_App::prepare(char ** envp) {
-	std::string current = getcwd(NULL, 0);
-	this->paths.push(current);
 	v8::Handle<v8::Object> g = JS_GLOBAL;
 	
 	GLOBAL_PROTO->SetInternalField(0, v8::External::New((void *)this)); 

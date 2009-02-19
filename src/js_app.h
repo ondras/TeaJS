@@ -15,7 +15,7 @@ class v8cgi_App {
 public:
 	virtual ~v8cgi_App() {};
 	int init(int argc, char ** argv);
-	int execute(char ** envp);
+	int execute(char ** envp, bool change);
 	int include(std::string str, bool populate);
 	v8::Handle<v8::Value> require(std::string str, bool wrap);
 	
@@ -39,7 +39,8 @@ private:
 
 	
 	int prepare(char ** envp);
-	int go(char ** envp);
+	int process();
+	int findmain();
 	void finish();
 	void http();
 	void report_error(const char * message);

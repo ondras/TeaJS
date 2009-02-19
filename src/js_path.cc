@@ -3,6 +3,18 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+// chdir()
+#ifndef HAVE_CHDIR
+#	include <direct.h>
+#	define chdir(name) _chdir(name)
+#endif
+
+// getcwd()
+#ifndef HAVE_GETCWD
+#	include <direct.h>
+#	define getcwd(name, bytes) _getcwd(name, bytes)
+#endif
+
 std::string path_normalize(std::string path, std::string base) {
 	std::string result;
 	if (path_isabsolute(path)) {
@@ -49,4 +61,12 @@ bool path_exists(std::string path) {
 	if (stat(path.c_str(), &st) != 0) { return false; } /* does not exist */
 	if (st.st_mode & S_IFDIR) { return false; } /* is directory */
 	return true;
+}
+
+std::string path_getcwd() {
+	return getcwd(NULL, 0);
+}
+
+void path_chdir(std::string dir) {
+	chdir(dir.c_str());
 }

@@ -44,7 +44,7 @@ public:
 	
 	int execute(char ** envp, request_rec * request) {
 		this->request = request;
-		return v8cgi_App::execute(envp);
+		return v8cgi_App::execute(envp, true);
 	}
 	
 private:

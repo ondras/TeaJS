@@ -9,5 +9,7 @@ std::string path_filename(std::string path);
 std::string path_dirname(std::string path);
 bool path_isabsolute(std::string path);
 bool path_exists(std::string path);
+std::string path_getcwd();
+void path_chdir(std::string dir);
 
 #endif 

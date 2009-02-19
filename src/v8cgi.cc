@@ -21,7 +21,7 @@ int main(int argc, char ** argv) {
 #ifdef FASTCGI
 	while (FCGI_Accept() >= 0) {
 #endif
-	result = app.execute(environ);
+	result = app.execute(environ, false);
 	
 #ifdef FASTCGI
 	FCGI_SetExitStatus(result);

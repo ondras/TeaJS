@@ -20,6 +20,14 @@ JS_METHOD(_mysql) {
 	return args.This();
 }
 
+JS_METHOD(_close) {
+	MYSQL * conn = LOAD_PTR(0, MYSQL *);
+	mysql_close(conn);
+	SAVE_VALUE(0, JS_BOOL(false));
+	
+	return args.This();
+}
+
 JS_METHOD(_connect) {
 	if (args.Length() < 4) {
 		return JS_EXCEPTION("Invalid call format. Use 'mysql.connect(host, user, pass, db)'");
@@ -246,6 +254,7 @@ SHARED_INIT() {
 		 
 	v8::Handle<v8::ObjectTemplate> pt = ft->PrototypeTemplate();
 	pt->Set(JS_STR("connect"), v8::FunctionTemplate::New(_connect));
+	pt->Set(JS_STR("close"), v8::FunctionTemplate::New(_close));
 	pt->Set(JS_STR("query"), v8::FunctionTemplate::New(_query));
 	pt->Set(JS_STR("error"), v8::FunctionTemplate::New(_error));
 	pt->Set(JS_STR("errno"), v8::FunctionTemplate::New(_errno));

@@ -61,6 +61,12 @@ env.Append(
     LINKFLAGS = []
 )
 
+if env["os"] == "posix":
+	env.Append(
+		LIBS = ["pthread"]
+	)
+# if
+
 Help(opts.GenerateHelpText(env))
 conf = Configure(env)
 
@@ -93,7 +99,7 @@ if conf.CheckFunc("sleep"):
     env.Append(CPPDEFINES = "HAVE_SLEEP")
 	
 if ((env["os"] != "windows") and not (conf.CheckLib("v8"))):
-	print "Cannot find V8 library, exiting!"
+	print "Cannot find V8 library!"
 # if
 
 env = conf.Finish()
@@ -105,7 +111,7 @@ env.Append(
 )
 
 if env["os"] == "posix":
-    env.Append(LIBS = ["pthread", "dl"])
+    env.Append(LIBS = ["dl"])
 # if
 
 if env["os"] == "windows":

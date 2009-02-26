@@ -1,5 +1,5 @@
 // put default .js and .dll files here
-Config["libraryPath"] = "c:/program files/v8cgi";
+Config["libraryPath"] = "c:/program files/v8cgi/lib";
 
 // these will get loaded automatically
 Config["libraryAutoload"] = ["js", "util", "html", "http"];

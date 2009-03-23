@@ -453,12 +453,16 @@ bool v8cgi_App::process_args(int argc, char ** argv) {
 	// if there were no v8 args, then reset index to the first argument
 	if (!have_v8args) index = 1;
 	
+	// we haven't found a mainfile yet, so there MUST be more arguments
+	if (index >= argc)
+		return false;
+	
 	// Only the very next argument can be the "-c".  if it isn't
 	// then set the cfgfile to the one passed in at compile time
 	if (std::string(argv[index]) == "-c") {
 		// make sure there is an argument after the "-c"
 		if (index + 1 >= argc) return false;
-		else ++index;
+		else ++index; // skip over the "-c"
 		
 		//printf("cfgfile: %s\n", argv[index]);
 		this->cfgfile = argv[index];
@@ -468,8 +472,7 @@ bool v8cgi_App::process_args(int argc, char ** argv) {
 	
 	// argv[index] MUST be the program_file.  If it doesn't
 	// exist then we have an error.
-	std::string program_file = argv[index];
-	if (program_file.size() == 0)
+	if (index >= argc)
 		return false;
 	else {
 		//printf("mainfile: %s\n", argv[index]);

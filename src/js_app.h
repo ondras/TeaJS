@@ -34,10 +34,12 @@ public:
 private:
 	std::string cfgfile; /* config file */
 	std::string mainfile; /* command-line specified file */
+	std::vector<std::string> mainfile_args; /* arguments after mainfile */
 	std::string cwd;
 	Cache cache;
 
 	
+	bool v8cgi_App::process_args(int argc, char ** argv);
 	int prepare(char ** envp);
 	int process();
 	int findmain();

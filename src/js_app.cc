@@ -6,6 +6,7 @@
 #define STRING(x) _STRING(x)
 
 #include <sstream>
+#include <vector>
 #include <stdlib.h>
 #include <string.h>
 #include <v8.h>
@@ -57,23 +58,25 @@ JS_METHOD(_exit) {
 	return v8::Undefined();
 }
 
+// Format for command line arguments
+//
+// as you can see if you wish to pass any arguments to v8, you MUST
+// put a -- surrounded by whitespace after all the v8 arguments
+//
+// any arguments after the v8_args but before the program_file are
+// used by v8cgi.
+static const char* v8cgi_usage = "v8cgi [v8_args --] [-c path] program_file [argument ...]";
+
 int v8cgi_App::init(int argc, char ** argv) {
-	v8::V8::SetFlagsFromCommandLine(&argc, argv, true);
-	this->cfgfile = STRING(CONFIG_PATH);
-	
-	int argptr = 0;
-	for (int i = 1; i < argc; i++) {
-		const char* str = argv[i];
-		std::string sstr = str;
-		argptr = i;
-		if (sstr.find("-c") == 0 && i + 1 < argc) {
-			this->cfgfile = argv[i+1];
-			argptr = 0;
-			i++;
-		}
+	if (!this->process_args(argc, argv)) {
+		std::string err = "Invalid command line usage.\n";
+		err += "Correct usage: ";
+		err += v8cgi_usage;
+		err += "\n";
+		this->error(err.c_str(), __FILE__, __LINE__);
+		return 1;
 	}
-	
-	if (argptr) { this->mainfile = argv[argptr]; }
+
 	FILE* file = fopen(this->cfgfile.c_str(), "rb");
 	if (file == NULL) { 
 		std::string err = "Invalid configuration file (";
@@ -409,7 +412,78 @@ int v8cgi_App::prepare(char ** envp) {
 		return 1;
 	}
 	
+	v8::Handle<v8::Object> args = v8::Array::New();
+	for (size_t i = 0; i < this->mainfile_args.size(); ++i) {
+		args->Set(JS_INT(i), JS_STR(this->mainfile_args.at(i).c_str()));
+	}
+	g->Set(JS_STR("arguments"), args);
+	
 	return 0;
+}
+
+// return true if we were able to (optionally) set a config file and 
+// (non-optionally) set a mainfile. false if usage was invalid.
+bool v8cgi_App::process_args(int argc, char ** argv) {
+	// see the v8cgi_usage definition for the format
+	
+	// we must have atleast one arg
+	if (argc == 1) return false;
+	
+	int index = 0;
+	
+	// see if we have v8 options
+	bool have_v8args = false;
+	for (; index < argc; ++index) {
+		// FIXME: if there is a standalone "--" after the name of the script
+		// then this breaks.  I can't figure out a solution to this, so
+		// for now we don't support any standalone "--" after the script name.
+		// One solution (and the way it currently works) is to require "--"
+		// before all other args even if no v8 args are used, but that seems
+		// I don't like this, but it is where we are right now.
+		if (std::string(argv[index]) == "--") {
+			// treat all previous arguments as v8 arguments
+			int v8argc = index;
+			v8::V8::SetFlagsFromCommandLine(&v8argc, argv, true);
+			++index; // skip over the "--"
+			have_v8args = true;
+			break;
+		}
+	}
+	
+	// if there were no v8 args, then reset index to the first argument
+	if (!have_v8args) index = 1;
+	
+	// Only the very next argument can be the "-c".  if it isn't
+	// then set the cfgfile to the one passed in at compile time
+	if (std::string(argv[index]) == "-c") {
+		// make sure there is an argument after the "-c"
+		if (index + 1 >= argc) return false;
+		else ++index;
+		
+		//printf("cfgfile: %s\n", argv[index]);
+		this->cfgfile = argv[index];
+		++index; // skip over the config file
+	} else
+		this->cfgfile = STRING(CONFIG_PATH);
+	
+	// argv[index] MUST be the program_file.  If it doesn't
+	// exist then we have an error.
+	std::string program_file = argv[index];
+	if (program_file.size() == 0)
+		return false;
+	else {
+		//printf("mainfile: %s\n", argv[index]);
+		this->mainfile = argv[index];
+		++index; // skip over the program_file
+	}
+	
+	// all the rest of the arguments are arguments to the program_file
+	for (; index < argc; ++index) {
+		//printf("program_arg: %s\n", argv[index]);
+		this->mainfile_args.push_back(std::string(argv[index]));
+	}
+	
+	return true;
 }
 
 size_t v8cgi_App::reader(char * destination, size_t amount) {

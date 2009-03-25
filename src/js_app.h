@@ -29,7 +29,6 @@ public:
 	virtual size_t reader (char * destination, size_t size);
 	virtual size_t writer (const char * source, size_t size);
 	virtual void error(const char * data, const char * file, int line);
-	virtual void header(const char * name, const char * value);
 
 private:
 	std::string cfgfile; /* config file */
@@ -38,8 +37,7 @@ private:
 	std::string cwd;
 	Cache cache;
 
-	
-	bool v8cgi_App::process_args(int argc, char ** argv);
+	virtual bool process_args(int argc, char ** argv);
 	int prepare(char ** envp);
 	int process();
 	int findmain();

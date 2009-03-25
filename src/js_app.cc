@@ -68,6 +68,8 @@ JS_METHOD(_exit) {
 static const char* v8cgi_usage = "v8cgi [v8_args --] [-c path] program_file [argument ...]";
 
 int v8cgi_App::init(int argc, char ** argv) {
+	this->cfgfile = STRING(CONFIG_PATH);
+
 	if (!this->process_args(argc, argv)) {
 		std::string err = "Invalid command line usage.\n";
 		err += "Correct usage: ";
@@ -356,12 +358,11 @@ void v8cgi_App::http() { /* prepare global request and response objects */
 		sys->Get(JS_STR("env"))
 	};
 	v8::Handle<v8::Value> resargs[] = { 
-		sys->Get(JS_STR("stdout")),
-		sys->Get(JS_STR("header"))
+		sys->Get(JS_STR("stdout"))
 	};
 
 	JS_GLOBAL->Set(JS_STR("request"), reqf->NewInstance(2, reqargs));
-	JS_GLOBAL->Set(JS_STR("response"), resf->NewInstance(2, resargs));
+	JS_GLOBAL->Set(JS_STR("response"), resf->NewInstance(1, resargs));
 }
 
 int v8cgi_App::findmain() {
@@ -426,7 +427,7 @@ int v8cgi_App::prepare(char ** envp) {
 bool v8cgi_App::process_args(int argc, char ** argv) {
 	// see the v8cgi_usage definition for the format
 	
-	// we must have atleast one arg
+	// we must have at least one arg
 	if (argc == 1) return false;
 	
 	int index = 0;
@@ -467,8 +468,7 @@ bool v8cgi_App::process_args(int argc, char ** argv) {
 		//printf("cfgfile: %s\n", argv[index]);
 		this->cfgfile = argv[index];
 		++index; // skip over the config file
-	} else
-		this->cfgfile = STRING(CONFIG_PATH);
+	}
 	
 	// argv[index] MUST be the program_file.  If it doesn't
 	// exist then we have an error.
@@ -499,8 +499,4 @@ size_t v8cgi_App::writer(const char * data, size_t amount) {
 
 void v8cgi_App::error(const char * data, const char * file, int line) {
 	fwrite((void *) data, sizeof(char), strlen(data), stderr);
-}
-
-void v8cgi_App::header(const char * name, const char * value) {
-	printf("%s: %s\n", name, value);
 }

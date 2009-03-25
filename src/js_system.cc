@@ -68,14 +68,6 @@ JS_METHOD(_stderr) {
 	return v8::Undefined();
 }
 
-JS_METHOD(_header) {
-	v8cgi_App * app = APP_PTR;
-	v8::String::Utf8Value name(args[0]);
-	v8::String::Utf8Value value(args[1]);
-	app->header(*name, *value);
-	return v8::Undefined();
-}
-
 JS_METHOD(_system) {
 	if (args.Length() != 1) {
 		return JS_EXCEPTION("Wrong argument count. Use System.system(\"command\")");
@@ -113,7 +105,6 @@ void setup_system(v8::Handle<v8::Object> global, char ** envp) {
 	system->Set(JS_STR("stdin"), v8::FunctionTemplate::New(_stdin)->GetFunction());
 	system->Set(JS_STR("stdout"), v8::FunctionTemplate::New(_stdout)->GetFunction());
 	system->Set(JS_STR("stderr"), v8::FunctionTemplate::New(_stderr)->GetFunction());
-	system->Set(JS_STR("header"), v8::FunctionTemplate::New(_header)->GetFunction());
 	system->Set(JS_STR("system"), v8::FunctionTemplate::New(_system)->GetFunction());
 	system->Set(JS_STR("sleep"), v8::FunctionTemplate::New(_sleep)->GetFunction());
 /*	system->Set(JS_STR("usleep"), v8::FunctionTemplate::New(_usleep)->GetFunction()); */

@@ -20,20 +20,61 @@ public:
 	}
 
 	size_t writer(const char * data, size_t amount) {
-		return ap_rwrite(data, amount, this->request);
+		if (this->output_started) { /* response data */
+			return ap_rwrite(data, amount, this->request);
+		} else { /* header or content separator */
+			char * end = strchr(data, '\r');
+			if (!end) { end = strchr(data, '\n'); }
+			if (!end) { return 0; } /* header or separator must end with a newline */
+			
+			if (end == data) { /* content separator */
+				this->output_started = true;
+				return 0;
+			} else { /* header */
+				char * colon = strchr(data, ':');
+				if (!colon) { return 0; } /* header without colon is a bad header */
+				size_t namelen = colon - data;
+				
+				if ((size_t) (colon-data+1) < amount && *(colon+1) == ' ') { colon++; } /* skip space after colon */
+				
+				size_t valuelen = end - colon - 1;
+				char * name = (char *) apr_palloc(request->pool, namelen + 1);
+				char * value = (char *) apr_palloc(request->pool, valuelen + 1);
+				name[namelen] = '\0';
+				value[valuelen] = '\0';
+				strncpy(name, data, namelen);
+				strncpy(value, colon+1, valuelen);
+				
+				this->header(name, value);
+				return amount;
+			}
+		}
 	}
 
-	void writer(const char * data, const char * file, int line) {
+	void error(const char * data, const char * file, int line) {
 		ap_log_rerror(file, line, APLOG_DEBUG, 1, this->request, "%s", data);
 	}
 
+	
+	int execute(char ** envp, request_rec * request) {
+		this->output_started = false;
+		this->request = request;
+		return v8cgi_App::execute(envp, true);
+	}
+	
+private:
+	request_rec * request;
+	bool output_started;
+
+	virtual bool process_args(int argc, char ** argv) { return true; }
+	
 	void header(const char * name, const char * value) {
 		if (strcasecmp(name, "content-type") == 0) {
 			char * ct =  (char *) apr_palloc(request->pool, strlen(value)+1);
 			strcpy(ct, value);
 			this->request->content_type = ct;
 		} else if (strcasecmp(name, "status") == 0) {
-			char * line =  (char *) apr_palloc(request->pool, strlen(value)+1);
+			char * line = (char *) apr_palloc(request->pool, strlen(value)+1);
 			strcpy(line, value);
 			this->request->status_line = line;
 			this->request->status = atoi(value);
@@ -42,13 +83,6 @@ public:
 		}
 	}
 	
-	int execute(char ** envp, request_rec * request) {
-		this->request = request;
-		return v8cgi_App::execute(envp, true);
-	}
-	
-private:
-	request_rec * request;
 };
 
 static v8cgi_Module app;
@@ -63,10 +97,6 @@ static int mod_v8cgi_handler(request_rec *r) {
     ap_add_common_vars(r);
     ap_add_cgi_vars(r);
 
-    /* set apache headers */
-    /* TODO - let the script do this. */
-    r->content_type = "text/html";
-	
     /* extract the CGI environment  */
     arr = apr_table_elts(r->subprocess_env);
     elts = (const apr_table_entry_t*) arr->elts;

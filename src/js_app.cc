@@ -32,6 +32,16 @@
 #   define dlsym(x,y) (void*)GetProcAddress((HMODULE)x,y)
 #endif
 
+void gc_handler(v8::Persistent<v8::Value> object, void * ptr) {
+	v8cgi_App * app = (v8cgi_App *) ptr;
+	v8cgi_App::gclist::iterator it = app->gc.begin();
+	v8cgi_App::gclist::iterator end = app->gc.end();
+	while (it != end && it->first != object) { it++; }
+	if (it != end) { /* only if we have this one */
+		app->goGC(it);
+	}
+}
+
 JS_METHOD(_include) {
 	v8cgi_App * app = APP_PTR;
 	v8::String::Utf8Value file(args[0]);
@@ -100,6 +110,7 @@ int v8cgi_App::execute(char ** envp, bool change) {
 	v8::Context::Scope context_scope(context);
 	
 	result = this->prepare(envp); /* prepare JS environment */
+		
 	if (result == 0) { result = this->findmain(); } /* try to locate main file */
 	if (result == 0) {
 		if (change) { path_chdir(path_dirname(this->mainfile)); } /* if requested, chdir */
@@ -138,7 +149,7 @@ v8::Handle<v8::Value> v8cgi_App::require(std::string str, bool wrap) {
 		return v8::Null();
 	}
 	
-	v8cgi_App::exportmap::iterator it = this->exports.find(filename);
+	exportmap::iterator it = this->exports.find(filename);
 	if (it != this->exports.end()) { /* use cached version */
 		return this->exports[filename];
 	}
@@ -321,24 +332,29 @@ int v8cgi_App::autoload() {
 
 void v8cgi_App::finish() {
 	v8::HandleScope handle_scope;
-	/* callbacks */
+	
+	/* user callbacks */
 	for (unsigned int i=0; i<this->onexit.size(); i++) {
 		this->onexit[i]->Call(JS_GLOBAL, 0, NULL);
 		this->onexit[i].Dispose();
 	}
 	this->onexit.clear();
 
+	/* garbage collection */
+	while (!this->gc.empty()) {
+		this->goGC(this->gc.begin());
+	}
+	this->gc.clear();
+	
 	/* export cache */
-	v8cgi_App::exportmap::iterator it;
-	for (it=this->exports.begin(); it != this->exports.end(); it++) {
-		it->second.Dispose();
+	exportmap::iterator expit;
+	for (expit=this->exports.begin(); expit != this->exports.end(); expit++) {
+		expit->second.Dispose();
 	}
 	this->exports.clear();
 	
 	/* paths */
-	while (!this->paths.empty()) {
-		this->paths.pop();
-	}
+	while (!this->paths.empty()) { this->paths.pop(); }
 }
 
 void v8cgi_App::http() { /* prepare global request and response objects */
@@ -346,7 +362,6 @@ void v8cgi_App::http() { /* prepare global request and response objects */
 	v8::Handle<v8::Value> env = sys->ToObject()->Get(JS_STR("env"));
 	v8::Handle<v8::Value> ss = env->ToObject()->Get(JS_STR("SERVER_SOFTWARE"));
 	if (!ss->IsString()) { return; }
-	
 	v8::Handle<v8::Object> http = JS_GLOBAL->Get(JS_STR("HTTP"))->ToObject();
 	v8::Handle<v8::Value> req = http->Get(JS_STR("ServerRequest"));
 	v8::Handle<v8::Value> res = http->Get(JS_STR("ServerResponse"));
@@ -361,8 +376,8 @@ void v8cgi_App::http() { /* prepare global request and response objects */
 		sys->Get(JS_STR("stdout"))
 	};
 
-	JS_GLOBAL->Set(JS_STR("request"), reqf->NewInstance(2, reqargs));
 	JS_GLOBAL->Set(JS_STR("response"), resf->NewInstance(1, resargs));
+	JS_GLOBAL->Set(JS_STR("request"), reqf->NewInstance(2, reqargs));
 }
 
 int v8cgi_App::findmain() {
@@ -487,6 +502,21 @@ bool v8cgi_App::process_args(int argc, char ** argv) {
 	}
 	
 	return true;
+}
+
+void v8cgi_App::goGC(gclist::iterator it) {
+	v8::HandleScope handle_scope;
+	v8::Handle<v8::Object> obj = it->first->ToObject();
+	v8::Local<v8::Function> fun = v8::Local<v8::Function>::Cast(obj->Get(JS_STR(it->second)));
+
+	fun->Call(obj, 0, NULL);
+	this->gc.erase(it);
+}
+
+void v8cgi_App::addGC(v8::Handle<v8::Value> object, char * method) {
+	v8::Persistent<v8::Value> p = v8::Persistent<v8::Value>::New(object);
+	p.MakeWeak((void *) this, &gc_handler);
+	this->gc.push_back(std::pair<v8::Persistent<v8::Value>, char *>(p, method));
 }
 
 size_t v8cgi_App::reader(char * destination, size_t amount) {

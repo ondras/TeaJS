@@ -145,7 +145,7 @@ if env["mysql"] == 1:
 	)
 	e.SharedLibrary(
 		target = "lib/libmysql", 
-		source = "src/lib/mysql/js_mysql.cc",
+		source = ["src/js_app.cc", "src/lib/mysql/js_mysql.cc"],
 		SHLIBPREFIX=""
 	)
 # if

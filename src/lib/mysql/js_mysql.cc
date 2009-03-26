@@ -1,5 +1,6 @@
 #include <v8.h>
 #include "js_macros.h"
+#include "js_app.h"
 
 #ifdef windows
 #	include <my_global.h>
@@ -12,19 +13,21 @@
 v8::Persistent<v8::FunctionTemplate> rest;
 
 JS_METHOD(_mysql) {
+	SAVE_PTR(0, NULL);
 	if (args.This()->InternalFieldCount() == 0) {
 		return JS_EXCEPTION("Invalid call format. Use 'new MySQL()'");
 	}
-	SAVE_VALUE(0, JS_BOOL(false));
-	
+	v8cgi_App * app = APP_PTR;
+	app->addGC(args.This(), "close");
 	return args.This();
 }
 
 JS_METHOD(_close) {
 	MYSQL * conn = LOAD_PTR(0, MYSQL *);
-	mysql_close(conn);
-	SAVE_VALUE(0, JS_BOOL(false));
-	
+	if (conn) {
+		mysql_close(conn);
+		SAVE_PTR(0, NULL);
+	}
 	return args.This();
 }
 
@@ -33,7 +36,7 @@ JS_METHOD(_connect) {
 		return JS_EXCEPTION("Invalid call format. Use 'mysql.connect(host, user, pass, db)'");
 	}
 
-	MYSQL *conn;
+	MYSQL * conn;
 	
 	v8::String::Utf8Value host(args[0]);
 	v8::String::Utf8Value user(args[1]);

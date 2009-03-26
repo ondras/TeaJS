@@ -8,27 +8,32 @@
 #include <map>
 #include <stack>
 #include <vector>
+#include <list>
 #include <v8.h>
 #include "js_cache.h"
 
 class v8cgi_App {
 public:
 	virtual ~v8cgi_App() {};
-	int init(int argc, char ** argv);
-	int execute(char ** envp, bool change);
+	int init(int argc, char ** argv); /* once per app lifetime */
+	int execute(char ** envp, bool change); /* once per request */
 	int include(std::string str, bool populate);
 	v8::Handle<v8::Value> require(std::string str, bool wrap);
+	void addGC(v8::Handle<v8::Value> object, char * method);
 	
 	typedef std::vector<v8::Persistent<v8::Function> > funcvector;
 	typedef std::stack<std::string> pathstack;
 	typedef std::map<std::string, v8::Persistent<v8::Value> > exportmap;
-	exportmap exports;
-	funcvector onexit;
-	pathstack paths;
+	typedef std::list<std::pair<v8::Persistent<v8::Value>, char *> > gclist;
+	exportmap exports;	/* list of cached exports */
+	funcvector onexit;	/* list of "onexit" functions */
+	pathstack paths;	/* stack of current paths */ 
+	gclist gc;			/* objects to be garbage collected */
 
-	virtual size_t reader (char * destination, size_t size);
-	virtual size_t writer (const char * source, size_t size);
-	virtual void error(const char * data, const char * file, int line);
+	void goGC(gclist::iterator it);
+	virtual size_t reader (char * destination, size_t size); /* stdin */
+	virtual size_t writer (const char * source, size_t size); /* stdout */
+	virtual void error(const char * data, const char * file, int line); /* stderr */
 
 private:
 	std::string cfgfile; /* config file */

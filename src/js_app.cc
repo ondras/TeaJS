@@ -99,8 +99,9 @@ int v8cgi_App::execute(char ** envp, bool change) {
 	v8::Handle<v8::Context> context = v8::Context::New(NULL, globaltemplate);
 	v8::Context::Scope context_scope(context);
 	
+	this->mainfile = "";
 	result = this->prepare(envp); /* prepare JS environment */
-		
+
 	if (result == 0) { result = this->findmain(); } /* try to locate main file */
 	if (result == 0) {
 		if (change) { path_chdir(path_dirname(this->mainfile)); } /* if requested, chdir */

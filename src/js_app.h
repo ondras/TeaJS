@@ -36,7 +36,6 @@ private:
 	std::string cfgfile; /* config file */
 	std::string mainfile; /* command-line specified file */
 	std::vector<std::string> mainfile_args; /* arguments after mainfile */
-	std::string cwd;
 	Cache cache;
 	GC gc;
 

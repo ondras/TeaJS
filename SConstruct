@@ -7,6 +7,7 @@ sources = [
 	"js_io.cc",
 	"js_socket.cc",
 	"js_cache.cc",
+	"js_gc.cc",
 	"js_app.cc",
 	"js_path.cc"
 ]
@@ -55,10 +56,10 @@ env = Environment(options=opts)
 env.Append(
     LIBS = ["v8"], 
     CPPPATH = ["src"], 
-    CCFLAGS = ["-Wall", "-O3"], 
+    CCFLAGS = ["-Wall", "-O3", "-m32"], 
     CPPDEFINES = [],
     LIBPATH = "",
-    LINKFLAGS = []
+    LINKFLAGS = ["-m32"]
 )
 
 if env["os"] == "posix":
@@ -145,7 +146,7 @@ if env["mysql"] == 1:
 	)
 	e.SharedLibrary(
 		target = "lib/libmysql", 
-		source = ["src/js_app.cc", "src/lib/mysql/js_mysql.cc"],
+		source = ["src/js_gc.cc", "src/lib/mysql/js_mysql.cc"],
 		SHLIBPREFIX=""
 	)
 # if
@@ -192,4 +193,3 @@ if env["cgi"] == 1:
 		target = "v8cgi"
 	)
 # if
-

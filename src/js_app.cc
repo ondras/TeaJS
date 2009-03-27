@@ -32,16 +32,6 @@
 #   define dlsym(x,y) (void*)GetProcAddress((HMODULE)x,y)
 #endif
 
-void gc_handler(v8::Persistent<v8::Value> object, void * ptr) {
-	v8cgi_App * app = (v8cgi_App *) ptr;
-	v8cgi_App::gclist::iterator it = app->gc.begin();
-	v8cgi_App::gclist::iterator end = app->gc.end();
-	while (it != end && it->first != object) { it++; }
-	if (it != end) { /* only if we have this one */
-		app->goGC(it);
-	}
-}
-
 JS_METHOD(_include) {
 	v8cgi_App * app = APP_PTR;
 	v8::String::Utf8Value file(args[0]);
@@ -105,7 +95,7 @@ int v8cgi_App::execute(char ** envp, bool change) {
 	v8::HandleScope handle_scope;
 	int result;
 	v8::Handle<v8::ObjectTemplate> globaltemplate = v8::ObjectTemplate::New();
-	globaltemplate->SetInternalFieldCount(1);
+	globaltemplate->SetInternalFieldCount(2);
 	v8::Handle<v8::Context> context = v8::Context::New(NULL, globaltemplate);
 	v8::Context::Scope context_scope(context);
 	
@@ -341,10 +331,7 @@ void v8cgi_App::finish() {
 	this->onexit.clear();
 
 	/* garbage collection */
-	while (!this->gc.empty()) {
-		this->goGC(this->gc.begin());
-	}
-	this->gc.clear();
+	this->gc.finish();
 	
 	/* export cache */
 	exportmap::iterator expit;
@@ -407,6 +394,8 @@ int v8cgi_App::prepare(char ** envp) {
 	v8::Handle<v8::Object> g = JS_GLOBAL;
 	
 	GLOBAL_PROTO->SetInternalField(0, v8::External::New((void *)this)); 
+	GLOBAL_PROTO->SetInternalField(1, v8::External::New((void *) &(this->gc))); 
+
 	g->Set(JS_STR("include"), v8::FunctionTemplate::New(_include)->GetFunction());
 	g->Set(JS_STR("require"), v8::FunctionTemplate::New(_require)->GetFunction());
 	g->Set(JS_STR("onexit"), v8::FunctionTemplate::New(_onexit)->GetFunction());
@@ -502,21 +491,6 @@ bool v8cgi_App::process_args(int argc, char ** argv) {
 	}
 	
 	return true;
-}
-
-void v8cgi_App::goGC(gclist::iterator it) {
-	v8::HandleScope handle_scope;
-	v8::Handle<v8::Object> obj = it->first->ToObject();
-	v8::Local<v8::Function> fun = v8::Local<v8::Function>::Cast(obj->Get(JS_STR(it->second)));
-
-	fun->Call(obj, 0, NULL);
-	this->gc.erase(it);
-}
-
-void v8cgi_App::addGC(v8::Handle<v8::Value> object, char * method) {
-	v8::Persistent<v8::Value> p = v8::Persistent<v8::Value>::New(object);
-	p.MakeWeak((void *) this, &gc_handler);
-	this->gc.push_back(std::pair<v8::Persistent<v8::Value>, char *>(p, method));
 }
 
 size_t v8cgi_App::reader(char * destination, size_t amount) {

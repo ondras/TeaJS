@@ -1,6 +1,6 @@
 #include <v8.h>
 #include "js_macros.h"
-#include "js_app.h"
+#include "js_gc.h"
 
 #ifdef windows
 #	include <my_global.h>
@@ -17,8 +17,8 @@ JS_METHOD(_mysql) {
 	if (args.This()->InternalFieldCount() == 0) {
 		return JS_EXCEPTION("Invalid call format. Use 'new MySQL()'");
 	}
-	v8cgi_App * app = APP_PTR;
-	app->addGC(args.This(), "close");
+	GC * gc = GC_PTR;
+	gc->add(args.This(), "close");
 	return args.This();
 }
 

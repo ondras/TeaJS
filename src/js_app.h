@@ -11,6 +11,7 @@
 #include <list>
 #include <v8.h>
 #include "js_cache.h"
+#include "js_gc.h"
 
 class v8cgi_App {
 public:
@@ -19,18 +20,14 @@ public:
 	int execute(char ** envp, bool change); /* once per request */
 	int include(std::string str, bool populate);
 	v8::Handle<v8::Value> require(std::string str, bool wrap);
-	void addGC(v8::Handle<v8::Value> object, char * method);
 	
 	typedef std::vector<v8::Persistent<v8::Function> > funcvector;
 	typedef std::stack<std::string> pathstack;
 	typedef std::map<std::string, v8::Persistent<v8::Value> > exportmap;
-	typedef std::list<std::pair<v8::Persistent<v8::Value>, char *> > gclist;
 	exportmap exports;	/* list of cached exports */
 	funcvector onexit;	/* list of "onexit" functions */
 	pathstack paths;	/* stack of current paths */ 
-	gclist gc;			/* objects to be garbage collected */
 
-	void goGC(gclist::iterator it);
 	virtual size_t reader (char * destination, size_t size); /* stdin */
 	virtual size_t writer (const char * source, size_t size); /* stdout */
 	virtual void error(const char * data, const char * file, int line); /* stderr */
@@ -41,6 +38,7 @@ private:
 	std::vector<std::string> mainfile_args; /* arguments after mainfile */
 	std::string cwd;
 	Cache cache;
+	GC gc;
 
 	virtual bool process_args(int argc, char ** argv);
 	int prepare(char ** envp);

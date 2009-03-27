@@ -14,6 +14,7 @@
 #define JS_GLOBAL v8::Context::GetCurrent()->Global()
 #define GLOBAL_PROTO v8::Handle<v8::Object>::Cast(JS_GLOBAL->GetPrototype())
 #define APP_PTR reinterpret_cast<v8cgi_App *>(v8::Handle<v8::External>::Cast(GLOBAL_PROTO->GetInternalField(0))->Value());
+#define GC_PTR reinterpret_cast<GC *>(v8::Handle<v8::External>::Cast(GLOBAL_PROTO->GetInternalField(1))->Value());
 
 #ifdef _WIN32
 #   define SHARED_INIT() extern "C" __declspec(dllexport) void init(v8::Handle<v8::Object> exports)

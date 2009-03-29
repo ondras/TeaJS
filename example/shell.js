@@ -2,7 +2,16 @@
 
 while (1) {
     System.stdout("> ");
-    var cmd = System.stdin();
+    var cmd = "";
+	var ch = "";
+	while (1) {
+		ch = System.stdin(1);
+		if (ch == "\n") {
+			break;
+		} else { 
+			cmd += ch;
+		}
+	}
     var error = false;
     try {
         var result = eval(cmd);

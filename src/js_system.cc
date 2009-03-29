@@ -26,14 +26,22 @@ JS_METHOD(_stdin) {
 	
 	std::string data;
 	size_t size = 0;
-	char ch;
-	while (1) {
-		app->reader(&ch, 1);
-		data += ch;
-		size++;
-		if (count > 0 && size == count) { break; }
-		if (count == 0 && ch == '\n') { break; }
-	};
+
+   if (count == 0) { /* all */
+		size_t tmp;
+		char * buf = new char[1024];
+		do {
+			tmp = app->reader(buf, sizeof(buf));
+			size += tmp;
+			data.insert(data.length(), buf, tmp);
+		} while (tmp == sizeof(buf));
+		delete[] buf;
+	} else {
+		char * tmp = new char[count];
+		size = app->reader(tmp, count);
+		data.insert(0, tmp, size);
+		delete[] tmp;
+	}
 	
 	if (args.Length() > 1 && args[1]->IsTrue()) {
 		return JS_CHARARRAY((char *) data.data(), size);

@@ -112,7 +112,7 @@ env.Append(
 )
 
 if env["os"] == "posix":
-    env.Append(LIBS = ["dl"])
+    env.Append(LIBS = ["dl", "rt"])
 # if
 
 if env["os"] == "windows":

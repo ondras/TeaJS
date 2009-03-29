@@ -99,7 +99,6 @@ int v8cgi_App::execute(char ** envp, bool change) {
 	v8::Handle<v8::Context> context = v8::Context::New(NULL, globaltemplate);
 	v8::Context::Scope context_scope(context);
 	
-	this->mainfile = "";
 	result = this->prepare(envp); /* prepare JS environment */
 
 	if (result == 0) { result = this->findmain(); } /* try to locate main file */
@@ -369,20 +368,17 @@ void v8cgi_App::http() { /* prepare global request and response objects */
 }
 
 int v8cgi_App::findmain() {
-	if (this->mainfile.length() == 0) { /* try the PATH_TRANSLATED env var */
-		v8::Handle<v8::Value> sys = JS_GLOBAL->Get(JS_STR("System"));
-		v8::Handle<v8::Value> env = sys->ToObject()->Get(JS_STR("env"));
-		v8::Handle<v8::Value> pt = env->ToObject()->Get(JS_STR("PATH_TRANSLATED"));
-		v8::Handle<v8::Value> sf = env->ToObject()->Get(JS_STR("SCRIPT_FILENAME"));
-		if (pt->IsString()) {
-			v8::String::Utf8Value jsname(pt);
-			this->mainfile = *jsname;
-		} else if (sf->IsString()) {
-			v8::String::Utf8Value jsname(sf);
-			this->mainfile = *jsname;
-		}
+	v8::Handle<v8::Value> sys = JS_GLOBAL->Get(JS_STR("System"));
+	v8::Handle<v8::Value> env = sys->ToObject()->Get(JS_STR("env"));
+	v8::Handle<v8::Value> pt = env->ToObject()->Get(JS_STR("PATH_TRANSLATED"));
+	v8::Handle<v8::Value> sf = env->ToObject()->Get(JS_STR("SCRIPT_FILENAME"));
+	if (pt->IsString()) {
+		v8::String::Utf8Value jsname(pt);
+		this->mainfile = *jsname;
+	} else if (sf->IsString()) {
+		v8::String::Utf8Value jsname(sf);
+		this->mainfile = *jsname;
 	}
-	
 	return (this->mainfile.length() == 0 ? 1 : 0);
 }
 
@@ -474,13 +470,12 @@ bool v8cgi_App::process_args(int argc, char ** argv) {
 		this->cfgfile = argv[index];
 		++index; // skip over the config file
 	}
-	
+
 	// argv[index] MUST be the program_file.  If it doesn't
 	// exist then we have an error.
 	if (index >= argc)
 		return false;
 	else {
-		//printf("mainfile: %s\n", argv[index]);
 		this->mainfile = argv[index];
 		++index; // skip over the program_file
 	}

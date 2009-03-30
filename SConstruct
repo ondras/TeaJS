@@ -64,7 +64,7 @@ env.Append(
 
 if env["os"] == "posix":
 	env.Append(
-		LIBS = ["pthread"]
+		LIBS = ["pthread", "rt"]
 	)
 # if
 
@@ -112,7 +112,7 @@ env.Append(
 )
 
 if env["os"] == "posix":
-    env.Append(LIBS = ["dl", "rt"])
+    env.Append(LIBS = ["dl"])
 # if
 
 if env["os"] == "windows":

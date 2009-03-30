@@ -20,8 +20,10 @@ std::string path_normalize(std::string path, std::string base) {
 	if (path_isabsolute(path)) {
 		result = path;
 	} else {
-		result = base;
-		result += '/';
+		if (base.length()) {
+			result = base;
+			result += '/';
+		}
 		result += path;
 	}
 	return result;

@@ -23,15 +23,15 @@ public:
 		if (this->output_started) { /* response data */
 			return ap_rwrite(data, amount, this->request);
 		} else { /* header or content separator */
-			char * end = strchr(data, '\r');
-			if (!end) { end = strchr(data, '\n'); }
+			char * end = strchr((char *) data, '\r');
+			if (!end) { end = strchr((char *) data, '\n'); }
 			if (!end) { return 0; } /* header or separator must end with a newline */
 			
 			if (end == data) { /* content separator */
 				this->output_started = true;
 				return 0;
 			} else { /* header */
-				char * colon = strchr(data, ':');
+				char * colon = strchr((char *) data, ':');
 				if (!colon) { return 0; } /* header without colon is a bad header */
 				size_t namelen = colon - data;
 				

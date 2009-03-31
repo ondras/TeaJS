@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <string>
 
+namespace {
+
 v8::Persistent<v8::FunctionTemplate> rest;
 
 JS_METHOD(_mysql) {
@@ -33,7 +35,7 @@ JS_METHOD(_connect) {
 	if (args.Length() < 4) {
 		return JS_EXCEPTION("Invalid call format. Use 'mysql.connect(host, user, pass, db)'");
 	}
-
+	
 	MYSQL * conn;
 	
 	v8::String::Utf8Value host(args[0]);
@@ -242,6 +244,8 @@ JS_METHOD(_fetchobjects) {
 	}
 	
 	return result;
+}
+
 }
 
 SHARED_INIT() {

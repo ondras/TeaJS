@@ -20,7 +20,6 @@ void GC::go(objlist::iterator it) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::Object> obj = it->first->ToObject();
 	v8::Local<v8::Function> fun = v8::Local<v8::Function>::Cast(obj->Get(JS_STR(it->second)));
-
 	fun->Call(obj, 0, NULL);
 	this->data.erase(it);
 }

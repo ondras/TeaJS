@@ -149,9 +149,8 @@ inline v8::Handle<v8::Value> create_peer(sockaddr * addr) {
 }
 
 JS_METHOD(_socket) {
-	if (args.Length() < 2 || args.This()->InternalFieldCount() == 0) {
-		return JS_EXCEPTION("Invalid call format. Use 'new Socket(family, type, [proto])'");
-	}						
+	ASSERT_CONSTRUCTOR;
+	if (args.Length() < 2) { return JS_EXCEPTION("Invalid call format. Use 'new Socket(family, type, [proto])'"); }						
 	
 	int offset = (args[0]->IsExternal() ? 1 : 0);
 	int family = args[offset + 0]->Int32Value();

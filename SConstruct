@@ -3,6 +3,7 @@ import os
 
 # base source files
 sources = [
+	"js_common.cc",
 	"js_system.cc",
 	"js_io.cc",
 	"js_socket.cc",

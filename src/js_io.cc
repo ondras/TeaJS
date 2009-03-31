@@ -89,10 +89,7 @@ v8::Handle<v8::Value> list_items(char * name, int type) {
 }
 
 JS_METHOD(_directory) {
-	if (args.Length() < 1 || args.This()->InternalFieldCount() == 0) {
-		return JS_EXCEPTION("Invalid call format. Use 'new Directory(name)'");
-	}
-	
+	ASSERT_CONSTRUCTOR;
 	SAVE_VALUE(0, args[0]);
 	return args.This();
 }
@@ -125,9 +122,7 @@ JS_METHOD(_listdirectories) {
 }
 
 JS_METHOD(_file) {
-	if (args.Length() < 1 || args.This()->InternalFieldCount() == 0) {
-		return JS_EXCEPTION("Invalid call format. Use 'new File(name)'");
-	}
+	ASSERT_CONSTRUCTOR;
 	
 	SAVE_VALUE(0, args[0]);
 	SAVE_VALUE(1, JS_BOOL(false));
@@ -295,11 +290,11 @@ JS_METHOD(_stat) {
 
 v8::Handle<v8::Value> _copy(char * name1, char * name2) {
 	size_t size = 0;
-	void * data = my_read(name1, &size);
+	void * data = mmap_read(name1, &size);
 	if (data == NULL) { return JS_EXCEPTION("Cannot open source file"); }
 	
-	int result = my_write(name2, data, size);
-	my_free((char *)data, size);
+	int result = mmap_write(name2, data, size);
+	mmap_free((char *)data, size);
 	
 	if (result == -1) { return JS_EXCEPTION("Cannot open target file"); }
 	return JS_BOOL(true);

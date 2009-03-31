@@ -13,10 +13,8 @@
 v8::Persistent<v8::FunctionTemplate> rest;
 
 JS_METHOD(_mysql) {
+	ASSERT_CONSTRUCTOR;
 	SAVE_PTR(0, NULL);
-	if (args.This()->InternalFieldCount() == 0) {
-		return JS_EXCEPTION("Invalid call format. Use 'new MySQL()'");
-	}
 	GC * gc = GC_PTR;
 	gc->add(args.This(), "close");
 	return args.This();

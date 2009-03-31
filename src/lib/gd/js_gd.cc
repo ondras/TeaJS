@@ -37,10 +37,8 @@ gdPointPtr gdPoints(v8::Handle<v8::Array> arr) {
 }
 
 JS_METHOD(_image) {
-	if (args.This()->InternalFieldCount() == 0) {
-		return JS_EXCEPTION("Invalid call format. Use 'new Image(type, params)'");
-	}
-	
+	ASSERT_CONSTRUCTOR;
+
 	int32_t type = args[0]->Int32Value();
 	gdImagePtr ptr;
 	
@@ -52,7 +50,7 @@ JS_METHOD(_image) {
 	
 	if (type == GD_JPEG || type == GD_PNG || type == GD_GIF) {
 		v8::String::Utf8Value name(args[1]);
-		data = my_read(*name, &size);
+		data = mmap_read(*name, &size);
 		if (data == NULL) { return JS_EXCEPTION("Cannot open file"); }
 	}
 
@@ -77,7 +75,7 @@ JS_METHOD(_image) {
 		break;
 	}
 	
-	my_free((char *)data, size);
+	mmap_free((char *)data, size);
 	SAVE_PTR(0, ptr);
 	return args.This();
 }
@@ -138,7 +136,7 @@ JS_METHOD(_save) {
 
 	if (tofile) {
 		v8::String::Utf8Value name(args[1]);
-		int result = my_write(*name, (void *)data, size);
+		int result = mmap_write(*name, (void *)data, size);
 		gdFree(data);
 		if (result == -1) { return JS_EXCEPTION("Cannot open file"); }
 		return v8::Undefined();

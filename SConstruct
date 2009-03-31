@@ -72,6 +72,10 @@ if env["os"] == "posix":
 Help(opts.GenerateHelpText(env))
 conf = Configure(env)
 
+if ((env["os"] != "windows") and not (conf.CheckLib("v8"))):
+	print "Cannot find V8 library!"
+# if
+
 # adjust variables based on user selection
 if conf.CheckCHeader("unistd.h", include_quotes = "<>"):
     env.Append(CPPDEFINES = "HAVE_UNISTD_H")
@@ -100,9 +104,6 @@ if conf.CheckFunc("getcwd"):
 if conf.CheckFunc("sleep"):
     env.Append(CPPDEFINES = "HAVE_SLEEP")
 	
-if ((env["os"] != "windows") and not (conf.CheckLib("v8"))):
-	print "Cannot find V8 library!"
-# if
 
 env = conf.Finish()
 

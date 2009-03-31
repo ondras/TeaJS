@@ -36,6 +36,9 @@
 #  define SOCKET_ERROR -1
 #endif
 
+
+namespace {
+
 typedef union sock_addr {
     struct sockaddr_in in;
 #ifndef HAVE_WINSOCK
@@ -447,6 +450,8 @@ JS_METHOD(_getpeername) {
 	}
 	
 	return LOAD_VALUE(1);
+}
+
 }
 
 void setup_socket(v8::Handle<v8::Object> target) {

@@ -21,6 +21,8 @@
 	v8::Handle<v8::Object> __second = args[0]->ToObject(); \
 	gdImagePtr ptr2 = reinterpret_cast<gdImagePtr>(v8::Handle<v8::External>::Cast(__second->GetInternalField(0))->Value())
 
+namespace {
+
 gdPointPtr gdPoints(v8::Handle<v8::Array> arr) {
 	v8::HandleScope handle_scope;
 	unsigned int len = arr->Length();
@@ -730,6 +732,7 @@ JS_METHOD(_sharpen) {
 	return args.This();
 }
 
+}
 /**/ 
 
 SHARED_INIT() {

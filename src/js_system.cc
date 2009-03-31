@@ -16,6 +16,8 @@
 #	define sleep(num) { Sleep(num * 1000); }
 #endif
 
+namespace {
+
 JS_METHOD(_stdin) {
 	v8cgi_App * app = APP_PTR;
 
@@ -100,6 +102,8 @@ JS_METHOD(_usleep) {
 	return v8::Undefined();
 }
 */
+
+}
 
 void setup_system(v8::Handle<v8::Object> global, char ** envp) {
 	v8::HandleScope handle_scope;

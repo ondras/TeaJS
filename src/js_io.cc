@@ -37,6 +37,8 @@
 #define TYPE_FILE 0
 #define TYPE_DIR 1
 
+namespace {
+
 v8::Handle<v8::Value> list_items(char * name, int type) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::Array> result = v8::Array::New();
@@ -351,6 +353,8 @@ JS_METHOD(_exists) {
 	v8::String::Utf8Value name(LOAD_VALUE(0));
 	int result = access(*name, F_OK);
 	return JS_BOOL(result == 0);
+}
+
 }
 
 void setup_io(v8::Handle<v8::Object> target) {

@@ -161,7 +161,7 @@ if env["gd"] == 1:
 	)
 	e.SharedLibrary(
 		target = "lib/libgd", 
-		source = "src/lib/gd/js_gd.cc",
+		source = ["src/js_common.cc", "src/lib/gd/js_gd.cc"],
 		SHLIBPREFIX=""
 	)
 # if

@@ -3,6 +3,8 @@
 #  include <string.h>
 #  include <unistd.h>
 #  include <fcntl.h>
+#else
+#  include <stdio.h>
 #endif
 
 void * mmap_read(char * name, size_t * size) {

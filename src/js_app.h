@@ -18,8 +18,7 @@ public:
 	virtual ~v8cgi_App() {};
 	int init(int argc, char ** argv); /* once per app lifetime */
 	int execute(char ** envp, bool change); /* once per request */
-	int include(std::string str, bool populate);
-	v8::Handle<v8::Value> require(std::string str, bool wrap);
+	v8::Handle<v8::Value> include(std::string name, bool populate, bool forceLocal);
 	
 	typedef std::vector<v8::Persistent<v8::Function> > funcvector;
 	typedef std::stack<std::string> pathstack;
@@ -39,17 +38,16 @@ private:
 	Cache cache;
 	GC gc;
 
-	virtual bool process_args(int argc, char ** argv);
-	int prepare(char ** envp);
-	int process();
-	int findmain();
+	std::string exception(v8::TryCatch* try_catch);
+	virtual void process_args(int argc, char ** argv);
+	void prepare(char ** envp);
+	void findmain();
 	void finish();
 	void http();
-	void report_error(const char * message);
-	void exception(v8::TryCatch* try_catch);
-	int autoload();
+	void js_error(std::string message);
+	void autoload();
 	
-	std::string findname(std::string name);
+	std::string findname(std::string name, bool forceLocal);
 	void populate_global(v8::Handle<v8::Object> exports);
 	std::string wrap(std::string original);
 	v8::Handle<v8::Value> include_js(std::string filename, bool wrap);

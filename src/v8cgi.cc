@@ -15,7 +15,7 @@ int main(int argc, char ** argv) {
 	int result = 0;
 	v8cgi_App app;
 	result = app.init(argc, argv);
-	if (result) { exit(1); }
+	if (result) { exit(result); }
 
 #ifdef FASTCGI
 	while (FCGI_Accept() >= 0) {

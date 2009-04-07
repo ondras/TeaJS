@@ -26,6 +26,33 @@ std::string path_normalize(std::string path, std::string base) {
 		}
 		result += path;
 	}
+	
+	size_t pos = 0;
+	int state = 1; /* 0 bad, 1 just after dirname, 2 dot  */
+	while (pos != result.length()) {
+		char ch = result.at(pos);
+		switch (ch) {
+			case '/':
+			case '\\':
+				if (state == 0) { state = 1; }
+				if (state == 2) { 
+					pos -= 2;
+					result.erase(pos, 2);
+				}
+			break;
+			
+			case '.': 
+				if (state == 1) { 
+					state = 2; 
+				} else {
+					state = 0;
+				}
+			break;
+			default: state = 0; break;
+		}
+		pos++;
+	}
+	
 	return result;
 }
 

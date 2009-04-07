@@ -50,7 +50,13 @@ std::string Cache::getJS(std::string filename) {
 		return it->second;
 	} else {
 		FILE * file = fopen(filename.c_str(), "rb");
-		if (file == NULL) { return std::string(""); }
+		if (file == NULL) { 
+			std::string s = "Error reading '";
+			s += filename;
+			s += "'";
+			throw s; 
+		}
+		
 		fseek(file, 0, SEEK_END);
 		size_t size = ftell(file);
 		rewind(file);
@@ -81,7 +87,12 @@ void * Cache::getHandle(std::string filename) {
 		return it->second;
 	} else {
 		void * handle = dlopen(filename.c_str(), RTLD_LAZY);
-		if (!handle) { return NULL; }
+		if (!handle) { 
+			std::string error = "Error opening shared library '";
+			error += filename;
+			error += "'";
+			throw error;
+		}
 		handles[filename] = handle;
 		return handle;
 	}

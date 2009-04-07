@@ -66,7 +66,7 @@ private:
 	request_rec * request;
 	bool output_started;
 
-	virtual bool process_args(int argc, char ** argv) { return true; }
+	virtual void process_args(int argc, char ** argv) {}
 	
 	void header(const char * name, const char * value) {
 		if (strcasecmp(name, "content-type") == 0) {

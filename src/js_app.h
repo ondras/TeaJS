@@ -50,8 +50,8 @@ private:
 	std::string findname(std::string name, bool forceLocal);
 	void populate_global(v8::Handle<v8::Object> exports);
 	std::string wrap(std::string original);
-	v8::Handle<v8::Value> include_js(std::string filename, bool wrap);
-	v8::Handle<v8::Value> include_dso(std::string filename);
+	v8::Handle<v8::Value> include_js(std::string filename, v8::Handle<v8::Object> exports, bool wrap);
+	v8::Handle<v8::Value> include_dso(std::string filename, v8::Handle<v8::Object> exports);
 };
 
 #endif

@@ -191,7 +191,9 @@ v8::Handle<v8::Value> v8cgi_App::include(std::string name, bool populate, bool f
 	exportmap::iterator it = this->exports.find(filename);
 	if (it != this->exports.end()) { return this->exports[filename]; } /* use cached version */
 
-	if (!forceLocal) { this->exports[filename] = v8::Persistent<v8::Object>::New(v8::Object::New()); } /* prevent infinite recursion */
+	v8::Handle<v8::Object> exports = v8::Object::New();
+	if (!forceLocal) { this->exports[filename] = v8::Persistent<v8::Object>::New(exports); } /* add exports to cache */
+
 	this->paths.push(path_dirname(filename)); /* prepare path to stack */
 	v8::Handle<v8::Value> data; /* result */
 
@@ -199,27 +201,23 @@ v8::Handle<v8::Value> v8cgi_App::include(std::string name, bool populate, bool f
 		size_t index = filename.find_last_of(".");
 		std::string ext = filename.substr(index+1);
 		if (ext == "so" || ext == "dll") {
-			data = this->include_dso(filename);
+			data = this->include_dso(filename, exports);
 		} else {
-			data = this->include_js(filename, !forceLocal);
+			data = this->include_js(filename, exports, !forceLocal);
 		}
 	} catch (std::string e) {
 		this->paths.pop(); /* remove from stack */
+		exportmap::iterator it = this->exports.find(filename); /* remove from export cache */
+		this->exports.erase(it);
 		throw e; /* rethrow */
 	}
 
 	this->paths.pop(); /* execution ended, remove top path */
-	
-	if (!forceLocal) { /* retrieve the exports and cache it */
-		v8::Persistent<v8::Object> exports = v8::Persistent<v8::Object>::New(data->ToObject());
-		this->exports[filename] = exports;
-		if (populate) { this->populate_global(exports); }
-	}
-	
+	if (populate) { this->populate_global(exports); }
 	return handle_scope.Close(data);
 }
 
-v8::Handle<v8::Value> v8cgi_App::include_js(std::string filename, bool wrap) {
+v8::Handle<v8::Value> v8cgi_App::include_js(std::string filename, v8::Handle<v8::Object> exports, bool wrap) {
 	v8::HandleScope handle_scope;
 	v8::TryCatch tc;
 
@@ -232,11 +230,20 @@ v8::Handle<v8::Value> v8cgi_App::include_js(std::string filename, bool wrap) {
 	} else {
 		v8::Handle<v8::Value> result = script->Run();
 		if (tc.HasCaught()) { throw this->exception(&tc); }
+		
+		if (wrap) {
+			v8::Handle<v8::Function> fun = v8::Handle<v8::Function>::Cast(result);
+			v8::Handle<v8::Value> params[1] = {exports}; 
+			result = fun->Call(JS_GLOBAL, 1, params);
+			if (tc.HasCaught()) { throw this->exception(&tc); }
+			return exports;
+		}
+		
 		return handle_scope.Close(result);
 	}
 }
 
-v8::Handle<v8::Value> v8cgi_App::include_dso(std::string filename) {
+v8::Handle<v8::Value> v8cgi_App::include_dso(std::string filename, v8::Handle<v8::Object> exports) {
 	v8::HandleScope handle_scope;
 	void * handle = this->cache.getHandle(filename);
 
@@ -252,16 +259,15 @@ v8::Handle<v8::Value> v8cgi_App::include_dso(std::string filename) {
 		throw error;
 	}
 	
-	v8::Handle<v8::Object> exports = v8::Object::New();
 	func(exports);
 	return handle_scope.Close(exports);	
 }
 
 std::string v8cgi_App::wrap(std::string original) {
 	std::string result = "";
-	result += "(function() { var exports = {}; (function(exports){";
+	result += "(function(exports){";
 	result += original;
-	result += "})(exports); return exports; })()";
+	result += "})";
 	return result;
 }
 

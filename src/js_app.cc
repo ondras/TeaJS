@@ -207,8 +207,10 @@ v8::Handle<v8::Value> v8cgi_App::include(std::string name, bool populate, bool f
 		}
 	} catch (std::string e) {
 		this->paths.pop(); /* remove from stack */
-		exportmap::iterator it = this->exports.find(filename); /* remove from export cache */
-		this->exports.erase(it);
+		if (!forceLocal) { /* remove from export cache */
+			exportmap::iterator it = this->exports.find(filename);
+			this->exports.erase(it);
+		}
 		throw e; /* rethrow */
 	}
 

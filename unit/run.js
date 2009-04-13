@@ -20,16 +20,21 @@ var TestRunner = {
 	},
 
 	file: function(name) {
-		var results = {failed:0, passed:0};
+		var results = {failed:0, passed:0, errors:0};
 		System.stdout("  File '"+name+"'\n");
 		
-		var data = require("./"+name);
-		
-		for (var p in data) {
-			if (!p.match(/^test/i)) { continue; }
-			var result = TestRunner.test(data[p], p);
-			TestRunner.add(results, result);
-		}
+		try {
+			var data = require("./"+name);
+			for (var p in data) {
+				if (!p.match(/^test/i)) { continue; }
+				var result = TestRunner.test(data[p], p);
+				TestRunner.add(results, result);
+			}
+		} catch(e) {
+			results.errors++;
+			System.stdout("  syntax error ("+e+")\n");
+			return results;
+		} 
 		
 		var total = results.failed + results.passed;
 		System.stdout("  done ("+total+" tests, "+results.passed+" passed, "+results.failed+" failed)\n");
@@ -37,7 +42,7 @@ var TestRunner = {
 	},
 
 	dir: function(name) {
-		var results = {failed:0, passed:0, files:0}
+		var results = {failed:0, passed:0, files:0, errors:0};
 		var d = new Directory(name);
 		System.stdout("Directory '"+name+"'\n");
 		var list = d.listFiles().filter(function(f) { return f.match(/\.js$/i); });
@@ -49,12 +54,12 @@ var TestRunner = {
 		}
 		
 		var total = results.failed + results.passed;
-		System.stdout("done ("+results.files+" files, "+total+" tests, "+results.passed+" passed, "+results.failed+" failed)\n");
+		System.stdout("done ("+results.files+" files, "+total+" tests, "+results.passed+" passed, "+results.failed+" failed, "+results.errors+" errors)\n");
 		return results;
 	},
 
 	go: function() {
-		var results = {failed:0, passed:0, files:0, directories:0};
+		var results = {failed:0, passed:0, files:0, directories:0, errors:0};
 		for (var i=0;i<global.arguments.length;i++) {
 			var result = TestRunner.dir(global.arguments[i]);
 			TestRunner.add(results, result);
@@ -68,6 +73,7 @@ var TestRunner = {
 		System.stdout("  "+total+" tests\n");
 		System.stdout("  "+results.passed+" passed\n");
 		System.stdout("  "+results.failed+" failed\n");
+		System.stdout("  "+results.errors+" errors\n");
 	}
 }
 

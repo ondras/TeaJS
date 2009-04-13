@@ -154,7 +154,7 @@ if env["mysql"] == 1:
 		LIBS = "mysqlclient"
 	)
 	e.SharedLibrary(
-		target = "lib/libmysql", 
+		target = "lib/mysql", 
 		source = ["src/js_gc.cc", "src/lib/mysql/js_mysql.cc"],
 		SHLIBPREFIX=""
 	)
@@ -167,7 +167,7 @@ if env["gd"] == 1:
 		LIBS = [libname]
 	)
 	e.SharedLibrary(
-		target = "lib/libgd", 
+		target = "lib/gd", 
 		source = ["src/js_common.cc", "src/lib/gd/js_gd.cc"],
 		SHLIBPREFIX=""
 	)

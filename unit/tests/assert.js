@@ -1,7 +1,7 @@
 var assert = require("assert");
 
 exports.testAssert = function() {
-	assert.assert(true, "true assertion");
+	assert.assert("true assertion", true);
 	
 	assert.assertThrows(function(){
 		assert.assert(false);
@@ -9,9 +9,9 @@ exports.testAssert = function() {
 }
 
 exports.testAssertEquals = function() {
-	assert.assertEquals(1, 3-2, "equality");
+	assert.assertEquals("equality", 1, 3-2);
 	
-	assert.assertThrows(function(){
+	assert.assertThrows("type inequality", function(){
 		assert.assertEquals(1, "1");
-	}, "type inequality");
+	});
 }

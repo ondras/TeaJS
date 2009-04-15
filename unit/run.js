@@ -1,6 +1,11 @@
 #!../v8cgi
 
 var TestRunner = {
+	depth:0,
+	indent: function() {
+		for (var i=0;i<this.depth;i++) { System.stdout("\t"); }
+	},
+	
 	add: function(base, data) {
 		for (var p in base) {
 			if (p in data) { base[p] += data[p]; }
@@ -8,7 +13,8 @@ var TestRunner = {
 	},	
 
 	test: function(f, name) {
-		System.stdout("    Test '"+name+"': ");
+		this.indent();
+		System.stdout("Test '"+name+"': ");
 		try {
 			f();
 			System.stdout("passed\n");
@@ -21,8 +27,9 @@ var TestRunner = {
 
 	file: function(name) {
 		var results = {failed:0, passed:0, errors:0};
-		System.stdout("  File '"+name+"'\n");
-		
+		this.indent();
+		System.stdout("File '"+name+"'\n");
+		this.depth++;
 		try {
 			var data = require("./"+name);
 			for (var p in data) {
@@ -32,12 +39,16 @@ var TestRunner = {
 			}
 		} catch(e) {
 			results.errors++;
-			System.stdout("  syntax error ("+e+")\n");
+			this.indent();
+			System.stdout("syntax error ("+e+")\n");
+			this.depth--;
 			return results;
 		} 
 		
+		this.depth--;
 		var total = results.failed + results.passed;
-		System.stdout("  done ("+total+" tests, "+results.passed+" passed, "+results.failed+" failed)\n");
+		this.indent();
+		System.stdout("done ("+total+" tests, "+results.passed+" passed, "+results.failed+" failed)\n");
 		return results;
 	},
 
@@ -48,7 +59,9 @@ var TestRunner = {
 		var list = d.listFiles().filter(function(f) { return f.match(/\.js$/i); });
 		
 		for (var i=0;i<list.length;i++) {
+			this.depth++;
 			var result = TestRunner.file(name+"/"+list[i]);
+			this.depth--;
 			TestRunner.add(results, result);
 			results.files++;
 		}
@@ -61,7 +74,17 @@ var TestRunner = {
 	go: function() {
 		var results = {failed:0, passed:0, files:0, directories:0, errors:0};
 		for (var i=0;i<global.arguments.length;i++) {
-			var result = TestRunner.dir(global.arguments[i]);
+			var name = global.arguments[i];
+			var f = new File(name);
+			if (!f.exists()) {
+				System.stdout("Skipping nonexistent '"+name+"'\n");
+			} else if (f.isFile()) {
+				var result = TestRunner.file(name);
+				results.files++;
+			} else {
+				var result = TestRunner.dir(name);
+			}
+			
 			TestRunner.add(results, result);
 			results.directories++;
 		}

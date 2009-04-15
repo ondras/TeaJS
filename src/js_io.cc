@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include "js_macros.h"
 #include "js_common.h"
+#include "js_path.h"
 
 // access()
 #ifdef HAVE_UNISTD_H
@@ -121,6 +122,11 @@ JS_METHOD(_listfiles) {
 JS_METHOD(_listdirectories) {
 	v8::String::Utf8Value name(LOAD_VALUE(0));
 	return list_items(*name, TYPE_DIR);
+}
+
+JS_METHOD(_isdirectory) {
+	v8::String::Utf8Value name(LOAD_VALUE(0));
+	return JS_BOOL(path_dir_exists(*name));
 }
 
 JS_METHOD(_file) {
@@ -355,6 +361,12 @@ JS_METHOD(_exists) {
 	return JS_BOOL(result == 0);
 }
 
+JS_METHOD(_isfile) {
+	v8::String::Utf8Value name(LOAD_VALUE(0));
+	return JS_BOOL(path_file_exists(*name));
+}
+
+
 }
 
 void setup_io(v8::Handle<v8::Object> target) {
@@ -377,6 +389,7 @@ void setup_io(v8::Handle<v8::Object> target) {
 	pt->Set("move", v8::FunctionTemplate::New(_movefile));
 	pt->Set("copy", v8::FunctionTemplate::New(_copyfile));
 	pt->Set("stat", v8::FunctionTemplate::New(_stat));
+	pt->Set("isFile", v8::FunctionTemplate::New(_isfile));
 
 	target->Set(JS_STR("File"), ft->GetFunction());			
 	
@@ -393,6 +406,7 @@ void setup_io(v8::Handle<v8::Object> target) {
 	pt->Set("exists", v8::FunctionTemplate::New(_exists));
 	pt->Set("remove", v8::FunctionTemplate::New(_removedirectory));
 	pt->Set("stat", v8::FunctionTemplate::New(_stat));
+	pt->Set("isDirectory", v8::FunctionTemplate::New(_isdirectory));
 
 	target->Set(JS_STR("Directory"), dt->GetFunction());
 }

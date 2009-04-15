@@ -307,12 +307,12 @@ std::string v8cgi_App::findname(std::string name, bool forceLocal) {
 	std::string path = "";
 	std::string path2 = "";
 	path = path_normalize(name, current);
-	if (path_exists(path)) { return path; }
+	if (path_file_exists(path)) { return path; }
 	for (int j=0;j<3;j++) {
 		path2 = path;
 		path2 += ".";
 		path2 += suffixes[j];
-		if (path_exists(path2)) { return path2; }
+		if (path_file_exists(path2)) { return path2; }
 	}
 	return std::string("");
 }

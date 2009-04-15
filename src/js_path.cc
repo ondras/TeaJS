@@ -85,11 +85,18 @@ bool path_isabsolute(std::string path) {
 #endif
 }
  
-bool path_exists(std::string path) {
+bool path_file_exists(std::string path) {
 	struct stat st;
 	if (stat(path.c_str(), &st) != 0) { return false; } /* does not exist */
 	if (st.st_mode & S_IFDIR) { return false; } /* is directory */
 	return true;
+}
+
+bool path_dir_exists(std::string path) {
+	struct stat st;
+	if (stat(path.c_str(), &st) != 0) { return false; } /* does not exist */
+	if (st.st_mode & S_IFDIR) { return true; } /* is directory */
+	return false;
 }
 
 std::string path_getcwd() {

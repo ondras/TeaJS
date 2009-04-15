@@ -52,7 +52,7 @@ public:
 	}
 
 	void error(const char * data, const char * file, int line) {
-		ap_log_rerror(file, line, APLOG_DEBUG, 1, this->request, "%s", data);
+		ap_log_rerror(file, line, APLOG_ERR, 0, this->request, "%s", data);
 	}
 
 	

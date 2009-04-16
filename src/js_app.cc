@@ -119,8 +119,8 @@ int v8cgi_App::execute(char ** envp, bool change) {
 	try {
 		this->include(this->mainfile, false, false); /* do not populate, do not wrap */
 	} catch (std::string e) {
-//		this->error(e.c_str(), __FILE__, __LINE__); /* error when executing main file -> goes to ??? */
-		this->js_error(e.c_str()); /* error when executing main file -> goes to ??? */
+		this->error(e.c_str(), __FILE__, __LINE__); /* error when executing main file -> goes to ??? */
+//		this->js_error(e.c_str()); /* error when executing main file -> goes to ??? */
 		this->finish();
 		return 1;
 	}

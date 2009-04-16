@@ -16,7 +16,7 @@
 class v8cgi_App {
 public:
 	virtual ~v8cgi_App() {};
-	int init(int argc, char ** argv); /* once per app lifetime */
+	virtual int init(int argc, char ** argv); /* once per app lifetime */
 	int execute(char ** envp, bool change); /* once per request */
 	v8::Handle<v8::Value> include(std::string name, bool populate, bool forceLocal);
 	
@@ -31,8 +31,10 @@ public:
 	virtual size_t writer (const char * source, size_t size); /* stdout */
 	virtual void error(const char * data, const char * file, int line); /* stderr */
 
-private:
+protected:
 	std::string cfgfile; /* config file */
+
+private:
 	std::string mainfile; /* command-line specified file */
 	std::vector<std::string> mainfile_args; /* arguments after mainfile */
 	Cache cache;

@@ -1,6 +1,9 @@
 #ifndef _JS_MACROS_H
 #define _JS_MACROS_H
 
+#define _STRING(x) #x                                                                                                                                                                   
+#define STRING(x) _STRING(x) 
+
 #define SAVE_PTR(index, ptr) args.This()->SetInternalField(index, v8::External::New((void *)ptr)); 
 #define LOAD_PTR(index, type) reinterpret_cast<type>(v8::Handle<v8::External>::Cast(args.This()->GetInternalField(index))->Value());
 #define SAVE_VALUE(index, val) args.This()->SetInternalField(index, val)

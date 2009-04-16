@@ -12,6 +12,14 @@
 #include "apr_pools.h"
 
 #include "js_app.h"
+#include "js_macros.h"
+
+typedef struct {
+	char * config;
+} v8cgi_config;
+
+extern "C" module AP_MODULE_DECLARE_DATA v8cgi_module; /* first declaration */
+
 
 class v8cgi_Module : public v8cgi_App {
 public:
@@ -55,19 +63,22 @@ public:
 		ap_log_rerror(file, line, APLOG_ERR, 0, this->request, "%s", data);
 	}
 
-	
 	int execute(char ** envp, request_rec * request) {
 		this->output_started = false;
 		this->request = request;
 		return v8cgi_App::execute(envp, true);
 	}
 	
+	int init(int argc, char ** argv) {}
+	
+	void apacheConfig(v8cgi_config * cfg) {
+		this->cfgfile = cfg->config;
+	}
+
 private:
 	request_rec * request;
 	bool output_started;
 
-	virtual void process_args(int argc, char ** argv) {}
-	
 	void header(const char * name, const char * value) {
 		if (strcasecmp(name, "content-type") == 0) {
 			char * ct =  (char *) apr_palloc(request->pool, strlen(value)+1);
@@ -134,30 +145,56 @@ static int mod_v8cgi_handler(request_rec *r) {
 	}
 }
 
-static int mod_v8cgi_init_handler(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp, server_rec *s) {
+static int mod_v8cgi_init_handler(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp, server_rec *s) { /* module initialization */
     ap_add_version_component(p, "mod_v8cgi");
+	v8cgi_config * cfg = (v8cgi_config *) ap_get_module_config(s->module_config, &v8cgi_module);
 	app.init(0, NULL);
+	app.apacheConfig(cfg);
     return OK;
 }
 
-static void mod_v8cgi_child_init(apr_pool_t *p, server_rec *s) {
+static void mod_v8cgi_child_init(apr_pool_t *p, server_rec *s) { /* child initialization */
 }
 
 
-static void mod_v8cgi_register_hooks(apr_pool_t *p ) {
+static void mod_v8cgi_register_hooks(apr_pool_t *p ) { /* hook registration */
     ap_hook_handler(mod_v8cgi_handler, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_post_config(mod_v8cgi_init_handler, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_child_init(mod_v8cgi_child_init, NULL, NULL, APR_HOOK_MIDDLE);
 }
 
-extern "C" {
-module AP_MODULE_DECLARE_DATA v8cgi_module = {
-    STANDARD20_MODULE_STUFF,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    mod_v8cgi_register_hooks,
+static void * mod_v8cgi_create_config(apr_pool_t *p, server_rec *s) { /* initial configuration values */
+	v8cgi_config * newcfg = (v8cgi_config *) apr_pcalloc(p, sizeof(v8cgi_config));
+	newcfg->config = STRING(CONFIG_PATH);
+	return (void *) newcfg;
+}
+
+static const char * set_v8cgi_config(cmd_parms * parms, void * mconfig, const char * arg) { /* callback for configuration change */
+	v8cgi_config * cfg = (v8cgi_config *) ap_get_module_config(parms->server->module_config, &v8cgi_module);
+	cfg->config = (char *) arg;
+	return NULL;
+}
+
+typedef const char * (* CONFIG_HANDLER) ();
+static const command_rec mod_v8cgi_cmds[] = { /* list of configurations */
+	AP_INIT_TAKE1(
+		"v8cgi_Config",
+		(CONFIG_HANDLER) set_v8cgi_config,
+		NULL,
+		RSRC_CONF,
+		"Path to v8cgi configuration file."
+	),
+	{NULL}
 };
+
+extern "C" { /* module declaration */
+	module AP_MODULE_DECLARE_DATA v8cgi_module = {
+		STANDARD20_MODULE_STUFF,
+		NULL,
+		NULL,
+		mod_v8cgi_create_config,
+		NULL,
+		mod_v8cgi_cmds,
+		mod_v8cgi_register_hooks,
+	};
 }

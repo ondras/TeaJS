@@ -2,9 +2,6 @@
  * v8cgi app file. Loosely based on V8's "shell" sample app.
  */
 
-#define _STRING(x) #x
-#define STRING(x) _STRING(x)
-
 #include <sstream>
 #include <vector>
 #include <stdlib.h>
@@ -37,7 +34,7 @@ JS_METHOD(_include) {
 	v8::String::Utf8Value file(args[0]);
 	v8::Handle<v8::Value> result;
 	try {
-		result = app->include(*file, true, false);
+		result = app->include(*file, true, true); /* populate, wrap */
 	} catch (std::string e) {
 		return JS_EXCEPTION(e.c_str());
 	}
@@ -49,7 +46,7 @@ JS_METHOD(_require) {
 	v8::String::Utf8Value file(args[0]);
 	v8::Handle<v8::Value> result;
 	try {
-		result = app->include(*file, false, false);
+		result = app->include(*file, false, true); /* do not populate, wrap */
 	} catch (std::string e) {
 		return JS_EXCEPTION(e.c_str());
 	}
@@ -84,7 +81,7 @@ int v8cgi_App::init(int argc, char ** argv) {
 	try {
 		this->process_args(argc, argv);
 	} catch (std::string e) {
-		this->error(e.c_str(), __FILE__, __LINE__);
+		this->error(e.c_str(), __FILE__, __LINE__); /* initialization error -> goes to stderr */
 		return 1;
 	}
 
@@ -101,14 +98,16 @@ int v8cgi_App::execute(char ** envp, bool change) {
 	try {
 		this->prepare(envp); /* prepare JS environment */
 	} catch (std::string e) {
-		this->error(e.c_str(), __FILE__, __LINE__);
+		this->error(e.c_str(), __FILE__, __LINE__); /* error with config file or default libs -> goes to stderr */
+		this->finish();
 		return 1;
 	}
 
 	try { 
 		this->findmain();  /* try to locate main file */
 	}  catch (std::string e) {
-		this->js_error(e.c_str());
+		this->error(e.c_str(), __FILE__, __LINE__); /* cannot locate main file -> goes to stderr */
+		this->finish();
 		return 1;
 	}
 	
@@ -118,9 +117,11 @@ int v8cgi_App::execute(char ** envp, bool change) {
 	this->http(); /* setup builtin request and response, if running as CGI */
 
 	try {
-		this->include(this->mainfile, false, true);
+		this->include(this->mainfile, false, false); /* do not populate, do not wrap */
 	} catch (std::string e) {
-		this->error(e.c_str(), __FILE__, __LINE__);
+//		this->error(e.c_str(), __FILE__, __LINE__); /* error when executing main file -> goes to ??? */
+		this->js_error(e.c_str()); /* error when executing main file -> goes to ??? */
+		this->finish();
 		return 1;
 	}
 	
@@ -177,9 +178,9 @@ std::string v8cgi_App::exception(v8::TryCatch* try_catch) {
 	return msgstring;
 }
 
-v8::Handle<v8::Value> v8cgi_App::include(std::string name, bool populate, bool forceLocal) {
+v8::Handle<v8::Value> v8cgi_App::include(std::string name, bool populate, bool wrap) {
 	v8::HandleScope handle_scope;
-	std::string filename = this->findname(name, forceLocal);
+	std::string filename = this->findname(name, !wrap);
 	
 	if (filename == "") {
 		std::string s = "Cannot find '";
@@ -189,10 +190,10 @@ v8::Handle<v8::Value> v8cgi_App::include(std::string name, bool populate, bool f
 	}
 	
 	exportmap::iterator it = this->exports.find(filename);
-	if (it != this->exports.end()) { return this->exports[filename]; } /* use cached version */
+	if (it != this->exports.end()) { return this->exports[filename];  } /* use cached version */
 
 	v8::Handle<v8::Object> exports = v8::Object::New();
-	if (!forceLocal) { this->exports[filename] = v8::Persistent<v8::Object>::New(exports); } /* add exports to cache */
+	if (wrap) { this->exports[filename] = v8::Persistent<v8::Object>::New(exports); } /* add exports to cache */
 
 	this->paths.push(path_dirname(filename)); /* prepare path to stack */
 	v8::Handle<v8::Value> data; /* result */
@@ -203,11 +204,12 @@ v8::Handle<v8::Value> v8cgi_App::include(std::string name, bool populate, bool f
 		if (ext == "so" || ext == "dll") {
 			data = this->include_dso(filename, exports);
 		} else {
-			data = this->include_js(filename, exports, !forceLocal);
+			data = this->include_js(filename, exports, wrap);
+
 		}
 	} catch (std::string e) {
 		this->paths.pop(); /* remove from stack */
-		if (!forceLocal) { /* remove from export cache */
+		if (wrap) { /* remove from export cache */
 			exportmap::iterator it = this->exports.find(filename);
 			this->exports.erase(it);
 		}
@@ -319,7 +321,6 @@ std::string v8cgi_App::findname(std::string name, bool forceLocal) {
 
 void v8cgi_App::autoload() {
 	v8::HandleScope handle_scope;
-
 	v8::Handle<v8::Value> config = JS_GLOBAL->Get(JS_STR("Config"));
 	v8::Handle<v8::Array> list = v8::Handle<v8::Array>::Cast(config->ToObject()->Get(JS_STR("libraryAutoload")));
 	int cnt = list->Length();
@@ -329,7 +330,7 @@ void v8cgi_App::autoload() {
 		v8::Handle<v8::Value> item = list->Get(JS_INT(i));
 		v8::String::Utf8Value name(item);
 		std::string filename = *name;
-		dummy = this->include(filename, true, false);
+		this->include(filename, true, true); /* populate, wrap */
 	}
 }
 
@@ -412,7 +413,7 @@ void v8cgi_App::prepare(char ** envp) {
 	setup_io(g);	
 	setup_socket(g);
 	
-	v8::Handle<v8::Value> dummy = this->include(cfgfile, false, false);
+	this->include(cfgfile, false, false); /* do not populate, do not wrap */
 	this->autoload();
 	
 	v8::Handle<v8::Object> args = v8::Array::New();

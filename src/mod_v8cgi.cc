@@ -24,12 +24,12 @@ extern "C" module AP_MODULE_DECLARE_DATA v8cgi_module; /* first declaration */
 class v8cgi_Module : public v8cgi_App {
 public:
 	size_t reader(char * destination, size_t amount) {
-		return ap_get_client_block(this->request, destination, amount);
+		return (size_t) ap_get_client_block(this->request, destination, amount);
 	}
 
 	size_t writer(const char * data, size_t amount) {
 		if (this->output_started) { /* response data */
-			return ap_rwrite(data, amount, this->request);
+			return (size_t) ap_rwrite(data, amount, this->request);
 		} else { /* header or content separator */
 			char * end = strchr((char *) data, '\r');
 			if (!end) { end = strchr((char *) data, '\n'); }
@@ -54,7 +54,7 @@ public:
 				strncpy(value, colon+1, valuelen);
 				
 				this->header(name, value);
-				return amount;
+				return (size_t) amount;
 			}
 		}
 	}
@@ -69,7 +69,7 @@ public:
 		return v8cgi_App::execute(envp, true);
 	}
 	
-	int init(int argc, char ** argv) {}
+	int init(int argc, char ** argv) { return 0; }
 	
 	void apacheConfig(v8cgi_config * cfg) {
 		this->cfgfile = cfg->config;

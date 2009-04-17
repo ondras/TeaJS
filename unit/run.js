@@ -2,6 +2,8 @@
 
 var TestRunner = {
 	depth:0,
+	verbosity:0,
+	
 	indent: function() {
 		for (var i=0;i<this.depth;i++) { System.stdout("\t"); }
 	},
@@ -13,79 +15,92 @@ var TestRunner = {
 	},	
 
 	test: function(f, name) {
-		this.indent();
-		System.stdout("Test '"+name+"': ");
 		try {
 			f();
-			System.stdout("passed\n");
+			if (this.verbosity > 1) { 
+				this.indent();
+				System.stdout("Test '"+name+"': passed\n"); 
+			}
 			return {passed:1};
 		} catch(e) {
-			System.stdout(e.message+"\n");
+			var msg = e || e.toString();
+			if (this.verbosity > 0) { 
+				this.indent();
+				System.stdout("Test '"+name+"': "+msg+"\n"); 
+			}
 			return {failed:1}
 		}
 	},
 
 	file: function(name) {
 		var results = {failed:0, passed:0, errors:0};
-		this.indent();
-		System.stdout("File '"+name+"'\n");
+		if (this.verbosity > 0) { 
+			this.indent();
+			System.stdout("File '"+name+"'\n"); 
+		}
 		this.depth++;
 		try {
 			var data = require("./"+name);
 			for (var p in data) {
 				if (!p.match(/^test/i)) { continue; }
-				var result = TestRunner.test(data[p], p);
-				TestRunner.add(results, result);
+				var result = this.test(data[p], p);
+				this.add(results, result);
 			}
 		} catch(e) {
 			results.errors++;
-			this.indent();
-			System.stdout("syntax error ("+e+")\n");
+			if (this.verbosity > 0) { 
+				this.indent();
+				System.stdout("syntax error ("+e+")\n"); 
+			}
 			this.depth--;
 			return results;
 		} 
 		
 		this.depth--;
 		var total = results.failed + results.passed;
-		this.indent();
-		System.stdout("done ("+total+" tests, "+results.passed+" passed, "+results.failed+" failed)\n");
+		if (this.verbosity > 0) { 
+			this.indent();
+			System.stdout("done ("+total+" tests, "+results.passed+" passed, "+results.failed+" failed)\n"); 
+		}
 		return results;
 	},
 
 	dir: function(name) {
 		var results = {failed:0, passed:0, files:0, errors:0};
 		var d = new Directory(name);
-		System.stdout("Directory '"+name+"'\n");
+		if (this.verbosity > 0) { System.stdout("Directory '"+name+"'\n"); }
 		var list = d.listFiles().filter(function(f) { return f.match(/\.js$/i); });
 		
 		for (var i=0;i<list.length;i++) {
 			this.depth++;
-			var result = TestRunner.file(name+"/"+list[i]);
+			var result = this.file(name+"/"+list[i]);
 			this.depth--;
-			TestRunner.add(results, result);
+			this.add(results, result);
 			results.files++;
 		}
 		
 		var total = results.failed + results.passed;
-		System.stdout("done ("+results.files+" files, "+total+" tests, "+results.passed+" passed, "+results.failed+" failed, "+results.errors+" errors)\n");
+		if (this.verbosity > 0) {
+			System.stdout("done ("+results.files+" files, "+total+" tests, "+results.passed+" passed, "+results.failed+" failed, "+results.errors+" errors)\n");
+		}
 		return results;
 	},
 
-	go: function() {
+	go: function(paths) {
 		var results = {failed:0, passed:0, files:0, directories:0, errors:0};
-		for (var i=0;i<global.arguments.length;i++) {
-			var name = global.arguments[i];
+		for (var i=0;i<paths.length;i++) {
+			var name = paths[i];
 			var f = new File(name);
 			if (!f.exists()) {
 				System.stdout("Skipping nonexistent '"+name+"'\n");
 			} else if (f.isFile()) {
-				var result = TestRunner.file(name);
+				var result = this.file(name);
 				results.files++;
 			} else {
-				var result = TestRunner.dir(name);
+				var result = this.dir(name);
 			}
 			
-			TestRunner.add(results, result);
+			this.add(results, result);
 			results.directories++;
 		}
 		
@@ -97,7 +112,31 @@ var TestRunner = {
 		System.stdout("  "+results.passed+" passed\n");
 		System.stdout("  "+results.failed+" failed\n");
 		System.stdout("  "+results.errors+" errors\n");
+	},
+	
+	init: function() {
+		var GetOpt = require("getopt").GetOpt;
+		this.options = new GetOpt();
+		this.options.add("help", "Print help message", false, "h", "help");
+		this.options.add("verbosity", "Verbosity level (0-2)", 0, "v", "", GetOpt.OPTIONAL_ARGUMENT);
+		try {
+			this.options.parse(global.arguments);
+			if (this.options.get("help")) {
+				this.help();
+			} else {
+				this.verbosity = this.options.get("verbosity");
+				this.go(this.options.get());
+			}
+		} catch(e) {
+			System.stdout("Bad arguments.\n");
+			this.help();
+		}
+	},
+	
+	help: function() {
+		System.stdout("Usage: v8cgi run.js [options] [file|dir] [file|dir] [...]\n\n");
+		System.stdout(this.options.help());
 	}
 }
 
-TestRunner.go();
+TestRunner.init();

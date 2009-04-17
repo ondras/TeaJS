@@ -91,6 +91,8 @@ var TestRunner = {
 		for (var i=0;i<paths.length;i++) {
 			var name = paths[i];
 			var f = new File(name);
+			var result = {};
+			
 			if (!f.exists()) {
 				System.stdout("Skipping nonexistent '"+name+"'\n");
 			} else if (f.isFile()) {
@@ -119,22 +121,25 @@ var TestRunner = {
 		this.options = new GetOpt();
 		this.options.add("help", "Print help message", false, "h", "help");
 		this.options.add("verbosity", "Verbosity level (0-2)", 0, "v", "", GetOpt.OPTIONAL_ARGUMENT);
+		
 		try {
 			this.options.parse(global.arguments);
-			if (this.options.get("help")) {
-				this.help();
-			} else {
-				this.verbosity = this.options.get("verbosity");
-				this.go(this.options.get());
-			}
 		} catch(e) {
 			System.stdout("Bad arguments.\n");
 			this.help();
+			return;
+		}
+		
+		if (this.options.get("help")) {
+			this.help();
+		} else {
+			this.verbosity = this.options.get("verbosity");
+			this.go(this.options.get());
 		}
 	},
 	
 	help: function() {
-		System.stdout("Usage: v8cgi run.js [options] [file|dir] [file|dir] [...]\n\n");
+		System.stdout("Usage: ./runner.js [options] [file|dir] [file|dir] [...]\n\n");
 		System.stdout(this.options.help());
 	}
 }

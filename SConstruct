@@ -6,7 +6,6 @@ sources = [
 	"js_common.cc",
 	"js_system.cc",
 	"js_io.cc",
-	"js_socket.cc",
 	"js_cache.cc",
 	"js_gc.cc",
 	"js_app.cc",
@@ -39,6 +38,7 @@ else:
 opts = Options()
 opts.Add(BoolOption("mysql", "MySQL library", 1))
 opts.Add(BoolOption("gd", "GD library", 1))
+opts.Add(BoolOption("socket", "Socket library", 1))
 opts.Add(BoolOption("module", "Build Apache module", 1))
 opts.Add(BoolOption("cgi", "Build CGI binray", 1))
 opts.Add(BoolOption("fcgi", "FastCGI support (for CGI binary)", 0))
@@ -173,6 +173,14 @@ if env["gd"] == 1:
 	)
 # if
 
+if env["socket"] == 1:
+	e = env.Clone()
+	e.SharedLibrary(
+		target = "lib/socket", 
+		source = ["src/lib/socket/js_socket.cc"],
+		SHLIBPREFIX=""
+	)
+# if
 
 if env["module"] == 1:
 	e = env.Clone()

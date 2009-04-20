@@ -1,6 +1,5 @@
 #include <v8.h>
 #include "js_macros.h"
-#include "js_socket.h"
 
 #include <stdlib.h>
 #include <errno.h>
@@ -454,7 +453,7 @@ JS_METHOD(_getpeername) {
 
 }
 
-void setup_socket(v8::Handle<v8::Object> target) {
+SHARED_INIT() {
 	v8::HandleScope handle_scope;
 
 #ifdef HAVE_WINSOCK
@@ -498,5 +497,5 @@ void setup_socket(v8::Handle<v8::Object> target) {
 	pt->Set("getOption", v8::FunctionTemplate::New(_getoption));
 	pt->Set("getPeerName", v8::FunctionTemplate::New(_getpeername));
 
-	target->Set(JS_STR("Socket"), ft->GetFunction());			
+	exports->Set(JS_STR("Socket"), ft->GetFunction());			
 }

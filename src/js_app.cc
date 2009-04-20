@@ -15,7 +15,6 @@
 #include "js_app.h"
 #include "js_system.h"
 #include "js_io.h"
-#include "js_socket.h"
 #include "js_macros.h"
 #include "js_cache.h"
 #include "js_path.h"
@@ -412,7 +411,6 @@ void v8cgi_App::prepare() {
 
 	setup_system(g);
 	setup_io(g);
-	setup_socket(g);
 	
 	this->include(this->cfgfile, false, false); /* do not populate, do not wrap */
 	this->autoload();

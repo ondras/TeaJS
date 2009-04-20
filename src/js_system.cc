@@ -105,7 +105,9 @@ JS_METHOD(_usleep) {
 
 }
 
-void setup_system(v8::Handle<v8::Object> global, char ** envp) {
+extern char ** environ;
+
+void setup_system(v8::Handle<v8::Object> global) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::ObjectTemplate> systemt = v8::ObjectTemplate::New();
 	v8::Handle<v8::Object> system = systemt->NewInstance();
@@ -127,13 +129,13 @@ void setup_system(v8::Handle<v8::Object> global, char ** envp) {
 	int i,j;
 	char ch;
 	
-	if (envp == NULL) { return; }
-	for (i = 0; envp[i] != NULL; i++) {
+	if (environ == NULL) { return; }
+	for (i = 0; environ[i] != NULL; i++) {
 		done = false;
 		name = "";
 		value = "";
-		for (j = 0; envp[i][j] != '\0'; j++) {
-			ch = envp[i][j];
+		for (j = 0; environ[i][j] != '\0'; j++) {
+			ch = environ[i][j];
 			if (!done) {
 				if (ch == '=') {
 					done = true;

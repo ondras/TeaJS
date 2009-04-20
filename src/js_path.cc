@@ -36,7 +36,7 @@ std::string path_normalize(std::string path, std::string base) {
 			case '\\':
 				if (state == 0) { state = 1; }
 				if (state == 2) { 
-					pos -= 2;
+					pos -= 1;
 					result.erase(pos, 2);
 				}
 			break;

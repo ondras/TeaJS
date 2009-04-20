@@ -88,7 +88,7 @@ int v8cgi_App::init(int argc, char ** argv) {
 	return 0;
 }
 
-int v8cgi_App::execute(char ** envp, bool change) {
+int v8cgi_App::execute(bool change) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::ObjectTemplate> globaltemplate = v8::ObjectTemplate::New();
 	globaltemplate->SetInternalFieldCount(2);
@@ -96,7 +96,7 @@ int v8cgi_App::execute(char ** envp, bool change) {
 	v8::Context::Scope context_scope(context);
 
 	try {
-		this->prepare(envp); /* prepare JS environment */
+		this->prepare(); /* prepare JS environment */
 	} catch (std::string e) {
 		this->error(e.c_str(), __FILE__, __LINE__); /* error with config file or default libs -> goes to stderr */
 		this->finish();
@@ -396,7 +396,8 @@ void v8cgi_App::findmain() {
 	if (!this->mainfile.length()) { throw std::string("Cannot locate main file."); }
 }
 
-void v8cgi_App::prepare(char ** envp) {
+void v8cgi_App::prepare() {
+	setenv("V8CGI_CONFIG", this->cfgfile.c_str(), 1);
 	v8::Handle<v8::Object> g = JS_GLOBAL;
 	
 	GLOBAL_PROTO->SetInternalField(0, v8::External::New((void *) this)); 
@@ -409,11 +410,11 @@ void v8cgi_App::prepare(char ** envp) {
 	g->Set(JS_STR("global"), g);
 	g->Set(JS_STR("Config"), v8::Object::New());
 
-	setup_system(g, envp);
-	setup_io(g);	
+	setup_system(g);
+	setup_io(g);
 	setup_socket(g);
 	
-	this->include(cfgfile, false, false); /* do not populate, do not wrap */
+	this->include(this->cfgfile, false, false); /* do not populate, do not wrap */
 	this->autoload();
 	
 	v8::Handle<v8::Object> args = v8::Array::New();

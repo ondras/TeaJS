@@ -9,8 +9,6 @@
 #include <stdlib.h>
 #include "js_app.h"
 
-extern char ** environ;
-
 int main(int argc, char ** argv) {
 	int result = 0;
 	v8cgi_App app;
@@ -20,7 +18,7 @@ int main(int argc, char ** argv) {
 #ifdef FASTCGI
 	while (FCGI_Accept() >= 0) {
 #endif
-	result = app.execute(environ, false);
+	result = app.execute(false);
 	
 #ifdef FASTCGI
 	FCGI_SetExitStatus(result);

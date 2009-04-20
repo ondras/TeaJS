@@ -396,7 +396,6 @@ void v8cgi_App::findmain() {
 }
 
 void v8cgi_App::prepare() {
-	setenv("V8CGI_CONFIG", this->cfgfile.c_str(), 1);
 	v8::Handle<v8::Object> g = JS_GLOBAL;
 	
 	GLOBAL_PROTO->SetInternalField(0, v8::External::New((void *) this)); 

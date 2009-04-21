@@ -63,10 +63,10 @@ public:
 		ap_log_rerror(file, line, APLOG_ERR, 0, this->request, "%s", data);
 	}
 
-	int execute(request_rec * request) {
+	int execute(request_rec * request, char ** envp) {
 		this->output_started = false;
 		this->request = request;
-		return v8cgi_App::execute(true);
+		return v8cgi_App::execute(true, envp);
 	}
 	
 	int init(int argc, char ** argv) { return 0; }
@@ -131,7 +131,7 @@ static int mod_v8cgi_handler(request_rec *r) {
 		strncpy(&(envp[i][len1+1]), elts[i].val, len2);
     }
 
-	int result = app.execute(r);
+	int result = app.execute(r, envp);
 	
 	for (int i=0;i<arr->nelts;i++) {
 		free(envp[i]);

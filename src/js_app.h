@@ -17,7 +17,7 @@ class v8cgi_App {
 public:
 	virtual ~v8cgi_App() {};
 	virtual int init(int argc, char ** argv); /* once per app lifetime */
-	int execute(bool change); /* once per request */
+	int execute(bool change, char ** envp); /* once per request */
 	v8::Handle<v8::Value> include(std::string name, bool populate, bool forceLocal);
 	
 	typedef std::vector<v8::Persistent<v8::Function> > funcvector;
@@ -42,7 +42,7 @@ private:
 
 	std::string exception(v8::TryCatch* try_catch);
 	virtual void process_args(int argc, char ** argv);
-	void prepare();
+	void prepare(char ** envp);
 	void findmain();
 	void finish();
 	void http();

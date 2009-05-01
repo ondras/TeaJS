@@ -137,7 +137,8 @@ if env["os"] == "windows":
 
 if env["debug"] == 1:
 	env.Append(
-		CCFLAGS = ["-O0", "-g", "-g3", "-gdwarf-2"]
+		CCFLAGS = ["-O0", "-g", "-g3", "-gdwarf-2", "-pg"],
+		LINKFLAGS = ["-pg"]
 	)
 # if
 

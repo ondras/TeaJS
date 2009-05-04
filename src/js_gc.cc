@@ -10,10 +10,10 @@ void GC::handler(v8::Persistent<v8::Value> object, void * ptr) {
 	}
 }
 
-void GC::add(v8::Handle<v8::Value> object, char * method) {
+void GC::add(v8::Handle<v8::Value> object, const char * method) {
 	v8::Persistent<v8::Value> p = v8::Persistent<v8::Value>::New(object);
 	p.MakeWeak((void *) this, &handler);
-	this->data.push_back(std::pair<v8::Persistent<v8::Value>, char *>(p, method));
+	this->data.push_back(std::pair<v8::Persistent<v8::Value>, const char *>(p, method));
 }
 
 void GC::go(objlist::iterator it) {

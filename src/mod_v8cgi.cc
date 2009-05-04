@@ -15,7 +15,7 @@
 #include "js_macros.h"
 
 typedef struct {
-	char * config;
+	const char * config;
 } v8cgi_config;
 
 extern "C" module AP_MODULE_DECLARE_DATA v8cgi_module; /* first declaration */

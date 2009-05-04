@@ -7,10 +7,10 @@
 
 class GC {
 public:
-	typedef std::list<std::pair<v8::Persistent<v8::Value>, char *> > objlist;                    
+	typedef std::list<std::pair<v8::Persistent<v8::Value>, const char *> > objlist;
 	
 	static void handler(v8::Persistent<v8::Value> object, void * ptr);
-    void add(v8::Handle<v8::Value> object, char * method);       
+    void add(v8::Handle<v8::Value> object, const char * method);
     void go(objlist::iterator it);
 	void finish();
 	objlist data;

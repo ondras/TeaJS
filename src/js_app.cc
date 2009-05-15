@@ -76,7 +76,6 @@ static const char * v8cgi_usage = "v8cgi [v8_args --] [-c path] program_file [ar
 
 int v8cgi_App::init(int argc, char ** argv) {
 	this->cfgfile = STRING(CONFIG_PATH);
-
 	try {
 		this->process_args(argc, argv);
 	} catch (std::string e) {

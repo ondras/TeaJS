@@ -4,10 +4,23 @@
 
 #ifdef FASTCGI
 #  include <fcgi_stdio.h>
+#  include <signal.h>
 #endif
 
 #include <stdlib.h>
 #include "js_app.h"
+
+#ifdef FASTCGI
+	bool exit_requested = false;
+	
+	void handle_sigterm(int param) {
+		exit_requested = true;
+	}
+
+	void handle_sigusr1(int param) {
+		exit_requested = true;
+	}
+#endif
 
 int main(int argc, char ** argv) {
 	int result = 0;
@@ -16,15 +29,20 @@ int main(int argc, char ** argv) {
 	if (result) { exit(result); }
 
 #ifdef FASTCGI
-	while (FCGI_Accept() >= 0) {
+	signal(SIGTERM, handle_sigterm);
+	signal(SIGUSR1, handle_sigusr1);
+	while (FCGI_Accept() >= 0  && !exit_requested) {
 #endif
-	result = app.execute(false, NULL);
-	
+
+		result = app.execute(false, NULL);
+
 #ifdef FASTCGI
-	FCGI_SetExitStatus(result);
-#endif
-	
-#ifdef FASTCGI
+		if (exit_requested) { 
+			FCGI_SetExitStatus(0);
+			exit(0); 
+		} else {
+			FCGI_SetExitStatus(result);
+		}
 	}
 #endif
 

@@ -36,7 +36,7 @@ exports.testGetoptErrors = function() {
 
 exports.testGetoptOk = function() {
 	var go = setup();
-	go.parse(["-a", "-b", "4", "-c", "xxx", "-d", "1", "-d", "2"]);
+	go.parse(["-a", "-b", "4", "-c", "xxx", "-d", "1", "-d", "2", "--"]);
 	assert.assertEquals("value #1", true, go.get("a"));
 	assert.assertEquals("value #2", 4, go.get("b"));
 	assert.assertEquals("value #3", "xxx", go.get("c"));

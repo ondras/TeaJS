@@ -121,7 +121,6 @@ var TestRunner = {
 		this.options = new GetOpt();
 		this.options.add("help", "Print help message", false, "h", "help");
 		this.options.add("verbosity", "Verbosity level (0-2)", 0, "v", "", GetOpt.OPTIONAL_ARGUMENT);
-		
 		try {
 			this.options.parse(global.arguments);
 		} catch(e) {

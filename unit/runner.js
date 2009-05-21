@@ -40,7 +40,7 @@ var TestRunner = {
 		}
 		this.depth++;
 		try {
-			var data = require("./"+name);
+			var data = require(System.getcwd() + "/" + name);
 			for (var p in data) {
 				if (!p.match(/^test/i)) { continue; }
 				var result = this.test(data[p], p);

@@ -28,6 +28,9 @@
 #   define dlsym(x,y) (void*)GetProcAddress((HMODULE)x,y)
 #endif
 
+/**
+ * global.include = global.require + populate global object
+ */
 JS_METHOD(_include) {
 	v8cgi_App * app = APP_PTR;
 	v8::String::Utf8Value file(args[0]);
@@ -40,6 +43,9 @@ JS_METHOD(_include) {
 	return result;
 }
 
+/**
+ * global.require = load module and return its (cached) exports
+ */
 JS_METHOD(_require) {
 	v8cgi_App * app = APP_PTR;
 	v8::String::Utf8Value file(args[0]);
@@ -52,6 +58,9 @@ JS_METHOD(_require) {
 	return result;
 }
 
+/**
+ * global.onexit = add a function to be executed when context ends
+ */
 JS_METHOD(_onexit) {
 	v8cgi_App * app = APP_PTR;
 
@@ -60,20 +69,28 @@ JS_METHOD(_onexit) {
 	return v8::Undefined();
 }
 
+/**
+ * does not work atm.
+ */
 JS_METHOD(_exit) {
 	v8::Context::GetCurrent()->Exit();
 	return v8::Undefined();
 }
 
-// Format for command line arguments
-//
-// as you can see if you wish to pass any arguments to v8, you MUST
-// put a -- surrounded by whitespace after all the v8 arguments
-//
-// any arguments after the v8_args but before the program_file are
-// used by v8cgi.
+/**
+ * Format for command line arguments
+ *
+ * as you can see if you wish to pass any arguments to v8, you MUST
+ * put a -- surrounded by whitespace after all the v8 arguments
+ *
+ * any arguments after the v8_args but before the program_file are
+ * used by v8cgi.
+ */
 static const char * v8cgi_usage = "v8cgi [v8_args --] [-c path] program_file [argument ...]";
 
+/**
+ * Execute only once - process command line arguments, set config file name
+ */
 int v8cgi_App::init(int argc, char ** argv) {
 	this->cfgfile = STRING(CONFIG_PATH);
 	try {
@@ -86,6 +103,11 @@ int v8cgi_App::init(int argc, char ** argv) {
 	return 0;
 }
 
+/**
+ * Process a request.
+ * @param {bool} change Perform a chdir?
+ * @param {char**} envp Environment
+ */
 int v8cgi_App::execute(bool change, char ** envp) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::ObjectTemplate> globaltemplate = v8::ObjectTemplate::New();
@@ -110,8 +132,6 @@ int v8cgi_App::execute(bool change, char ** envp) {
 	}
 	
 	if (change) { path_chdir(path_dirname(this->mainfile)); } /* if requested, chdir */
-	std::string current = path_getcwd(); /* add current path to stack */
-	this->paths.push(current);
 	this->http(); /* setup builtin request and response, if running as CGI */
 
 	try {
@@ -127,7 +147,9 @@ int v8cgi_App::execute(bool change, char ** envp) {
 	return 0;
 }
 
-/* try to report error via JS means, instead of stderr */
+/**
+ * Try to report error via JS means, instead of stderr 
+ */
 void v8cgi_App::js_error(std::string message) {
 	int cgi = 0;
 	v8::Local<v8::Function> fun;
@@ -153,7 +175,9 @@ void v8cgi_App::js_error(std::string message) {
 	fun->Call(context->ToObject(), 1, data);
 }
 
-/* covert JS exception to c string */
+/** 
+ * Convert JS exception to c string 
+ */
 std::string v8cgi_App::exception(v8::TryCatch* try_catch) {
 	v8::HandleScope handle_scope;
 	v8::String::Utf8Value exception(try_catch->Exception());
@@ -176,11 +200,21 @@ std::string v8cgi_App::exception(v8::TryCatch* try_catch) {
 	return msgstring;
 }
 
+/**
+ * Include a module
+ * @param {std::string} name
+ * @param {bool} populate Should we automatically populate global object?
+ * @param {bool} wrap Should we wrap the module in an "exports" envelope?
+ */
 v8::Handle<v8::Value> v8cgi_App::include(std::string name, bool populate, bool wrap) {
 	v8::HandleScope handle_scope;
-/*	printf("[debug] looking for '%s'\n", name.c_str()); */
+#ifdef VERBOSE
+	printf("[include] looking for '%s'\n", name.c_str()); 
+#endif	
 	std::string filename = this->findname(name, !wrap);
-/*	printf("[debug] resolved as '%s'\n", filename.c_str()); */
+#ifdef VERBOSE
+	printf("[include] resolved as '%s'\n", filename.c_str()); 
+#endif	
 	
 	if (filename == "") {
 		std::string s = "Cannot find '";
@@ -221,6 +255,9 @@ v8::Handle<v8::Value> v8cgi_App::include(std::string name, bool populate, bool w
 	return handle_scope.Close(data);
 }
 
+/**
+ * Include a js module
+ */
 v8::Handle<v8::Value> v8cgi_App::include_js(std::string filename, v8::Handle<v8::Object> exports, bool wrap) {
 	v8::HandleScope handle_scope;
 	v8::TryCatch tc;
@@ -247,6 +284,9 @@ v8::Handle<v8::Value> v8cgi_App::include_js(std::string filename, v8::Handle<v8:
 	}
 }
 
+/**
+ * Include a dso module
+ */
 v8::Handle<v8::Value> v8cgi_App::include_dso(std::string filename, v8::Handle<v8::Object> exports) {
 	v8::HandleScope handle_scope;
 	void * handle = this->cache.getHandle(filename);
@@ -267,6 +307,9 @@ v8::Handle<v8::Value> v8cgi_App::include_dso(std::string filename, v8::Handle<v8
 	return handle_scope.Close(exports);	
 }
 
+/**
+ * Wrap a string with exports envelope
+ */
 std::string v8cgi_App::wrap(std::string original) {
 	std::string result = "";
 	result += "(function(exports){";
@@ -275,6 +318,9 @@ std::string v8cgi_App::wrap(std::string original) {
 	return result;
 }
 
+/**
+ * Apply exports object to global object
+ */
 void v8cgi_App::populate_global(v8::Handle<v8::Object> exports) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::Array> names = exports->GetPropertyNames();
@@ -290,7 +336,10 @@ void v8cgi_App::populate_global(v8::Handle<v8::Object> exports) {
 std::string v8cgi_App::findname(std::string name, bool forceLocal) {
 	if (!name.length()) { return std::string(""); }
 
+	/* try all these suffixes if file does not exist */
 	const char * suffixes[] = {"js", "so", "dll"};
+	
+	/* try to fetch the Config.libraryPath option */
 	v8::Handle<v8::Value> config = JS_GLOBAL->Get(JS_STR("Config"));
 	v8::Handle<v8::Value> prefix = config->ToObject()->Get(JS_STR("libraryPath"));
 	v8::String::Utf8Value pfx(prefix);
@@ -298,19 +347,24 @@ std::string v8cgi_App::findname(std::string name, bool forceLocal) {
 	std::string fullPath = "";
 	if (path_isabsolute(name)) { /* v8cgi non-standard extension - absolute path */
 		fullPath = name;
-	} else {
+	} else { 
 		if (!forceLocal && name.at(0) != '.') { /* "global" module */
 			fullPath = std::string(*pfx);
 		} else { /* "local" module */
-			fullPath = this->paths.empty() ? "" : this->paths.top();
+			fullPath = this->paths.empty() ? path_getcwd() : this->paths.top();
 		}
-		fullPath += "/" + name;
+		fullPath += "/";
+		fullPath += name;
 	}
 
-	fullPath = path_normalize(fullPath);
+#ifdef VERBOSE
+	printf("[findname] expanded to '%s'\n", fullPath.c_str()); 
+#endif	
 
+	fullPath = path_normalize(fullPath); /* remove /./, /../ etc */
 	if (path_file_exists(fullPath)) { return fullPath; }
-	std::string path2;
+	
+	std::string path2; /* try all suffixes */
 	for (int j=0;j<3;j++) {
 		path2 = fullPath;
 		path2 += ".";
@@ -320,6 +374,9 @@ std::string v8cgi_App::findname(std::string name, bool forceLocal) {
 	return std::string("");
 }
 
+/**
+ * Load default libraries
+ */
 void v8cgi_App::autoload() {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::Value> config = JS_GLOBAL->Get(JS_STR("Config"));
@@ -335,6 +392,9 @@ void v8cgi_App::autoload() {
 	}
 }
 
+/**
+ * End request
+ */
 void v8cgi_App::finish() {
 	v8::HandleScope handle_scope;
 	/* user callbacks */
@@ -358,7 +418,10 @@ void v8cgi_App::finish() {
 	while (!this->paths.empty()) { this->paths.pop(); }
 }
 
-void v8cgi_App::http() { /* prepare global request and response objects */
+/**
+ * Create global.response and global.request
+ */
+void v8cgi_App::http() {
 	v8::Handle<v8::Object> sys = JS_GLOBAL->Get(JS_STR("System"))->ToObject();
 	v8::Handle<v8::Value> env = sys->ToObject()->Get(JS_STR("env"));
 	v8::Handle<v8::Value> ss = env->ToObject()->Get(JS_STR("SERVER_SOFTWARE"));
@@ -381,6 +444,9 @@ void v8cgi_App::http() { /* prepare global request and response objects */
 	JS_GLOBAL->Set(JS_STR("request"), reqf->NewInstance(2, reqargs));
 }
 
+/**
+ * Try to locate main file
+ */
 void v8cgi_App::findmain() {
 	v8::Handle<v8::Value> sys = JS_GLOBAL->Get(JS_STR("System"));
 	v8::Handle<v8::Value> env = sys->ToObject()->Get(JS_STR("env"));
@@ -397,6 +463,9 @@ void v8cgi_App::findmain() {
 	if (!this->mainfile.length()) { throw std::string("Cannot locate main file."); }
 }
 
+/**
+ * Initialize and setup the context
+ */
 void v8cgi_App::prepare(char ** envp) {
 	v8::Handle<v8::Object> g = JS_GLOBAL;
 	
@@ -423,8 +492,11 @@ void v8cgi_App::prepare(char ** envp) {
 	g->Set(JS_STR("arguments"), args);
 }
 
-/* returns true if we were able to (optionaly) set a config file and 
-  (non-optionally) set a mainfile. false if usage was invalid. */
+/**
+ * Process command line arguments.
+ * @returns {bool} True if we were able to (optionaly) set a config file and 
+ * (non-optionally) set a mainfile. False if usage was invalid.
+ */
 void v8cgi_App::process_args(int argc, char ** argv) {
 	std::string err = "Invalid command line usage.\n";
 	err += "Correct usage: ";
@@ -493,14 +565,23 @@ void v8cgi_App::process_args(int argc, char ** argv) {
 	}
 }
 
+/**
+ * Default stdin routine
+ */
 size_t v8cgi_App::reader(char * destination, size_t amount) {
 	return fread((void *) destination, sizeof(char), amount, stdin);
 }
 
+/**
+ * Default stdout routine
+ */
 size_t v8cgi_App::writer(const char * data, size_t amount) {
 	return fwrite((void *) data, sizeof(char), amount, stdout);
 }
 
+/**
+ * Default stderr routine
+ */
 void v8cgi_App::error(const char * data, const char * file, int line) {
 	fwrite((void *) data, sizeof(char), strlen(data), stderr);
 	fwrite((void *) "\n", sizeof(char), 1, stderr);

@@ -17,10 +17,17 @@
 #	define getcwd(name, bytes) _getcwd(name, bytes)
 #endif
 
+#ifdef windows
+#	define PATH_MAX _MAX_PATH
+#	define realpath(in, out) _fullpath(out, in, PATH_MAX)
+#endif
+
 std::string path_normalize(std::string path) {
 	char * p = new char[PATH_MAX];
 	realpath(path.c_str(), p);
-	return std::string(p);
+	std::string result(p);
+	delete p;
+	return result;
 /*
 	std::string result = path;
 
@@ -101,5 +108,8 @@ std::string path_getcwd() {
 }
 
 void path_chdir(std::string dir) {
+#ifdef VERBOSE
+	printf("[path_chdir] chdir to '%s'\n", dir.c_str()); 
+#endif	
 	chdir(dir.c_str());
 }

@@ -10,6 +10,7 @@
 #include "js_common.h"
 #include "js_app.h"
 #include "js_system.h"
+#include "js_path.h"
 
 #ifndef HAVE_SLEEP
 #	include <windows.h>
@@ -88,6 +89,10 @@ JS_METHOD(_system) {
 	return JS_INT(result);
 }
 
+JS_METHOD(_getcwd) {
+	return JS_STR(path_getcwd().c_str());
+}
+
 JS_METHOD(_sleep) {
 	int num = args[0]->Int32Value();
 	sleep(num);
@@ -120,6 +125,7 @@ void setup_system(v8::Handle<v8::Object> global, char ** envp) {
 	system->Set(JS_STR("stdout"), v8::FunctionTemplate::New(_stdout)->GetFunction());
 	system->Set(JS_STR("stderr"), v8::FunctionTemplate::New(_stderr)->GetFunction());
 	system->Set(JS_STR("system"), v8::FunctionTemplate::New(_system)->GetFunction());
+	system->Set(JS_STR("getcwd"), v8::FunctionTemplate::New(_getcwd)->GetFunction());
 	system->Set(JS_STR("sleep"), v8::FunctionTemplate::New(_sleep)->GetFunction());
 /*	system->Set(JS_STR("usleep"), v8::FunctionTemplate::New(_usleep)->GetFunction()); */
 	system->Set(JS_STR("env"), env);

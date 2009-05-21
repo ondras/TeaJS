@@ -43,6 +43,7 @@ opts.Add(BoolOption("module", "Build Apache module", 1))
 opts.Add(BoolOption("cgi", "Build CGI binray", 1))
 opts.Add(BoolOption("fcgi", "FastCGI support (for CGI binary)", 0))
 opts.Add(BoolOption("debug", "Debugging support", 0))
+opts.Add(BoolOption("verbose", "Verbose debugging messages", 0))
 
 opts.Add(("mysqlpath", "MySQL header path", mysql_include))
 opts.Add(("apachepath", "Apache header path", apache_include))
@@ -139,6 +140,12 @@ if env["debug"] == 1:
 	env.Append(
 		CCFLAGS = ["-O0", "-g", "-g3", "-gdwarf-2", "-pg"],
 		LINKFLAGS = ["-pg"]
+	)
+# if
+
+if env["verbose"] == 1:
+	env.Append(
+		CPPDEFINES = ["VERBOSE"]
 	)
 # if
 

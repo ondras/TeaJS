@@ -2,6 +2,8 @@
 #include <string>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <limits.h>
+#include <stdlib.h>
 
 // chdir()
 #ifndef HAVE_CHDIR
@@ -15,20 +17,15 @@
 #	define getcwd(name, bytes) _getcwd(name, bytes)
 #endif
 
-std::string path_normalize(std::string path, std::string base) {
-	std::string result;
-	if (path_isabsolute(path)) {
-		result = path;
-	} else {
-		if (base.length()) {
-			result = base;
-			result += '/';
-		}
-		result += path;
-	}
-	
+std::string path_normalize(std::string path) {
+	char * p = new char[PATH_MAX];
+	realpath(path.c_str(), p);
+	return std::string(p);
+/*
+	std::string result = path;
+
 	size_t pos = 0;
-	int state = 1; /* 0 bad, 1 just after dirname, 2 dot  */
+	int state = 1; // 0 bad, 1 just after dirname, 2 dot
 	while (pos != result.length()) {
 		char ch = result.at(pos);
 		switch (ch) {
@@ -54,6 +51,7 @@ std::string path_normalize(std::string path, std::string base) {
 	}
 	
 	return result;
+	*/
 }
 
 std::string path_filename(std::string path) {
@@ -80,8 +78,7 @@ bool path_isabsolute(std::string path) {
 	return (pos != std::string::npos);
 #else
 	if (path.length() == 0) { return false; }
-	char ch = path.at(0);
-	return (ch == '/');
+	return (path.at(0) == '/');
 #endif
 }
  

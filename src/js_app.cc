@@ -101,9 +101,9 @@ int v8cgi_App::execute(bool change, char ** envp) {
 		return 1;
 	}
 
-	try { 
+	try {
 		this->findmain();  /* try to locate main file */
-	}  catch (std::string e) {
+	} catch (std::string e) {
 		this->error(e.c_str(), __FILE__, __LINE__); /* cannot locate main file -> goes to stderr */
 		this->finish();
 		return 1;
@@ -178,7 +178,9 @@ std::string v8cgi_App::exception(v8::TryCatch* try_catch) {
 
 v8::Handle<v8::Value> v8cgi_App::include(std::string name, bool populate, bool wrap) {
 	v8::HandleScope handle_scope;
+/*	printf("[debug] looking for '%s'\n", name.c_str()); */
 	std::string filename = this->findname(name, !wrap);
+/*	printf("[debug] resolved as '%s'\n", filename.c_str()); */
 	
 	if (filename == "") {
 		std::string s = "Cannot find '";
@@ -286,30 +288,31 @@ void v8cgi_App::populate_global(v8::Handle<v8::Object> exports) {
  * Try to find absolute file name. If !local, libraryPath is used
  */
 std::string v8cgi_App::findname(std::string name, bool forceLocal) {
+	if (!name.length()) { return std::string(""); }
+
+	const char * suffixes[] = {"js", "so", "dll"};
 	v8::Handle<v8::Value> config = JS_GLOBAL->Get(JS_STR("Config"));
 	v8::Handle<v8::Value> prefix = config->ToObject()->Get(JS_STR("libraryPath"));
 	v8::String::Utf8Value pfx(prefix);
-	
-	if (!name.length()) { return std::string(""); }
-	
-	std::string current = (this->paths.empty() ? "" : this->paths.top());
-	if (!forceLocal && name.at(0) != '.') {
-		/* 
-			we search module path only if:
-			1) we have libraryPath
-			2) name is "global" (does not start with a dot)
-			3) name is not the mainfile
-		*/
-		current = std::string(*pfx); 
+
+	std::string fullPath = "";
+	if (path_isabsolute(name)) { /* v8cgi non-standard extension - absolute path */
+		fullPath = name;
+	} else {
+		if (!forceLocal && name.at(0) != '.') { /* "global" module */
+			fullPath = std::string(*pfx);
+		} else { /* "local" module */
+			fullPath = this->paths.empty() ? "" : this->paths.top();
+		}
+		fullPath += "/" + name;
 	}
-	
-	const char * suffixes[] = {"js", "so", "dll"};
-	std::string path = "";
-	std::string path2 = "";
-	path = path_normalize(name, current);
-	if (path_file_exists(path)) { return path; }
+
+	fullPath = path_normalize(fullPath);
+
+	if (path_file_exists(fullPath)) { return fullPath; }
+	std::string path2;
 	for (int j=0;j<3;j++) {
-		path2 = path;
+		path2 = fullPath;
 		path2 += ".";
 		path2 += suffixes[j];
 		if (path_file_exists(path2)) { return path2; }

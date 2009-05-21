@@ -4,7 +4,7 @@
 #include <string>
 
 size_t path_lastslash(std::string path);
-std::string path_normalize(std::string path, std::string base);
+std::string path_normalize(std::string path);
 std::string path_filename(std::string path);
 std::string path_dirname(std::string path);
 bool path_isabsolute(std::string path);

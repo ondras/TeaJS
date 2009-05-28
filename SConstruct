@@ -55,14 +55,52 @@ opts.Add(("conffile", "Config file", config_path))
 
 env = Environment(options=opts)
 
+Help(opts.GenerateHelpText(env))
+conf = Configure(env)
+
+if ((env["os"] != "windows") and not (conf.CheckLib("v8"))):
+	Abort("Cannot find V8 library!")
+# if
+
+# adjust variables based on user selection
+if conf.CheckCHeader("unistd.h", include_quotes = "<>"):
+	env.Append(CPPDEFINES = ["HAVE_UNISTD_H"])
+
+if conf.CheckCHeader("dirent.h", include_quotes = "<>"):
+	env.Append(CPPDEFINES = ["HAVE_DIRENT_H"])
+
+if conf.CheckCHeader("sys/mman.h", include_quotes = "<>"):
+	env.Append(CPPDEFINES = ["HAVE_MMAN_H"])
+
+if not conf.CheckFunc("close"):
+	env.Append(CPPDEFINES = ["HAVE_WINSOCK"])
+
+if conf.CheckFunc("mkdir"):
+	env.Append(CPPDEFINES = ["HAVE_MKDIR"])
+
+if conf.CheckFunc("rmdir"):
+	env.Append(CPPDEFINES = ["HAVE_RMDIR"])
+
+if conf.CheckFunc("chdir"):
+	env.Append(CPPDEFINES = ["HAVE_CHDIR"])
+
+if conf.CheckFunc("getcwd"):
+	env.Append(CPPDEFINES = ["HAVE_GETCWD"])
+
+if conf.CheckFunc("sleep"):
+    env.Append(CPPDEFINES = ["HAVE_SLEEP"])
+	
+
+env = conf.Finish()
+
 # default values
 env.Append(
-    LIBS = ["v8"], 
-    CPPPATH = ["src"], 
-    CCFLAGS = ["-Wall", "-O3", "-m32"], 
-    CPPDEFINES = [],
-    LIBPATH = "",
-    LINKFLAGS = ["-m32"]
+	LIBS = ["v8"], 
+	CPPPATH = ["src"], 
+	CCFLAGS = ["-Wall", "-O3", "-m32"], 
+	CPPDEFINES = [],
+	LIBPATH = "",
+	LINKFLAGS = ["-m32"]
 )
 
 if env["os"] == "posix":
@@ -71,48 +109,12 @@ if env["os"] == "posix":
 	)
 # if
 
-Help(opts.GenerateHelpText(env))
-conf = Configure(env)
 
-if ((env["os"] != "windows") and not (conf.CheckLib("v8"))):
-	print "Cannot find V8 library!"
-# if
-
-# adjust variables based on user selection
-if conf.CheckCHeader("unistd.h", include_quotes = "<>"):
-    env.Append(CPPDEFINES = "HAVE_UNISTD_H")
-
-if conf.CheckCHeader("dirent.h", include_quotes = "<>"):
-    env.Append(CPPDEFINES = "HAVE_DIRENT_H")
-
-if conf.CheckCHeader("sys/mman.h", include_quotes = "<>"):
-    env.Append(CPPDEFINES = "HAVE_MMAN_H")
-
-if not conf.CheckFunc("close"):
-    env.Append(CPPDEFINES = "HAVE_WINSOCK")
-
-if conf.CheckFunc("mkdir"):
-    env.Append(CPPDEFINES = "HAVE_MKDIR")
-
-if conf.CheckFunc("rmdir"):
-    env.Append(CPPDEFINES = "HAVE_RMDIR")
-
-if conf.CheckFunc("chdir"):
-    env.Append(CPPDEFINES = "HAVE_CHDIR")
-
-if conf.CheckFunc("getcwd"):
-    env.Append(CPPDEFINES = "HAVE_GETCWD")
-
-if conf.CheckFunc("sleep"):
-    env.Append(CPPDEFINES = "HAVE_SLEEP")
-	
-
-env = conf.Finish()
 
 env.Append(
-    CPPDEFINES = ["CONFIG_PATH=" + env["conffile"], env["os"]],
-    CPPPATH = env["v8path"] + "/include",
-    LIBPATH = env["v8path"]
+	CPPDEFINES = ["CONFIG_PATH=" + env["conffile"], env["os"]],
+	CPPPATH = env["v8path"] + "/include",
+	LIBPATH = env["v8path"]
 )
 
 if env["fcgi"] == 1:
@@ -124,7 +126,7 @@ if env["fcgi"] == 1:
 # if
 
 if env["os"] == "posix":
-    env.Append(LIBS = ["dl"])
+	env.Append(LIBS = ["dl"])
 # if
 
 if env["os"] == "windows":

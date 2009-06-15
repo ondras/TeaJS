@@ -34,13 +34,13 @@
 JS_METHOD(_include) {
 	v8cgi_App * app = APP_PTR;
 	v8::String::Utf8Value file(args[0]);
-	v8::Handle<v8::Value> result;
+	v8::Handle<v8::Object> exports;
 	try {
-		result = app->include(*file, true, true); /* populate, wrap */
+		exports = app->include(*file);
 	} catch (std::string e) {
 		return JS_EXCEPTION(e.c_str());
 	}
-	return result;
+	return exports;
 }
 
 /**
@@ -49,13 +49,13 @@ JS_METHOD(_include) {
 JS_METHOD(_require) {
 	v8cgi_App * app = APP_PTR;
 	v8::String::Utf8Value file(args[0]);
-	v8::Handle<v8::Value> result;
+	v8::Handle<v8::Object> exports;
 	try {
-		result = app->include(*file, false, true); /* do not populate, wrap */
+		exports = app->require(*file, true);
 	} catch (std::string e) {
 		return JS_EXCEPTION(e.c_str());
 	}
-	return result;
+	return exports;
 }
 
 /**
@@ -96,7 +96,8 @@ int v8cgi_App::init(int argc, char ** argv) {
 	try {
 		this->process_args(argc, argv);
 	} catch (std::string e) {
-		this->error(e.c_str(), __FILE__, __LINE__); /* initialization error -> goes to stderr */
+		/* initialization error -> goes to stderr */
+		this->error(e.c_str(), __FILE__, __LINE__); 
 		return 1;
 	}
 
@@ -108,6 +109,56 @@ int v8cgi_App::init(int argc, char ** argv) {
 #endif
 
 	return 0;
+}
+
+/**
+ * Initialize and setup the context. Executed during every request, prior to executing main request file.
+ */
+void v8cgi_App::prepare(char ** envp) {
+	v8::HandleScope handle_scope;
+	v8::Handle<v8::Object> g = JS_GLOBAL;
+
+	g->Set(JS_STR("include"), v8::FunctionTemplate::New(_include)->GetFunction());
+	g->Set(JS_STR("require"), v8::FunctionTemplate::New(_require)->GetFunction());
+	g->Set(JS_STR("onexit"), v8::FunctionTemplate::New(_onexit)->GetFunction());
+/**
+ * exit() function would be nice, but ATM there is no way to achieve this functionality in V8
+ *
+	g->Set(JS_STR("exit"), v8::FunctionTemplate::New(_exit)->GetFunction());
+ */
+	g->Set(JS_STR("global"), g);
+	g->Set(JS_STR("Config"), v8::Object::New());
+
+	setup_system(g, envp);
+	setup_io(g);
+	
+	/* do not wrap config file */
+	this->require(this->cfgfile, false); 
+	this->autoload();
+	
+	v8::Handle<v8::Object> args = v8::Array::New();
+	for (size_t i = 0; i < this->mainfile_args.size(); ++i) {
+		args->Set(JS_INT(i), JS_STR(this->mainfile_args.at(i).c_str()));
+	}
+	g->Set(JS_STR("arguments"), args);
+}
+
+/**
+ * Load default libraries
+ */
+void v8cgi_App::autoload() {
+	v8::HandleScope handle_scope;
+	v8::Handle<v8::Value> config = JS_GLOBAL->Get(JS_STR("Config"));
+	v8::Handle<v8::Array> list = v8::Handle<v8::Array>::Cast(config->ToObject()->Get(JS_STR("libraryAutoload")));
+	int cnt = list->Length();
+	v8::Handle<v8::Value> dummy;
+	
+	for (int i=0;i<cnt;i++) {
+		v8::Handle<v8::Value> item = list->Get(JS_INT(i));
+		v8::String::Utf8Value name(item);
+		std::string filename = *name;
+		this->include(filename);
+	}
 }
 
 /**
@@ -131,30 +182,37 @@ int v8cgi_App::execute(bool change, char ** envp) {
 #endif
 
 	try {
-		this->prepare(envp); /* prepare JS environment: config, default libraries */
+		/* prepare JS environment: config, default libraries */
+		this->prepare(envp); 
 	} catch (std::string e) {
-		this->error(e.c_str(), __FILE__, __LINE__); /* error with config file or default libs -> goes to stderr */
+		/* error with config file or default libs -> goes to stderr */
+		this->error(e.c_str(), __FILE__, __LINE__); 
 		this->finish();
 		return 1;
 	}
 	try {
-		this->findmain();  /* try to locate main file */
+		/* try to locate main file */
+		this->findmain();
 	} catch (std::string e) {
-		this->error(e.c_str(), __FILE__, __LINE__); /* cannot locate main file -> goes to stderr */
+		/* cannot locate main file -> goes to stderr */
+		this->error(e.c_str(), __FILE__, __LINE__); 
 		this->finish();
 		return 1;
 	}
 	
-	if (change) { path_chdir(path_dirname(this->mainfile)); } /* if requested, chdir */
-	this->http(); /* setup builtin request and response, if running as CGI */
+	/* if requested, chdir */
+	if (change) { path_chdir(path_dirname(this->mainfile)); } 
+	/* setup builtin request and response, if running as CGI */
+	this->http(); 
 
 	try {
-		this->include(this->mainfile, false, false); /* do not populate, do not wrap */
+		/* do not wrap main file */
+		this->require(this->mainfile, false); 
 	} catch (std::string e) {
 		/**
 		 * FIXME: mainfile errors should be configurable - display/log
 		 */
-		this->error(e.c_str(), __FILE__, __LINE__); /* error when executing main file -> goes to ??? */
+		this->error(e.c_str(), __FILE__, __LINE__);
 //		this->js_error(e.c_str()); /* error when executing main file -> goes to ??? */
 		this->finish();
 		return 1;
@@ -162,283 +220,6 @@ int v8cgi_App::execute(bool change, char ** envp) {
 	
 	this->finish();
 	return 0;
-}
-
-/**
- * Creates a new context
- */
-void v8cgi_App::create_context() {
-	v8::HandleScope handle_scope;
-	v8::Handle<v8::ObjectTemplate> globaltemplate = v8::ObjectTemplate::New();
-	globaltemplate->SetInternalFieldCount(2);
-	this->context = v8::Context::New(NULL, globaltemplate);
-	this->context->Enter();
-
-	GLOBAL_PROTO->SetInternalField(0, v8::External::New((void *) this)); 
-	GLOBAL_PROTO->SetInternalField(1, v8::External::New((void *) &(this->gc))); 
-}
-
-/**
- * Deletes the existing context
- */
-void v8cgi_App::delete_context() {
-	this->context->Exit();
-	this->context.Dispose();
-	this->context.Clear();
-}
-
-/**
- * Removes all "garbage" from the global object
- */
-void v8cgi_App::clear_global() {
-	v8::Handle<v8::Array> keys = JS_GLOBAL->GetPropertyNames();
-	int length = keys->Length();
-	for (int i=0;i<length;i++) {
-		v8::Handle<v8::String> key = keys->Get(JS_INT(i))->ToString();
-		JS_GLOBAL->Delete(key);
-	}
-}
-
-/**
- * Try to report error via JS means, instead of stderr 
- */
-void v8cgi_App::js_error(std::string message) {
-	int cgi = 0;
-	v8::Local<v8::Function> fun;
-	v8::Local<v8::Value> context = JS_GLOBAL->Get(JS_STR("response"));
-	if (context->IsObject()) {
-		v8::Local<v8::Value> print = context->ToObject()->Get(JS_STR("write"));
-		if (print->IsObject()) {
-			fun = v8::Local<v8::Function>::Cast(print);
-			cgi = 1;
-		}
-	}
-	if (!cgi) {
-		context = JS_GLOBAL->Get(JS_STR("System"));
-		if (context->IsUndefined()) {
-			this->error(message.c_str(), __FILE__, __LINE__);
-			return;
-		} else {
-			fun = v8::Local<v8::Function>::Cast(context->ToObject()->Get(JS_STR("stdout")));
-		}
-	}
-	
-	v8::Handle<v8::Value> data[1] = { JS_STR(message.c_str()) };
-	fun->Call(context->ToObject(), 1, data);
-}
-
-/** 
- * Convert JS exception to c string 
- */
-std::string v8cgi_App::exception(v8::TryCatch* try_catch) {
-	v8::HandleScope handle_scope;
-	v8::String::Utf8Value exception(try_catch->Exception());
-	v8::Handle<v8::Message> message = try_catch->Message();
-	std::string msgstring = "";
-	std::stringstream ss;
-
-	if (message.IsEmpty()) {
-		msgstring += *exception;
-	} else {
-		v8::String::Utf8Value filename(message->GetScriptResourceName());
-		int linenum = message->GetLineNumber();
-		msgstring += *filename;
-		msgstring += ":";
-		ss << linenum;
-		msgstring += ss.str();
-		msgstring += ": ";
-		msgstring += *exception;
-	}
-	return msgstring;
-}
-
-/**
- * Include a module
- * @param {std::string} name
- * @param {bool} populate Should we automatically populate global object?
- * @param {bool} wrap Should we wrap the module in an "exports" envelope?
- */
-v8::Handle<v8::Value> v8cgi_App::include(std::string name, bool populate, bool wrap) {
-	v8::HandleScope handle_scope;
-#ifdef VERBOSE
-	printf("[include] looking for '%s'\n", name.c_str()); 
-#endif	
-	std::string filename = this->findname(name, !wrap);
-#ifdef VERBOSE
-	printf("[include] resolved as '%s'\n", filename.c_str()); 
-#endif	
-	
-	if (filename == "") {
-		std::string s = "Cannot find '";
-		s += name;
-		s += "'";
-		throw s;
-	}
-	
-	exportmap::iterator it = this->exports.find(filename);
-	if (it != this->exports.end()) { /* use cached exports */
-#ifdef VERBOSE
-		printf("[include] using cached exports for '%s'\n", filename.c_str()); 
-#endif	
-		return this->exports[filename];  
-	} 
-	
-	v8::Handle<v8::Object> exports = v8::Object::New();
-	if (wrap) { this->exports[filename] = v8::Persistent<v8::Object>::New(exports); } /* add exports to cache */
-
-	this->paths.push(path_dirname(filename)); /* prepare path to stack */
-	v8::Handle<v8::Value> data; /* result */
-
-	try {
-		size_t index = filename.find_last_of(".");
-		std::string ext = filename.substr(index+1);
-		if (ext == "so" || ext == "dll") {
-			data = this->include_dso(filename, exports);
-		} else {
-			data = this->include_js(filename, exports, wrap);
-
-		}
-	} catch (std::string e) {
-		this->paths.pop(); /* remove from stack */
-		if (wrap) { /* remove from export cache */
-			exportmap::iterator it = this->exports.find(filename);
-			this->exports.erase(it);
-		}
-		throw e; /* rethrow */
-	}
-
-	this->paths.pop(); /* execution ended, remove top path */
-	if (populate) { this->populate_global(exports); }
-	return handle_scope.Close(data);
-}
-
-/**
- * Include a js module
- */
-v8::Handle<v8::Value> v8cgi_App::include_js(std::string filename, v8::Handle<v8::Object> exports, bool wrap) {
-	v8::HandleScope handle_scope;
-	v8::TryCatch tc;
-
-#ifdef REUSE_CONTEXT
-	v8::Handle<v8::Script> script = this->cache.getScript(filename, wrap);
-#else
-	std::string source = this->cache.getSource(filename, wrap);
-	v8::Handle<v8::Script> script = v8::Script::Compile(JS_STR(source.c_str()), JS_STR(filename.c_str()));
-#endif
-	
-	if (tc.HasCaught()) {
-		throw this->exception(&tc);
-	} else {
-		v8::Handle<v8::Value> result = script->Run();
-		if (tc.HasCaught()) { throw this->exception(&tc); }
-		
-		if (wrap) {
-			v8::Handle<v8::Function> fun = v8::Handle<v8::Function>::Cast(result);
-			v8::Handle<v8::Value> params[1] = {exports}; 
-			result = fun->Call(JS_GLOBAL, 1, params);
-			if (tc.HasCaught()) { throw this->exception(&tc); }
-			return exports;
-		}
-		
-		return handle_scope.Close(result);
-	}
-}
-
-/**
- * Include a dso module
- */
-v8::Handle<v8::Value> v8cgi_App::include_dso(std::string filename, v8::Handle<v8::Object> exports) {
-	v8::HandleScope handle_scope;
-	void * handle = this->cache.getHandle(filename);
-
-	typedef void (*funcdef)(v8::Handle<v8::Object>);
-	typedef funcdef (*dlsym_t)(void *, const char *);
-	funcdef func;
-	func = ((dlsym_t)(DLSYM))(handle, "init");	
-	
-	if (!func) {
-		std::string error = "Cannot initialize shared library '";
-		error += filename;
-		error += "'";
-		throw error;
-	}
-	
-	func(exports);
-	return handle_scope.Close(exports);	
-}
-
-/**
- * Apply exports object to global object
- */
-void v8cgi_App::populate_global(v8::Handle<v8::Object> exports) {
-	v8::HandleScope handle_scope;
-	v8::Handle<v8::Array> names = exports->GetPropertyNames();
-	for (unsigned i=0;i<names->Length();i++) {
-		v8::Handle<v8::Value> name = names->Get(JS_INT(i));
-		JS_GLOBAL->Set(name, exports->Get(name));		
-	}
-}
-
-/**
- * Try to find absolute file name. If !local, libraryPath is used
- */
-std::string v8cgi_App::findname(std::string name, bool forceLocal) {
-	if (!name.length()) { return std::string(""); }
-
-	/* try all these suffixes if file does not exist */
-	const char * suffixes[] = {"js", "so", "dll"};
-	
-	/* try to fetch the Config.libraryPath option */
-	v8::Handle<v8::Value> config = JS_GLOBAL->Get(JS_STR("Config"));
-	v8::Handle<v8::Value> prefix = config->ToObject()->Get(JS_STR("libraryPath"));
-	v8::String::Utf8Value pfx(prefix);
-
-	std::string fullPath = "";
-	if (path_isabsolute(name)) { /* v8cgi non-standard extension - absolute path */
-		fullPath = name;
-	} else { 
-		if (!forceLocal && name.at(0) != '.') { /* "global" module */
-			fullPath = std::string(*pfx);
-		} else { /* "local" module */
-			fullPath = this->paths.empty() ? path_getcwd() : this->paths.top();
-		}
-		fullPath += "/";
-		fullPath += name;
-	}
-
-#ifdef VERBOSE
-	printf("[findname] expanded to '%s'\n", fullPath.c_str()); 
-#endif	
-
-	fullPath = path_normalize(fullPath); /* remove /./, /../ etc */
-	if (path_file_exists(fullPath)) { return fullPath; }
-	
-	std::string path2; /* try all suffixes */
-	for (int j=0;j<3;j++) {
-		path2 = fullPath;
-		path2 += ".";
-		path2 += suffixes[j];
-		if (path_file_exists(path2)) { return path2; }
-	}
-	return std::string("");
-}
-
-/**
- * Load default libraries
- */
-void v8cgi_App::autoload() {
-	v8::HandleScope handle_scope;
-	v8::Handle<v8::Value> config = JS_GLOBAL->Get(JS_STR("Config"));
-	v8::Handle<v8::Array> list = v8::Handle<v8::Array>::Cast(config->ToObject()->Get(JS_STR("libraryAutoload")));
-	int cnt = list->Length();
-	v8::Handle<v8::Value> dummy;
-	
-	for (int i=0;i<cnt;i++) {
-		v8::Handle<v8::Value> item = list->Get(JS_INT(i));
-		v8::String::Utf8Value name(item);
-		std::string filename = *name;
-		this->include(filename, true, true); /* populate, wrap */
-	}
 }
 
 /**
@@ -473,6 +254,223 @@ void v8cgi_App::finish() {
 	 */
 	this->delete_context();
 #endif
+}
+
+/**
+ * To include a module, we first require it and than populate global object with retrieved data
+ * @param {std::string} name
+ */
+v8::Handle<v8::Object> v8cgi_App::include(std::string name) {
+	v8::HandleScope handle_scope;
+
+	v8::Handle<v8::Object> exports = this->require(name, true);
+	v8::Handle<v8::Array> names = exports->GetPropertyNames();
+	for (unsigned i=0;i<names->Length();i++) {
+		v8::Handle<v8::Value> name = names->Get(JS_INT(i));
+		JS_GLOBAL->Set(name, exports->Get(name));		
+	}
+
+	return handle_scope.Close(exports);
+}
+
+/**
+ * Require a module
+ * @param {std::string} name
+ * @param {bool} wrap Should we wrap the module in an "exports" envelope?
+ */
+v8::Handle<v8::Object> v8cgi_App::require(std::string name, bool wrap) {
+	v8::HandleScope handle_scope;
+#ifdef VERBOSE
+	printf("[require] looking for '%s'\n", name.c_str()); 
+#endif	
+	std::string filename = this->findname(name, !wrap);
+#ifdef VERBOSE
+	printf("[require] resolved as '%s'\n", filename.c_str()); 
+#endif	
+	
+	if (filename == "") {
+		std::string s = "Cannot find '";
+		s += name;
+		s += "'";
+		throw s;
+	}
+	
+	exportmap::iterator it = this->exports.find(filename);
+	/* use cached exports */
+	if (it != this->exports.end()) { 
+#ifdef VERBOSE
+		printf("[include] using cached exports for '%s'\n", filename.c_str()); 
+#endif	
+		return this->exports[filename];  
+	} 
+	
+	v8::Handle<v8::Object> exports = v8::Object::New();
+	/* add exports to cache */
+	if (wrap) { this->exports[filename] = v8::Persistent<v8::Object>::New(exports); } 
+
+	/* prepare path to stack */
+	this->paths.push(path_dirname(filename)); 
+	
+	/* result */
+	v8::Handle<v8::Value> data; 
+
+	try {
+		size_t index = filename.find_last_of(".");
+		std::string ext = filename.substr(index+1);
+		if (ext == "so" || ext == "dll") {
+			data = this->load_dso(filename, exports);
+		} else {
+			data = this->load_js(filename, exports, wrap);
+
+		}
+	} catch (std::string e) {
+		this->paths.pop(); 
+		/* remove from export cache */
+		if (wrap) { 
+			exportmap::iterator it = this->exports.find(filename);
+			this->exports.erase(it);
+		}
+		/* rethrow */
+		throw e; 
+	}
+
+	/* execution ended, remove top path */
+	this->paths.pop(); 
+	return handle_scope.Close(exports);
+}
+
+/**
+ * Include a js module
+ */
+v8::Handle<v8::Value> v8cgi_App::load_js(std::string filename, v8::Handle<v8::Object> exports, bool wrap) {
+	v8::HandleScope handle_scope;
+	v8::TryCatch tc;
+
+#ifdef REUSE_CONTEXT
+	v8::Handle<v8::Script> script = this->cache.getScript(filename, wrap);
+#else
+	std::string source = this->cache.getSource(filename, wrap);
+	v8::Handle<v8::Script> script = v8::Script::Compile(JS_STR(source.c_str()), JS_STR(filename.c_str()));
+#endif
+	
+	if (tc.HasCaught()) {
+		throw this->format_exception(&tc);
+	} else {
+		v8::Handle<v8::Value> result = script->Run();
+		if (tc.HasCaught()) { throw this->format_exception(&tc); }
+		
+		if (wrap) {
+			v8::Handle<v8::Function> fun = v8::Handle<v8::Function>::Cast(result);
+			v8::Handle<v8::Value> params[1] = {exports}; 
+			result = fun->Call(JS_GLOBAL, 1, params);
+			if (tc.HasCaught()) { throw this->format_exception(&tc); }
+			return exports;
+		}
+		
+		return handle_scope.Close(result);
+	}
+}
+
+/**
+ * Include a dso module
+ */
+v8::Handle<v8::Value> v8cgi_App::load_dso(std::string filename, v8::Handle<v8::Object> exports) {
+	v8::HandleScope handle_scope;
+	void * handle = this->cache.getHandle(filename);
+
+	typedef void (*funcdef)(v8::Handle<v8::Object>);
+	typedef funcdef (*dlsym_t)(void *, const char *);
+	funcdef func;
+	func = ((dlsym_t)(DLSYM))(handle, "init");	
+	
+	if (!func) {
+		std::string error = "Cannot initialize shared library '";
+		error += filename;
+		error += "'";
+		throw error;
+	}
+	
+	func(exports);
+	return handle_scope.Close(exports);	
+}
+
+/**
+ * Try to report error via JS means, instead of stderr 
+ */
+void v8cgi_App::js_error(std::string message) {
+	int cgi = 0;
+	v8::Local<v8::Function> fun;
+	v8::Local<v8::Value> context = JS_GLOBAL->Get(JS_STR("response"));
+	if (context->IsObject()) {
+		v8::Local<v8::Value> print = context->ToObject()->Get(JS_STR("write"));
+		if (print->IsObject()) {
+			fun = v8::Local<v8::Function>::Cast(print);
+			cgi = 1;
+		}
+	}
+	if (!cgi) {
+		context = JS_GLOBAL->Get(JS_STR("System"));
+		if (context->IsUndefined()) {
+			this->error(message.c_str(), __FILE__, __LINE__);
+			return;
+		} else {
+			fun = v8::Local<v8::Function>::Cast(context->ToObject()->Get(JS_STR("stdout")));
+		}
+	}
+	
+	v8::Handle<v8::Value> data[1] = { JS_STR(message.c_str()) };
+	fun->Call(context->ToObject(), 1, data);
+}
+
+/**
+ * Try to find absolute file name. If !local, libraryPath is used
+ */
+std::string v8cgi_App::findname(std::string name, bool forceLocal) {
+	if (!name.length()) { return std::string(""); }
+
+	/* try all these suffixes if file does not exist */
+	const char * suffixes[] = {"js", "so", "dll"};
+	
+	/* try to fetch the Config.libraryPath option */
+	v8::Handle<v8::Value> config = JS_GLOBAL->Get(JS_STR("Config"));
+	v8::Handle<v8::Value> prefix = config->ToObject()->Get(JS_STR("libraryPath"));
+	v8::String::Utf8Value pfx(prefix);
+
+	std::string fullPath = "";
+	
+	/* v8cgi non-standard extension - absolute path */
+	if (path_isabsolute(name)) { 
+		fullPath = name;
+	} else { 
+		
+		if (!forceLocal && name.at(0) != '.') {
+			/* "global" module */
+			fullPath = std::string(*pfx);
+		} else { 
+			/* "local" module */
+			fullPath = this->paths.empty() ? path_getcwd() : this->paths.top();
+		}
+		fullPath += "/";
+		fullPath += name;
+	}
+
+#ifdef VERBOSE
+	printf("[findname] expanded to '%s'\n", fullPath.c_str()); 
+#endif	
+
+	/* remove /./, /../ etc */
+	fullPath = path_normalize(fullPath); 
+	if (path_file_exists(fullPath)) { return fullPath; }
+	
+	/* try all suffixes */
+	std::string path2; 
+	for (int j=0;j<3;j++) {
+		path2 = fullPath;
+		path2 += ".";
+		path2 += suffixes[j];
+		if (path_file_exists(path2)) { return path2; }
+	}
+	return std::string("");
 }
 
 /**
@@ -519,37 +517,6 @@ void v8cgi_App::findmain() {
 	}
 	
 	if (!this->mainfile.length()) { throw std::string("Cannot locate main file."); }
-}
-
-/**
- * Initialize and setup the context. Executed during every request, prior to executing main request file.
- */
-void v8cgi_App::prepare(char ** envp) {
-	v8::HandleScope handle_scope;
-	v8::Handle<v8::Object> g = JS_GLOBAL;
-
-	g->Set(JS_STR("include"), v8::FunctionTemplate::New(_include)->GetFunction());
-	g->Set(JS_STR("require"), v8::FunctionTemplate::New(_require)->GetFunction());
-	g->Set(JS_STR("onexit"), v8::FunctionTemplate::New(_onexit)->GetFunction());
-/**
- * exit() function would be nice, but ATM there is no way to achieve this functionality in V8
- *
-	g->Set(JS_STR("exit"), v8::FunctionTemplate::New(_exit)->GetFunction());
- */
-	g->Set(JS_STR("global"), g);
-	g->Set(JS_STR("Config"), v8::Object::New());
-
-	setup_system(g, envp);
-	setup_io(g);
-	
-	this->include(this->cfgfile, false, false); /* do not populate, do not wrap */
-	this->autoload();
-	
-	v8::Handle<v8::Object> args = v8::Array::New();
-	for (size_t i = 0; i < this->mainfile_args.size(); ++i) {
-		args->Set(JS_INT(i), JS_STR(this->mainfile_args.at(i).c_str()));
-	}
-	g->Set(JS_STR("arguments"), args);
 }
 
 /**
@@ -622,6 +589,66 @@ void v8cgi_App::process_args(int argc, char ** argv) {
 	for (; index < argc; ++index) {
 		//printf("program_arg: %s\n", argv[index]);
 		this->mainfile_args.push_back(std::string(argv[index]));
+	}
+}
+
+/** 
+ * Convert JS exception to c string 
+ */
+std::string v8cgi_App::format_exception(v8::TryCatch* try_catch) {
+	v8::HandleScope handle_scope;
+	v8::String::Utf8Value exception(try_catch->Exception());
+	v8::Handle<v8::Message> message = try_catch->Message();
+	std::string msgstring = "";
+	std::stringstream ss;
+
+	if (message.IsEmpty()) {
+		msgstring += *exception;
+	} else {
+		v8::String::Utf8Value filename(message->GetScriptResourceName());
+		int linenum = message->GetLineNumber();
+		msgstring += *filename;
+		msgstring += ":";
+		ss << linenum;
+		msgstring += ss.str();
+		msgstring += ": ";
+		msgstring += *exception;
+	}
+	return msgstring;
+}
+
+/**
+ * Creates a new context
+ */
+void v8cgi_App::create_context() {
+	v8::HandleScope handle_scope;
+	v8::Handle<v8::ObjectTemplate> globaltemplate = v8::ObjectTemplate::New();
+	globaltemplate->SetInternalFieldCount(2);
+	this->context = v8::Context::New(NULL, globaltemplate);
+	this->context->Enter();
+
+	GLOBAL_PROTO->SetInternalField(0, v8::External::New((void *) this)); 
+	GLOBAL_PROTO->SetInternalField(1, v8::External::New((void *) &(this->gc))); 
+}
+
+/**
+ * Deletes the existing context
+ */
+void v8cgi_App::delete_context() {
+	this->context->Exit();
+	this->context.Dispose();
+	this->context.Clear();
+}
+
+/**
+ * Removes all "garbage" from the global object
+ */
+void v8cgi_App::clear_global() {
+	v8::Handle<v8::Array> keys = JS_GLOBAL->GetPropertyNames();
+	int length = keys->Length();
+	for (int i=0;i<length;i++) {
+		v8::Handle<v8::String> key = keys->Get(JS_INT(i))->ToString();
+		JS_GLOBAL->Delete(key);
 	}
 }
 

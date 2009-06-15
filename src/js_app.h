@@ -11,17 +11,17 @@
 
 class v8cgi_App {
 public:
+	typedef std::vector<v8::Persistent<v8::Function> > funcvector;
+	typedef std::stack<std::string> pathstack;
+	typedef std::map<std::string, v8::Persistent<v8::Object> > exportmap;
+
 	virtual ~v8cgi_App() {};
 	virtual int init(int argc, char ** argv); /* once per app lifetime */
 	int execute(bool change, char ** envp); /* once per request */
-	v8::Handle<v8::Value> include(std::string name, bool populate, bool forceLocal);
+	v8::Handle<v8::Object> include(std::string name);
+	v8::Handle<v8::Object> require(std::string name, bool wrap);
 	
-	typedef std::vector<v8::Persistent<v8::Function> > funcvector;
-	typedef std::stack<std::string> pathstack;
-	typedef std::map<std::string, v8::Persistent<v8::Value> > exportmap;
-	exportmap exports;	/* list of cached exports */
 	funcvector onexit;	/* list of "onexit" functions */
-	pathstack paths;	/* stack of current paths */ 
 
 	virtual size_t reader (char * destination, size_t size); /* stdin */
 	virtual size_t writer (const char * source, size_t size); /* stdout */
@@ -39,7 +39,10 @@ private:
 	Cache cache;
 	GC gc;
 
-	std::string exception(v8::TryCatch* try_catch);
+	exportmap exports;	/* list of cached exports */
+	pathstack paths;	/* stack of current paths */ 
+
+	std::string format_exception(v8::TryCatch* try_catch);
 	virtual void process_args(int argc, char ** argv);
 	void prepare(char ** envp);
 	void findmain();
@@ -50,9 +53,8 @@ private:
 	void clear_global();
 	
 	std::string findname(std::string name, bool forceLocal);
-	void populate_global(v8::Handle<v8::Object> exports);
-	v8::Handle<v8::Value> include_js(std::string filename, v8::Handle<v8::Object> exports, bool wrap);
-	v8::Handle<v8::Value> include_dso(std::string filename, v8::Handle<v8::Object> exports);
+	v8::Handle<v8::Value> load_js(std::string filename, v8::Handle<v8::Object> exports, bool wrap);
+	v8::Handle<v8::Value> load_dso(std::string filename, v8::Handle<v8::Object> exports);
 };
 
 #endif

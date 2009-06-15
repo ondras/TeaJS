@@ -1,20 +1,17 @@
 v8cgi - CGI wrapper around V8 JS engine
 =======================================
 
-!!! BETA STAGE - YOU HAVE BEEN WARNED !!!
+This is a BETA software. You are encouraged to use and test it, but do not expect rock-solid robustness.
+
 
 1) Building 
 
   - see http://code.google.com/p/v8cgi/wiki/Compiling and  http://code.google.com/p/v8cgi/wiki/Installation
   
-
 2) Running
 
   - see example/example.js
   
-  
 3) Contact
 
   - ondras@zarovi.cz
-
-  

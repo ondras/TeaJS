@@ -7,6 +7,8 @@
 #  include <stdio.h>
 #endif
 
+#include "js_common.h"
+
 void * mmap_read(char * name, size_t * size) {
 #ifdef HAVE_MMAN_H
 	int f = open(name, O_RDONLY);
@@ -58,4 +60,15 @@ int mmap_write(char * name, void * data, size_t size) {
 	fclose(f);
 #endif
 	return 0;
+}
+
+/**
+ * Wrap a string with exports envelope
+ */
+std::string wrapExports(std::string what) {
+	std::string result = "";
+	result += "(function(exports){";
+	result += what;
+	result += "})";
+	return result;
 }

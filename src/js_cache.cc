@@ -12,29 +12,42 @@
 #   define dlclose(x) FreeLibrary((HMODULE)x)
 #endif
 
+#include "js_macros.h"
 #include "js_cache.h"
+#include "js_common.h"
 
+/**
+ * Is this file already cached?
+ */
 bool Cache::isCached(std::string filename) {
 	struct stat st;
 	int result = stat(filename.c_str(), &st);
 	if (result != 0) { return false; }	
 
 	TimeValue::iterator it = modified.find(filename);
-	if (it == modified.end()) { /* not seen yet */
-		modified[filename] = st.st_mtime;
-		return false; 
-	}
+	if (it == modified.end()) { return false; } /* not seen yet */
 	
 	if (it->second != st.st_mtime) { /* was modified */
 		erase(filename);
-		modified[filename] = st.st_mtime;
 		return false;
 	}
 	return true;
 }
 
+/**
+ * Mark filename as "cached"
+ * */
+void Cache::mark(std::string filename) {
+	struct stat st;
+	stat(filename.c_str(), &st);
+	modified[filename] = st.st_mtime;
+}
+
+/**
+ * Remove file from all available caches
+ */
 void Cache::erase(std::string filename) {
-	JSValue::iterator it1 = sources.find(filename);
+	SourceValue::iterator it1 = sources.find(filename);
 	if (it1 != sources.end()) { sources.erase(it1); }
 
 	HandleValue::iterator it2 = handles.find(filename);
@@ -42,13 +55,32 @@ void Cache::erase(std::string filename) {
 		dlclose(it2->second);
 		handles.erase(it2); 
 	}
+	
+	ScriptValue::iterator it3 = scripts.find(filename);
+	if (it3 != scripts.end()) { 
+		it3->second.Dispose();
+		scripts.erase(it3); 
+	}
+	
 }
 
-std::string Cache::getJS(std::string filename) {
+/**
+ * Return source code for a given file
+ */
+std::string Cache::getSource(std::string filename, bool wrap) {
+#ifdef VERBOSE
+	printf("[getSource] cache try for '%s' .. ", filename.c_str()); 
+#endif	
 	if (isCached(filename)) {
-		JSValue::iterator it = sources.find(filename);
+#ifdef VERBOSE
+		printf("cache hit\n"); 
+#endif	
+		SourceValue::iterator it = sources.find(filename);
 		return it->second;
 	} else {
+#ifdef VERBOSE
+		printf("cache miss\n"); 
+#endif	
 		FILE * file = fopen(filename.c_str(), "rb");
 		if (file == NULL) { 
 			std::string s = "Error reading '";
@@ -57,6 +89,7 @@ std::string Cache::getJS(std::string filename) {
 			throw s; 
 		}
 		
+		mark(filename); /* mark as cached */
 		fseek(file, 0, SEEK_END);
 		size_t size = ftell(file);
 		rewind(file);
@@ -76,16 +109,29 @@ std::string Cache::getJS(std::string filename) {
 			source.erase(0,pfix);
 		};
 		
+		if (wrap) { source = wrapExports(source); }
 		sources[filename] = source;
 		return source;
 	}
 }
 
+/**
+ * Return dlopen handle for a given file
+ */
 void * Cache::getHandle(std::string filename) {
+#ifdef VERBOSE
+	printf("[getHandle] cache try for '%s' .. ", filename.c_str()); 
+#endif	
 	if (isCached(filename)) {
+#ifdef VERBOSE
+		printf("cache hit\n"); 
+#endif	
 		HandleValue::iterator it = handles.find(filename);
 		return it->second;
 	} else {
+#ifdef VERBOSE
+		printf("cache miss\n"); 
+#endif	
 		void * handle = dlopen(filename.c_str(), RTLD_LAZY);
 		if (!handle) { 
 			std::string error = "Error opening shared library '";
@@ -93,7 +139,33 @@ void * Cache::getHandle(std::string filename) {
 			error += "'";
 			throw error;
 		}
+		mark(filename); /* mark as cached */
 		handles[filename] = handle;
 		return handle;
+	}
+}
+
+/**
+ * Return dlopen handle for a given file
+ */
+v8::Persistent<v8::Script> Cache::getScript(std::string filename, bool wrap) {
+#ifdef VERBOSE
+	printf("[getScript] cache try for '%s' .. ", filename.c_str()); 
+#endif	
+	if (isCached(filename)) {
+#ifdef VERBOSE
+		printf("cache hit\n"); 
+#endif	
+		ScriptValue::iterator it = scripts.find(filename);
+		return it->second;
+	} else {
+#ifdef VERBOSE
+		printf("cache miss\n"); 
+#endif	
+		std::string source = getSource(filename, wrap);
+		v8::Handle<v8::Script> script = v8::Script::Compile(JS_STR(source.c_str()), JS_STR(filename.c_str()));		
+		v8::Persistent<v8::Script> result = v8::Persistent<v8::Script>::New(script);
+		scripts[filename] = result;
+		return result;
 	}
 }

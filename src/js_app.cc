@@ -1,5 +1,5 @@
-/*
- * v8cgi app file. Loosely based on V8's "shell" sample app.
+/**
+ * v8cgi app file
  */
 
 #include <sstream>
@@ -89,7 +89,7 @@ JS_METHOD(_exit) {
 static const char * v8cgi_usage = "v8cgi [v8_args --] [-c path] program_file [argument ...]";
 
 /**
- * Execute only once - process command line arguments, set config file name
+ * To be executed only once - process command line arguments, set config file name
  */
 int v8cgi_App::init(int argc, char ** argv) {
 	this->cfgfile = STRING(CONFIG_PATH);
@@ -99,6 +99,13 @@ int v8cgi_App::init(int argc, char ** argv) {
 		this->error(e.c_str(), __FILE__, __LINE__); /* initialization error -> goes to stderr */
 		return 1;
 	}
+
+	/**
+	 * Reusable context is created only once, here.
+ 	 */
+#ifdef REUSE_CONTEXT
+	this->create_context();
+#endif
 
 	return 0;
 }
@@ -110,19 +117,26 @@ int v8cgi_App::init(int argc, char ** argv) {
  */
 int v8cgi_App::execute(bool change, char ** envp) {
 	v8::HandleScope handle_scope;
-	v8::Handle<v8::ObjectTemplate> globaltemplate = v8::ObjectTemplate::New();
-	globaltemplate->SetInternalFieldCount(2);
-	v8::Handle<v8::Context> context = v8::Context::New(NULL, globaltemplate);
-	v8::Context::Scope context_scope(context);
+	
+	/**
+	 * Context must be clened before reusing
+	 */
+#ifdef REUSE_CONTEXT
+	this->clear_global();
+#else
+	/**
+	 * No reusing -> new context 
+	 */
+	this->create_context();
+#endif
 
 	try {
-		this->prepare(envp); /* prepare JS environment */
+		this->prepare(envp); /* prepare JS environment: config, default libraries */
 	} catch (std::string e) {
 		this->error(e.c_str(), __FILE__, __LINE__); /* error with config file or default libs -> goes to stderr */
 		this->finish();
 		return 1;
 	}
-
 	try {
 		this->findmain();  /* try to locate main file */
 	} catch (std::string e) {
@@ -137,6 +151,9 @@ int v8cgi_App::execute(bool change, char ** envp) {
 	try {
 		this->include(this->mainfile, false, false); /* do not populate, do not wrap */
 	} catch (std::string e) {
+		/**
+		 * FIXME: mainfile errors should be configurable - display/log
+		 */
 		this->error(e.c_str(), __FILE__, __LINE__); /* error when executing main file -> goes to ??? */
 //		this->js_error(e.c_str()); /* error when executing main file -> goes to ??? */
 		this->finish();
@@ -145,6 +162,41 @@ int v8cgi_App::execute(bool change, char ** envp) {
 	
 	this->finish();
 	return 0;
+}
+
+/**
+ * Creates a new context
+ */
+void v8cgi_App::create_context() {
+	v8::HandleScope handle_scope;
+	v8::Handle<v8::ObjectTemplate> globaltemplate = v8::ObjectTemplate::New();
+	globaltemplate->SetInternalFieldCount(2);
+	this->context = v8::Context::New(NULL, globaltemplate);
+	this->context->Enter();
+
+	GLOBAL_PROTO->SetInternalField(0, v8::External::New((void *) this)); 
+	GLOBAL_PROTO->SetInternalField(1, v8::External::New((void *) &(this->gc))); 
+}
+
+/**
+ * Deletes the existing context
+ */
+void v8cgi_App::delete_context() {
+	this->context->Exit();
+	this->context.Dispose();
+	this->context.Clear();
+}
+
+/**
+ * Removes all "garbage" from the global object
+ */
+void v8cgi_App::clear_global() {
+	v8::Handle<v8::Array> keys = JS_GLOBAL->GetPropertyNames();
+	int length = keys->Length();
+	for (int i=0;i<length;i++) {
+		v8::Handle<v8::String> key = keys->Get(JS_INT(i))->ToString();
+		JS_GLOBAL->Delete(key);
+	}
 }
 
 /**
@@ -224,8 +276,13 @@ v8::Handle<v8::Value> v8cgi_App::include(std::string name, bool populate, bool w
 	}
 	
 	exportmap::iterator it = this->exports.find(filename);
-	if (it != this->exports.end()) { return this->exports[filename];  } /* use cached version */
-
+	if (it != this->exports.end()) { /* use cached exports */
+#ifdef VERBOSE
+		printf("[include] using cached exports for '%s'\n", filename.c_str()); 
+#endif	
+		return this->exports[filename];  
+	} 
+	
 	v8::Handle<v8::Object> exports = v8::Object::New();
 	if (wrap) { this->exports[filename] = v8::Persistent<v8::Object>::New(exports); } /* add exports to cache */
 
@@ -262,10 +319,13 @@ v8::Handle<v8::Value> v8cgi_App::include_js(std::string filename, v8::Handle<v8:
 	v8::HandleScope handle_scope;
 	v8::TryCatch tc;
 
-	std::string source = this->cache.getJS(filename);
-	if (wrap) { source = this->wrap(source); }
-	
+#ifdef REUSE_CONTEXT
+	v8::Handle<v8::Script> script = this->cache.getScript(filename, wrap);
+#else
+	std::string source = this->cache.getSource(filename, wrap);
 	v8::Handle<v8::Script> script = v8::Script::Compile(JS_STR(source.c_str()), JS_STR(filename.c_str()));
+#endif
+	
 	if (tc.HasCaught()) {
 		throw this->exception(&tc);
 	} else {
@@ -305,17 +365,6 @@ v8::Handle<v8::Value> v8cgi_App::include_dso(std::string filename, v8::Handle<v8
 	
 	func(exports);
 	return handle_scope.Close(exports);	
-}
-
-/**
- * Wrap a string with exports envelope
- */
-std::string v8cgi_App::wrap(std::string original) {
-	std::string result = "";
-	result += "(function(exports){";
-	result += original;
-	result += "})";
-	return result;
 }
 
 /**
@@ -396,11 +445,11 @@ void v8cgi_App::autoload() {
  * End request
  */
 void v8cgi_App::finish() {
-	v8::HandleScope handle_scope;
 	/* user callbacks */
 	for (unsigned int i=0; i<this->onexit.size(); i++) {
 		this->onexit[i]->Call(JS_GLOBAL, 0, NULL);
 		this->onexit[i].Dispose();
+		this->onexit[i].Clear();
 	}
 	this->onexit.clear();
 
@@ -411,11 +460,19 @@ void v8cgi_App::finish() {
 	exportmap::iterator expit;
 	for (expit=this->exports.begin(); expit != this->exports.end(); expit++) {
 		expit->second.Dispose();
+		expit->second.Clear();
 	}
 	this->exports.clear();
 	
 	/* paths */
 	while (!this->paths.empty()) { this->paths.pop(); }
+	
+#ifndef REUSE_CONTEXT
+	/**
+	 * Delete current context
+	 */
+	this->delete_context();
+#endif
 }
 
 /**
@@ -448,6 +505,7 @@ void v8cgi_App::http() {
  * Try to locate main file
  */
 void v8cgi_App::findmain() {
+	v8::HandleScope handle_scope;
 	v8::Handle<v8::Value> sys = JS_GLOBAL->Get(JS_STR("System"));
 	v8::Handle<v8::Value> env = sys->ToObject()->Get(JS_STR("env"));
 	v8::Handle<v8::Value> pt = env->ToObject()->Get(JS_STR("PATH_TRANSLATED"));
@@ -464,18 +522,20 @@ void v8cgi_App::findmain() {
 }
 
 /**
- * Initialize and setup the context
+ * Initialize and setup the context. Executed during every request, prior to executing main request file.
  */
 void v8cgi_App::prepare(char ** envp) {
+	v8::HandleScope handle_scope;
 	v8::Handle<v8::Object> g = JS_GLOBAL;
-	
-	GLOBAL_PROTO->SetInternalField(0, v8::External::New((void *) this)); 
-	GLOBAL_PROTO->SetInternalField(1, v8::External::New((void *) &(this->gc))); 
 
 	g->Set(JS_STR("include"), v8::FunctionTemplate::New(_include)->GetFunction());
 	g->Set(JS_STR("require"), v8::FunctionTemplate::New(_require)->GetFunction());
 	g->Set(JS_STR("onexit"), v8::FunctionTemplate::New(_onexit)->GetFunction());
-//	g->Set(JS_STR("exit"), v8::FunctionTemplate::New(_exit)->GetFunction());
+/**
+ * exit() function would be nice, but ATM there is no way to achieve this functionality in V8
+ *
+	g->Set(JS_STR("exit"), v8::FunctionTemplate::New(_exit)->GetFunction());
+ */
 	g->Set(JS_STR("global"), g);
 	g->Set(JS_STR("Config"), v8::Object::New());
 

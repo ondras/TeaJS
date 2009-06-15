@@ -20,7 +20,6 @@ typedef struct {
 
 extern "C" module AP_MODULE_DECLARE_DATA v8cgi_module; /* first declaration */
 
-
 class v8cgi_Module : public v8cgi_App {
 public:
 	size_t reader(char * destination, size_t amount) {
@@ -69,7 +68,12 @@ public:
 		return v8cgi_App::execute(true, envp);
 	}
 	
-	int init(int argc, char ** argv) { return 0; }
+	int init(int argc, char ** argv) { 
+#ifdef REUSE_CONTEXT
+		v8cgi_App::create_context();	
+#endif
+		return 0; 
+	}
 	
 	void apacheConfig(v8cgi_config * cfg) {
 		this->cfgfile = cfg->config;
@@ -93,7 +97,6 @@ private:
 			apr_table_set(this->request->headers_out, name, value);
 		}
 	}
-	
 };
 
 static v8cgi_Module app;
@@ -155,7 +158,6 @@ static int mod_v8cgi_init_handler(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *p
 
 static void mod_v8cgi_child_init(apr_pool_t *p, server_rec *s) { /* child initialization */
 }
-
 
 static void mod_v8cgi_register_hooks(apr_pool_t *p ) { /* hook registration */
     ap_hook_handler(mod_v8cgi_handler, NULL, NULL, APR_HOOK_MIDDLE);

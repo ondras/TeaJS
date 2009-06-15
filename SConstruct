@@ -44,14 +44,15 @@ opts.Add(BoolOption("cgi", "Build CGI binray", 1))
 opts.Add(BoolOption("fcgi", "FastCGI support (for CGI binary)", 0))
 opts.Add(BoolOption("debug", "Debugging support", 0))
 opts.Add(BoolOption("verbose", "Verbose debugging messages", 0))
+opts.Add(BoolOption("reuse_context", "Reuse context for multiple requests", 0))
 
-opts.Add(("mysqlpath", "MySQL header path", mysql_include))
-opts.Add(("apachepath", "Apache header path", apache_include))
-opts.Add(("aprpath", "APR header path", apr_include))
+opts.Add(("mysql_path", "MySQL header path", mysql_include))
+opts.Add(("apache_path", "Apache header path", apache_include))
+opts.Add(("apr_path", "APR header path", apr_include))
 
-opts.Add(PathOption("v8path", "Directory with V8", "../v8"))
+opts.Add(PathOption("v8_path", "Directory with V8", "../v8"))
 opts.Add(EnumOption("os", "Operating system", os_string, allowed_values = ["windows", "posix"]))
-opts.Add(("conffile", "Config file", config_path))
+opts.Add(("config_file", "Config file", config_path))
 
 env = Environment(options=opts)
 
@@ -112,9 +113,12 @@ if env["os"] == "posix":
 
 
 env.Append(
-	CPPDEFINES = ["CONFIG_PATH=" + env["conffile"], env["os"]],
-	CPPPATH = env["v8path"] + "/include",
-	LIBPATH = env["v8path"]
+	CPPDEFINES = [
+		"CONFIG_PATH=" + env["config_file"], 
+		env["os"] 
+	],
+	CPPPATH = env["v8_path"] + "/include",
+	LIBPATH = env["v8_path"]
 )
 
 if env["fcgi"] == 1:
@@ -151,6 +155,12 @@ if env["verbose"] == 1:
 	)
 # if
 
+if env["reuse_context"] == 1:
+	env.Append(
+		CPPDEFINES = ["REUSE_CONTEXT"]
+	)
+# if
+
 if env["mysql"] == 1:
 	e = env.Clone()
 	if env["os"] == "windows":
@@ -160,7 +170,7 @@ if env["mysql"] == 1:
 		)
 	# if
 	e.Append(
-		CPPPATH = env["mysqlpath"],
+		CPPPATH = env["mysql_path"],
 		LIBS = "mysqlclient"
 	)
 	e.SharedLibrary(
@@ -195,7 +205,7 @@ if env["socket"] == 1:
 if env["module"] == 1:
 	e = env.Clone()
 	e.Append(
-		CPPPATH = [env["apachepath"], env["aprpath"]]
+		CPPPATH = [env["apache_path"], env["apr_path"]]
 	)
 	if env["os"] == "windows":
 		e.Append(

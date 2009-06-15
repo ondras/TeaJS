@@ -1,7 +1,3 @@
-/*
- * v8cgi app file. Loosely based on V8's "shell" sample app.
- */
-
 #ifndef _JS_APP_H
 #define _JS_APP_H
 
@@ -33,8 +29,11 @@ public:
 
 protected:
 	std::string cfgfile; /* config file */
+	void create_context();
+	void delete_context();
 
 private:
+	v8::Persistent<v8::Context> context; /* current active context */
 	std::string mainfile; /* command-line specified file */
 	std::vector<std::string> mainfile_args; /* arguments after mainfile */
 	Cache cache;
@@ -48,10 +47,10 @@ private:
 	void http();
 	void js_error(std::string message);
 	void autoload();
+	void clear_global();
 	
 	std::string findname(std::string name, bool forceLocal);
 	void populate_global(v8::Handle<v8::Object> exports);
-	std::string wrap(std::string original);
 	v8::Handle<v8::Value> include_js(std::string filename, v8::Handle<v8::Object> exports, bool wrap);
 	v8::Handle<v8::Value> include_dso(std::string filename, v8::Handle<v8::Object> exports);
 };

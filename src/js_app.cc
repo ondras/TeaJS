@@ -238,12 +238,7 @@ void v8cgi_App::finish() {
 	this->gc.finish();
 	
 	/* export cache */
-	exportmap::iterator expit;
-	for (expit=this->exports.begin(); expit != this->exports.end(); expit++) {
-		expit->second.Dispose();
-		expit->second.Clear();
-	}
-	this->exports.clear();
+	this->cache.clearExports();
 	
 	/* paths */
 	while (!this->paths.empty()) { this->paths.pop(); }
@@ -295,18 +290,12 @@ v8::Handle<v8::Object> v8cgi_App::require(std::string name, bool wrap) {
 		throw s;
 	}
 	
-	exportmap::iterator it = this->exports.find(filename);
-	/* use cached exports */
-	if (it != this->exports.end()) { 
-#ifdef VERBOSE
-		printf("[include] using cached exports for '%s'\n", filename.c_str()); 
-#endif	
-		return this->exports[filename];  
-	} 
+	v8::Handle<v8::Object> exports = this->cache.getExports(filename);
+	if (!exports.IsEmpty()) { return exports; }
 	
-	v8::Handle<v8::Object> exports = v8::Object::New();
-	/* add exports to cache */
-	if (wrap) { this->exports[filename] = v8::Persistent<v8::Object>::New(exports); } 
+	/* add new blank exports to cache */
+	exports = v8::Object::New();
+	this->cache.addExports(filename, exports);
 
 	/* prepare path to stack */
 	this->paths.push(path_dirname(filename)); 
@@ -321,15 +310,11 @@ v8::Handle<v8::Object> v8cgi_App::require(std::string name, bool wrap) {
 			data = this->load_dso(filename, exports);
 		} else {
 			data = this->load_js(filename, exports, wrap);
-
 		}
 	} catch (std::string e) {
 		this->paths.pop(); 
 		/* remove from export cache */
-		if (wrap) { 
-			exportmap::iterator it = this->exports.find(filename);
-			this->exports.erase(it);
-		}
+		this->cache.removeExports(filename);
 		/* rethrow */
 		throw e; 
 	}

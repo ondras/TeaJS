@@ -146,9 +146,9 @@ void * Cache::getHandle(std::string filename) {
 }
 
 /**
- * Return dlopen handle for a given file
+ * Return compiled script from a given file
  */
-v8::Persistent<v8::Script> Cache::getScript(std::string filename, bool wrap) {
+v8::Handle<v8::Script> Cache::getScript(std::string filename, bool wrap) {
 #ifdef VERBOSE
 	printf("[getScript] cache try for '%s' .. ", filename.c_str()); 
 #endif	
@@ -168,4 +168,59 @@ v8::Persistent<v8::Script> Cache::getScript(std::string filename, bool wrap) {
 		scripts[filename] = result;
 		return result;
 	}
+}
+
+/**
+ * Return exports object for a given file
+ */
+v8::Handle<v8::Object> Cache::getExports(std::string filename) {
+	ExportsValue::iterator it = exports.find(filename);
+	if (it != exports.end()) { 
+#ifdef VERBOSE
+		printf("[getExports] using cached exports for '%s'\n", filename.c_str()); 
+#endif	
+		return it->second;
+	} else {
+#ifdef VERBOSE
+		printf("[getExports] '%s' has no cached exports\n", filename.c_str()); 
+#endif	
+		return v8::Handle<v8::Object>::Handle();
+	}
+}
+
+/**
+ * Add a single item to exports cache
+ */
+void Cache::addExports(std::string filename, v8::Handle<v8::Object> obj) {
+#ifdef VERBOSE
+		printf("[addExports] caching exports for '%s'\n", filename.c_str()); 
+#endif	
+	exports[filename] = v8::Persistent<v8::Object>::New(obj);
+}
+
+/**
+ * Remove a cached exports object
+ */
+void Cache::removeExports(std::string filename) {
+#ifdef VERBOSE
+		printf("[removeExports] removing exports for '%s'\n", filename.c_str()); 
+#endif	
+	ExportsValue::iterator it = exports.find(filename);
+	if (it != exports.end()) { 
+		it->second.Dispose();
+		it->second.Clear();
+		exports.erase(it);
+	}
+}
+
+/**
+ * Remove all cached exports
+ */
+void Cache::clearExports() {
+	ExportsValue::iterator it;
+	for (it=exports.begin(); it != exports.end(); it++) {
+		it->second.Dispose();
+		it->second.Clear();
+	}
+	exports.clear();
 }

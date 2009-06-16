@@ -13,7 +13,6 @@ class v8cgi_App {
 public:
 	typedef std::vector<v8::Persistent<v8::Function> > funcvector;
 	typedef std::stack<std::string> pathstack;
-	typedef std::map<std::string, v8::Persistent<v8::Object> > exportmap;
 
 	virtual ~v8cgi_App() {};
 	virtual int init(int argc, char ** argv); /* once per app lifetime */
@@ -33,14 +32,18 @@ protected:
 	void delete_context();
 
 private:
-	v8::Persistent<v8::Context> context; /* current active context */
-	std::string mainfile; /* command-line specified file */
-	std::vector<std::string> mainfile_args; /* arguments after mainfile */
+	/* current active context */
+	v8::Persistent<v8::Context> context; 
+	/* command-line specified file */
+	std::string mainfile; 
+	/* arguments after mainfile */
+	std::vector<std::string> mainfile_args; 
+	/* cache */
 	Cache cache;
+	/* GC notification engine */
 	GC gc;
-
-	exportmap exports;	/* list of cached exports */
-	pathstack paths;	/* stack of current paths */ 
+	/* stack of current paths */ 
+	pathstack paths;
 
 	std::string format_exception(v8::TryCatch* try_catch);
 	virtual void process_args(int argc, char ** argv);

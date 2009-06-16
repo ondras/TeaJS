@@ -46,6 +46,14 @@ typedef union sock_addr {
     struct sockaddr_in6 in6;
 } sock_addr_t;
 
+/**
+ * Universal address creator.
+ * @param {char *} address Stringified addres
+ * @param {int} port Port number
+ * @param {int} family Address family
+ * @param {sock_addr_t *} result Target data structure
+ * @param {socklen_t *} len Result length
+ */
 inline int create_addr(char * address, int port, int family, sock_addr_t * result, socklen_t * len) {
 	unsigned int length = strlen(address);
     switch (family) {
@@ -102,7 +110,11 @@ inline int create_addr(char * address, int port, int family, sock_addr_t * resul
 	return 0;
 }
 
-
+/**
+ * Returns JS array with values describing remote address.
+ * For UNIX socket, only one item is present. For AF_INET and
+ * AF_INET6, array contains [address, port].
+ */
 inline v8::Handle<v8::Value> create_peer(sockaddr * addr) {
     switch (addr->sa_family) {
 #ifndef HAVE_WINSOCK
@@ -150,6 +162,12 @@ inline v8::Handle<v8::Value> create_peer(sockaddr * addr) {
     return v8::Undefined();
 }
 
+/**
+ * Socket constructor
+ * @param {int} family
+ * @param {int} type
+ * @param {int} [proto]
+ */
 JS_METHOD(_socket) {
 	ASSERT_CONSTRUCTOR;
 	if (args.Length() < 2) { return JS_EXCEPTION("Invalid call format. Use 'new Socket(family, type, [proto])'"); }						
@@ -465,6 +483,9 @@ SHARED_INIT() {
 	v8::Handle<v8::FunctionTemplate> ft = v8::FunctionTemplate::New(_socket);
 	ft->SetClassName(JS_STR("Socket"));
 	
+	/**
+	 * Constants (Socket.*)
+	 */
 	ft->Set(JS_STR("PF_INET"), JS_INT(PF_INET)); 
 	ft->Set(JS_STR("PF_INET6"), JS_INT(PF_INET6)); 
 	ft->Set(JS_STR("PF_UNIX"), JS_INT(PF_UNIX)); 
@@ -486,6 +507,10 @@ SHARED_INIT() {
 	it->SetInternalFieldCount(2); /* sock, peername */
 
 	v8::Handle<v8::ObjectTemplate> pt = ft->PrototypeTemplate();
+	
+	/**
+	 * Prototype methods (new Socket().*)
+	 */
 	pt->Set("connect", v8::FunctionTemplate::New(_connect));
 	pt->Set("send", v8::FunctionTemplate::New(_send));
 	pt->Set("receive", v8::FunctionTemplate::New(_receive));

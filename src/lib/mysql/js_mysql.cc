@@ -14,6 +14,9 @@ namespace {
 
 v8::Persistent<v8::FunctionTemplate> rest;
 
+/**
+ * MySQL constructor does basically nothing. It just adds "this.close()" method to global GC
+ */
 JS_METHOD(_mysql) {
 	ASSERT_CONSTRUCTOR;
 	SAVE_PTR(0, NULL);
@@ -22,6 +25,9 @@ JS_METHOD(_mysql) {
 	return args.This();
 }
 
+/**
+ * Close DB connection
+ */ 
 JS_METHOD(_close) {
 	MYSQL * conn = LOAD_PTR(0, MYSQL *);
 	if (conn) {
@@ -31,6 +37,9 @@ JS_METHOD(_close) {
 	return args.This();
 }
 
+/**
+ * Should be called ASAP: new MySQL().connect("host", "user", "pass", "db")
+ */ 
 JS_METHOD(_connect) {
 	if (args.Length() < 4) {
 		return JS_EXCEPTION("Invalid call format. Use 'mysql.connect(host, user, pass, db)'");
@@ -54,6 +63,9 @@ JS_METHOD(_connect) {
 	}	
 }
 
+/**
+ * Query takes a string argument and returns an instance of Result object
+ */ 
 JS_METHOD(_query) {
 	v8::Handle<v8::Value> c = LOAD_VALUE(0);
 	if (c->IsFalse()) {
@@ -195,6 +207,9 @@ JS_METHOD(_fetchnames) {
 	return result;
 }
 
+/**
+ * Return result data as an array of JS arrays
+ */ 
 JS_METHOD(_fetcharrays) {
 	MYSQL_RES * res = LOAD_PTR(0, MYSQL_RES *);
 	mysql_data_seek(res, 0);
@@ -220,6 +235,9 @@ JS_METHOD(_fetcharrays) {
 	return result;
 }
 
+/**
+ * Return result data as an array of JS objects, indexed with column names
+ */ 
 JS_METHOD(_fetchobjects) {
 	MYSQL_RES * res = LOAD_PTR(0, MYSQL_RES *);
 	mysql_data_seek(res, 0);
@@ -246,7 +264,7 @@ JS_METHOD(_fetchobjects) {
 	return result;
 }
 
-}
+} /* end namespace */
 
 SHARED_INIT() {
 	v8::HandleScope handle_scope;
@@ -255,9 +273,17 @@ SHARED_INIT() {
 
 	v8::Handle<v8::ObjectTemplate> ot = ft->InstanceTemplate();
 	ot->SetInternalFieldCount(1); /* connection */
+	
+	/**
+	 * Static property, useful for stats gathering
+	 */
 	ot->Set(JS_STR("queryCount"), JS_INT(0));
 		 
 	v8::Handle<v8::ObjectTemplate> pt = ft->PrototypeTemplate();
+
+	/**
+	 * MySQL prototype methods (new MySQL().*)
+	 */
 	pt->Set(JS_STR("connect"), v8::FunctionTemplate::New(_connect));
 	pt->Set(JS_STR("close"), v8::FunctionTemplate::New(_close));
 	pt->Set(JS_STR("query"), v8::FunctionTemplate::New(_query));
@@ -275,6 +301,10 @@ SHARED_INIT() {
 	resinst->SetInternalFieldCount(1);
 	
 	v8::Handle<v8::ObjectTemplate> resproto = rest->PrototypeTemplate();
+
+	/**
+	 * Result prototype methods (new MySQL().*)
+	 */
 	resproto->Set(JS_STR("numRows"), v8::FunctionTemplate::New(_numrows));
 	resproto->Set(JS_STR("numFields"), v8::FunctionTemplate::New(_numfields));
 	resproto->Set(JS_STR("fetchNames"), v8::FunctionTemplate::New(_fetchnames));

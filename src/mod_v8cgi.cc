@@ -18,7 +18,10 @@ typedef struct {
 	const char * config;
 } v8cgi_config;
 
-extern "C" module AP_MODULE_DECLARE_DATA v8cgi_module; /* first declaration */
+/**
+ * First module declaration 
+ */
+extern "C" module AP_MODULE_DECLARE_DATA v8cgi_module; 
 
 class v8cgi_Module : public v8cgi_App {
 public:
@@ -27,22 +30,29 @@ public:
 	}
 
 	size_t writer(const char * data, size_t amount) {
-		if (this->output_started) { /* response data */
+		if (this->output_started) { 
+			/* response data */
 			return (size_t) ap_rwrite(data, amount, this->request);
-		} else { /* header or content separator */
+		} else { 
+			/* header or content separator */
 			char * end = strchr((char *) data, '\r');
 			if (!end) { end = strchr((char *) data, '\n'); }
-			if (!end) { return 0; } /* header or separator must end with a newline */
+			/* header or separator must end with a newline */
+			if (!end) { return 0; } 
 			
-			if (end == data) { /* content separator */
+			if (end == data) { 
+				/* content separator */
 				this->output_started = true;
 				return 0;
-			} else { /* header */
+			} else { 
+				/* header */
 				char * colon = strchr((char *) data, ':');
-				if (!colon) { return 0; } /* header without colon is a bad header */
+				/* header without colon is a bad header */
+				if (!colon) { return 0; }
 				size_t namelen = colon - data;
 				
-				if ((size_t) (colon-data+1) < amount && *(colon+1) == ' ') { colon++; } /* skip space after colon */
+				/* skip space after colon */
+				if ((size_t) (colon-data+1) < amount && *(colon+1) == ' ') { colon++; } 
 				
 				size_t valuelen = end - colon - 1;
 				char * name = (char *) apr_palloc(request->pool, namelen + 1);
@@ -58,10 +68,16 @@ public:
 		}
 	}
 
+	/**
+	 * We log errors to apache errorlog
+	 */
 	void error(const char * data, const char * file, int line) {
 		ap_log_rerror(file, line, APLOG_ERR, 0, this->request, "%s", data);
 	}
 
+	/** 
+	 * Remember apache request structure and continue as usually
+	 */
 	int execute(request_rec * request, char ** envp) {
 		this->output_started = false;
 		this->request = request;
@@ -83,6 +99,11 @@ private:
 	request_rec * request;
 	bool output_started;
 
+	/**
+	 * Set a HTTP response header
+	 * @param {char *} name
+	 * @param {char *} value
+	 */
 	void header(const char * name, const char * value) {
 		if (strcasecmp(name, "content-type") == 0) {
 			char * ct =  (char *) apr_palloc(request->pool, strlen(value)+1);
@@ -101,6 +122,9 @@ private:
 
 static v8cgi_Module app;
 
+/**
+ * This is called from Apache every time request arrives
+ */
 static int mod_v8cgi_handler(request_rec *r) {
     const apr_array_header_t *arr;
     const apr_table_entry_t *elts;
@@ -148,7 +172,10 @@ static int mod_v8cgi_handler(request_rec *r) {
 	}
 }
 
-static int mod_v8cgi_init_handler(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp, server_rec *s) { /* module initialization */
+/**
+ * Module initialization 
+ */
+static int mod_v8cgi_init_handler(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp, server_rec *s) { 
     ap_add_version_component(p, "mod_v8cgi");
 	v8cgi_config * cfg = (v8cgi_config *) ap_get_module_config(s->module_config, &v8cgi_module);
 	app.init(0, NULL);
@@ -156,29 +183,43 @@ static int mod_v8cgi_init_handler(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *p
     return OK;
 }
 
-static void mod_v8cgi_child_init(apr_pool_t *p, server_rec *s) { /* child initialization */
+/**
+ * Child initialization 
+ * FIXME: what is this for?
+ */
+static void mod_v8cgi_child_init(apr_pool_t *p, server_rec *s) { 
 }
 
-static void mod_v8cgi_register_hooks(apr_pool_t *p ) { /* hook registration */
+/**
+ * Register relevant hooks
+ */
+static void mod_v8cgi_register_hooks(apr_pool_t *p ) {
     ap_hook_handler(mod_v8cgi_handler, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_post_config(mod_v8cgi_init_handler, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_child_init(mod_v8cgi_child_init, NULL, NULL, APR_HOOK_MIDDLE);
 }
 
-static void * mod_v8cgi_create_config(apr_pool_t *p, server_rec *s) { /* initial configuration values */
+/**
+ * Create initial configuration values 
+ */
+static void * mod_v8cgi_create_config(apr_pool_t *p, server_rec *s) { 
 	v8cgi_config * newcfg = (v8cgi_config *) apr_pcalloc(p, sizeof(v8cgi_config));
 	newcfg->config = STRING(CONFIG_PATH);
 	return (void *) newcfg;
 }
 
-static const char * set_v8cgi_config(cmd_parms * parms, void * mconfig, const char * arg) { /* callback for configuration change */
+/**
+ * Callback executed for every configuration change 
+ */
+static const char * set_v8cgi_config(cmd_parms * parms, void * mconfig, const char * arg) { 
 	v8cgi_config * cfg = (v8cgi_config *) ap_get_module_config(parms->server->module_config, &v8cgi_module);
 	cfg->config = (char *) arg;
 	return NULL;
 }
 
 typedef const char * (* CONFIG_HANDLER) ();
-static const command_rec mod_v8cgi_cmds[] = { /* list of configurations */
+/* list of configurations */
+static const command_rec mod_v8cgi_cmds[] = { 
 	AP_INIT_TAKE1(
 		"v8cgi_Config",
 		(CONFIG_HANDLER) set_v8cgi_config,
@@ -189,7 +230,10 @@ static const command_rec mod_v8cgi_cmds[] = { /* list of configurations */
 	{NULL}
 };
 
-extern "C" { /* module declaration */
+/**
+ * Module (re-)declaration 
+ */
+extern "C" { 
 	module AP_MODULE_DECLARE_DATA v8cgi_module = {
 		STANDARD20_MODULE_STUFF,
 		NULL,

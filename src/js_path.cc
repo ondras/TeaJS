@@ -1,3 +1,7 @@
+/**
+ * Path manipulation utilities
+ */
+
 #include <js_path.h>
 #include <string>
 #include <sys/stat.h>
@@ -22,6 +26,9 @@
 #	define realpath(in, out) _fullpath(out, in, PATH_MAX)
 #endif
 
+/**
+ * Normalize path by removing "./", "../" and resolving symlinks
+ */
 std::string path_normalize(std::string path) {
 	char * p = new char[PATH_MAX];
 	realpath(path.c_str(), p);
@@ -58,27 +65,39 @@ std::string path_normalize(std::string path) {
 	}
 	
 	return result;
-	*/
+*/
 }
 
+/**
+ * Return file name component of path
+ */
 std::string path_filename(std::string path) {
 	size_t pos = path_lastslash(path);
 	if (pos != std::string::npos) { path.erase(0, pos+1); }
 	return path;
 }
 
+/**
+ * Return directory name component of path
+ */
 std::string path_dirname(std::string path) {
 	size_t pos = path_lastslash(path);
 	if (pos != std::string::npos) { path.erase(pos, path.length()-pos); }
 	return path;
 }
 
+/**
+ * Return index of last slash (normal or backslash) in a path
+ */
 size_t path_lastslash(std::string path) {
 	size_t pos = path.find_last_of('/');
 	if (pos == std::string::npos) { pos = path.find_last_of('\\'); }
 	return pos;
 }
 
+/**
+ * Is this path absolute?
+ */
 bool path_isabsolute(std::string path) {
 #ifdef windows
 	size_t pos = path.find(':');
@@ -89,6 +108,9 @@ bool path_isabsolute(std::string path) {
 #endif
 }
  
+/**
+ * Does a file exist at this path?
+ */
 bool path_file_exists(std::string path) {
 	struct stat st;
 	if (stat(path.c_str(), &st) != 0) { return false; } /* does not exist */
@@ -96,6 +118,9 @@ bool path_file_exists(std::string path) {
 	return true;
 }
 
+/**
+ * Does a directory exist at this path?
+ */
 bool path_dir_exists(std::string path) {
 	struct stat st;
 	if (stat(path.c_str(), &st) != 0) { return false; } /* does not exist */
@@ -103,10 +128,16 @@ bool path_dir_exists(std::string path) {
 	return false;
 }
 
+/**
+ * Get current working directory
+ */
 std::string path_getcwd() {
 	return getcwd(NULL, 0);
 }
 
+/**
+ * Change current directory
+ */
 void path_chdir(std::string dir) {
 #ifdef VERBOSE
 	printf("[path_chdir] chdir to '%s'\n", dir.c_str()); 

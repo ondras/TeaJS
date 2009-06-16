@@ -1,4 +1,4 @@
-/*
+/**
  * v8cgi - cgi binary
  */
 
@@ -11,6 +11,9 @@
 #include "js_app.h"
 
 #ifdef FASTCGI
+	/**
+	 * This is true only after we receive a signal to terminate
+	 */
 	bool exit_requested = false;
 	
 	void handle_sigterm(int param) {
@@ -31,6 +34,9 @@ int main(int argc, char ** argv) {
 #ifdef FASTCGI
 	signal(SIGTERM, handle_sigterm);
 	signal(SIGUSR1, handle_sigusr1);
+	/**
+	 * FastCGI main loop
+	 */
 	while (FCGI_Accept() >= 0  && !exit_requested) {
 #endif
 

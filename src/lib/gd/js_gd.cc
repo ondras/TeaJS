@@ -23,6 +23,9 @@
 
 namespace {
 
+/**
+ * Creates a GD points structure from JS array of {x:..., y:...} objects
+ */
 gdPointPtr gdPoints(v8::Handle<v8::Array> arr) {
 	v8::HandleScope handle_scope;
 	unsigned int len = arr->Length();
@@ -38,6 +41,11 @@ gdPointPtr gdPoints(v8::Handle<v8::Array> arr) {
 	return points;
 }
 
+/**
+ * Image constructor works in two modes:
+ * a) new Image(Image.JPG|PNG|GIF, "filename.ext")
+ * b) new Image(Image.TRUECOLOR|PALETTE, width, height)
+ */
 JS_METHOD(_image) {
 	ASSERT_CONSTRUCTOR;
 
@@ -82,28 +90,10 @@ JS_METHOD(_image) {
 	return args.This();
 }
 
-/**/
-
-JS_METHOD(_truecolor) {
-	GD_RGB;
-	int result = gdTrueColor(r, g, b);
-	return JS_INT(result);
-}
-
-JS_METHOD(_truecoloralpha) {
-	GD_RGBA;
-	int result = gdTrueColorAlpha(r, g, b, a);
-	return JS_INT(result);
-}
-
-/**/
-
-JS_METHOD(_destroy) {
-	GD_PTR;
-	gdImageDestroy(ptr);
-	return v8::Undefined();
-}
-
+/**
+ * @param {int} type Image.JPEG|PNG|GIF
+ * @param {string} [file] File name. If not present, image data is returned as array of byte numers.
+ */
 JS_METHOD(_save) {
 	GD_PTR;
 
@@ -147,6 +137,32 @@ JS_METHOD(_save) {
 		gdFree(data);
 		return arr;
 	}
+}
+
+/**
+ * All following functions are simple wrappers around gd* methods
+ */
+
+/**/
+
+JS_METHOD(_truecolor) {
+	GD_RGB;
+	int result = gdTrueColor(r, g, b);
+	return JS_INT(result);
+}
+
+JS_METHOD(_truecoloralpha) {
+	GD_RGBA;
+	int result = gdTrueColorAlpha(r, g, b, a);
+	return JS_INT(result);
+}
+
+/**/
+
+JS_METHOD(_destroy) {
+	GD_PTR;
+	gdImageDestroy(ptr);
+	return v8::Undefined();
 }
 
 JS_METHOD(_colorallocate) {
@@ -739,6 +755,10 @@ SHARED_INIT() {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::FunctionTemplate> ft = v8::FunctionTemplate::New(_image);
 	ft->SetClassName(JS_STR("Image"));
+	
+	/**
+	 * Constants (Image.*)
+	 */
 	ft->Set(JS_STR("TRUECOLOR"), JS_INT(GD_TRUECOLOR));
 	ft->Set(JS_STR("PALETTE"), JS_INT(GD_PALETTE));
 	ft->Set(JS_STR("MAXCOLORS"), JS_INT(gdMaxColors));
@@ -757,6 +777,9 @@ SHARED_INIT() {
 	ft->Set(JS_STR("COLOR_TILED"), JS_INT(gdTiled));
 	ft->Set(JS_STR("COLOR_TRANSPARENT"), JS_INT(gdTransparent));
 	
+	/**
+	 * Static methods (Image.*)
+	 */
 	ft->Set(JS_STR("trueColor"), v8::FunctionTemplate::New(_truecolor));
 	ft->Set(JS_STR("trueColorAlpha"), v8::FunctionTemplate::New(_truecoloralpha));
 
@@ -764,6 +787,10 @@ SHARED_INIT() {
 	it->SetInternalFieldCount(1);
 
 	v8::Handle<v8::ObjectTemplate> pt = ft->PrototypeTemplate();
+	
+	/**
+	 * Prototype methods (new Image().*)
+	 */
 	pt->Set(JS_STR("save"), v8::FunctionTemplate::New(_save));
 	
 	pt->Set(JS_STR("colorAllocate"), v8::FunctionTemplate::New(_colorallocate));

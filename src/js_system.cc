@@ -19,6 +19,11 @@
 
 namespace {
 
+/**
+ * Read characters from stdin
+ * @param {int} count How many; 0 == all
+ * @param {bool} [arr=false] Return as array of bytes?
+ */
 JS_METHOD(_stdin) {
 	v8cgi_App * app = APP_PTR;
 
@@ -53,6 +58,10 @@ JS_METHOD(_stdin) {
 	}
 }
 
+/**
+ * Dump data to stdout
+ * @param {string|int[]} String or array of bytes
+ */
 JS_METHOD(_stdout) {
 	v8cgi_App * app = APP_PTR;
 	if (args[0]->IsArray()) {
@@ -93,13 +102,17 @@ JS_METHOD(_getcwd) {
 	return JS_STR(path_getcwd().c_str());
 }
 
+/**
+ * Sleep for a given number of seconds
+ */
 JS_METHOD(_sleep) {
 	int num = args[0]->Int32Value();
 	sleep(num);
 	return v8::Undefined();
 }
 
-/* 
+/**
+ * FIXME: How to do this on win32?
 JS_METHOD(_usleep) {
 	v8::HandleScope handle_scope;
 	int num = args[0]->Int32Value();
@@ -117,8 +130,7 @@ void setup_system(v8::Handle<v8::Object> global, char ** envp) {
 	v8::Handle<v8::ObjectTemplate> systemt = v8::ObjectTemplate::New();
 	v8::Handle<v8::Object> system = systemt->NewInstance();
 
-	v8::Handle<v8::ObjectTemplate> envt = v8::ObjectTemplate::New();
-	v8::Handle<v8::Object> env = envt->NewInstance();
+	v8::Handle<v8::Object> env = v8::Object::New();
 
 	global->Set(JS_STR("System"), system);
 	system->Set(JS_STR("stdin"), v8::FunctionTemplate::New(_stdin)->GetFunction());
@@ -135,6 +147,7 @@ void setup_system(v8::Handle<v8::Object> global, char ** envp) {
 	int i,j;
 	char ch;
 	
+	/* extract environment variables and create JS object */
 	char ** e = envp;
 	if (e == NULL) { e = environ; }
 	if (e == NULL) { return; }

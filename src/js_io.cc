@@ -40,6 +40,11 @@
 
 namespace {
 
+/**
+ * Generic directory lister
+ * @param {char *} name Directory name
+ * @param {int} type Type constant - do we list files or directories?
+ */
 v8::Handle<v8::Value> list_items(char * name, int type) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::Array> result = v8::Array::New();
@@ -375,9 +380,13 @@ void setup_io(v8::Handle<v8::Object> target) {
 	v8::Handle<v8::FunctionTemplate> ft = v8::FunctionTemplate::New(_file);
 	ft->SetClassName(JS_STR("File"));
 	v8::Handle<v8::ObjectTemplate> ot = ft->InstanceTemplate();
-	ot->SetInternalFieldCount(2); /* filename, handle */
+	/* filename, handle */
+	ot->SetInternalFieldCount(2); 
 
 	v8::Handle<v8::ObjectTemplate> pt = ft->PrototypeTemplate();
+	/**
+	 * File prototype methods (new File().*)
+	 */
 	pt->Set("open", v8::FunctionTemplate::New(_open));
 	pt->Set("read", v8::FunctionTemplate::New(_read));
 	pt->Set("rewind", v8::FunctionTemplate::New(_rewind));
@@ -399,6 +408,10 @@ void setup_io(v8::Handle<v8::Object> target) {
 	ot->SetInternalFieldCount(1); /* dirname */
 
 	pt = dt->PrototypeTemplate();
+
+	/**
+	 * Directory prototype methods (new File().*)
+	 */
 	pt->Set("create", v8::FunctionTemplate::New(_create));
 	pt->Set("listFiles", v8::FunctionTemplate::New(_listfiles));
 	pt->Set("listDirectories", v8::FunctionTemplate::New(_listdirectories));

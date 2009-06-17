@@ -10,6 +10,11 @@
 #include <stdlib.h>
 #include <string>
 
+#define MYSQL_ERROR mysql_error(conn)
+#define ASSERT_CONNECTED if (!conn) { return JS_EXCEPTION("No connection established yet."); }
+#define MYSQL_PTR MYSQL * conn = LOAD_PTR(0, MYSQL *)
+
+
 namespace {
 
 v8::Persistent<v8::FunctionTemplate> rest;
@@ -29,7 +34,7 @@ JS_METHOD(_mysql) {
  * Close DB connection
  */ 
 JS_METHOD(_close) {
-	MYSQL * conn = LOAD_PTR(0, MYSQL *);
+	MYSQL_PTR;
 	if (conn) {
 		mysql_close(conn);
 		SAVE_PTR(0, NULL);
@@ -55,9 +60,9 @@ JS_METHOD(_connect) {
 	conn = mysql_init(NULL);
 
 	if (!mysql_real_connect(conn, *host, *user, *pass, *db, 0, NULL, 0)) {
-		return JS_BOOL(false);
+		return JS_EXCEPTION(MYSQL_ERROR);
 	} else {
-		mysql_query(conn, "SET NAMES 'utf8'");				 
+		mysql_query(conn, "SET NAMES 'utf8'");
 		SAVE_PTR(0, conn);
 		return args.This();
 	}	
@@ -67,19 +72,16 @@ JS_METHOD(_connect) {
  * Query takes a string argument and returns an instance of Result object
  */ 
 JS_METHOD(_query) {
-	v8::Handle<v8::Value> c = LOAD_VALUE(0);
-	if (c->IsFalse()) {
-		return JS_EXCEPTION("No connection established");
-	}		
+	MYSQL_PTR;
+	ASSERT_CONNECTED;
 	if (args.Length() < 1) {
 		return JS_EXCEPTION("No query specified");
 	}
 	v8::String::Utf8Value q(args[0]);
 	
-	MYSQL * conn = LOAD_PTR(0, MYSQL *);
 	MYSQL_RES *res;
 	int code = mysql_real_query(conn, *q, q.length());
-	if (code != 0) { return JS_BOOL(false); }
+	if (code != 0) { return JS_EXCEPTION(MYSQL_ERROR); }
 	
 	int qc = args.This()->Get(JS_STR("queryCount"))->ToInteger()->Int32Value();
 	args.This()->Set(JS_STR("queryCount"), JS_INT(qc+1));
@@ -91,62 +93,29 @@ JS_METHOD(_query) {
 		return rest->GetFunction()->NewInstance(1, resargs);
 	} else {
 		if (mysql_field_count(conn)) {
-			return JS_BOOL(false);
+			return JS_EXCEPTION(MYSQL_ERROR);
 		} else {
-			return JS_BOOL(true);
+			return args.This();
 		}
 	}
 }
 
-JS_METHOD(_error) {
-	v8::Handle<v8::Value> c = LOAD_VALUE(0);
-	if (c->IsFalse()) {
-		return JS_EXCEPTION("No connection established");
-	}
-
-	MYSQL * conn = LOAD_PTR(0, MYSQL *);
-
-	return JS_STR(mysql_error(conn));
-}
-
-JS_METHOD(_errno) {
-	v8::Handle<v8::Value> c = LOAD_VALUE(0);
-	if (c->IsFalse()) {
-		return JS_EXCEPTION("No connection established");
-	}
-	
-	MYSQL * conn = LOAD_PTR(0, MYSQL *);
-
-	return JS_INT(mysql_errno(conn));
-}
-
 JS_METHOD(_affectedrows) {
-	v8::Handle<v8::Value> c = LOAD_VALUE(0);
-	if (c->IsFalse()) {
-		return JS_EXCEPTION("No connection established");
-	}
-		
-	MYSQL * conn = LOAD_PTR(0, MYSQL *)
-
+	MYSQL_PTR;
+	ASSERT_CONNECTED;
 	return JS_INT(mysql_affected_rows(conn));
 }
 
 JS_METHOD(_insertid) {
-	v8::Handle<v8::Value> c = LOAD_VALUE(0);
-	if (c->IsFalse()) {
-		return JS_EXCEPTION("No connection established");
-	}
-
-	MYSQL * conn = LOAD_PTR(0, MYSQL *);
-
+	MYSQL_PTR;
+	ASSERT_CONNECTED;
 	return JS_INT(mysql_insert_id(conn));
 }
 
 JS_METHOD(_escape) {
-	v8::Handle<v8::Value> c = LOAD_VALUE(0);
-	if (c->IsFalse()) {
-		return JS_EXCEPTION("No connection established");
-	}
+	MYSQL_PTR;
+	ASSERT_CONNECTED;
+	
 	if (args.Length() < 1) {
 		return JS_EXCEPTION("Nothing to escape");
 	}
@@ -155,7 +124,6 @@ JS_METHOD(_escape) {
 	int len = args[0]->ToString()->Utf8Length();
 	char * result = new char[2*len + 1];
 	
-	MYSQL * conn = LOAD_PTR(0, MYSQL *);
 
 	int length = mysql_real_escape_string(conn, result, *str, len);
 	v8::Handle<v8::Value> output = JS_STR(result, length);
@@ -288,8 +256,6 @@ SHARED_INIT() {
 	pt->Set(JS_STR("connect"), v8::FunctionTemplate::New(_connect));
 	pt->Set(JS_STR("close"), v8::FunctionTemplate::New(_close));
 	pt->Set(JS_STR("query"), v8::FunctionTemplate::New(_query));
-	pt->Set(JS_STR("error"), v8::FunctionTemplate::New(_error));
-	pt->Set(JS_STR("errno"), v8::FunctionTemplate::New(_errno));
 	pt->Set(JS_STR("affectedRows"), v8::FunctionTemplate::New(_affectedrows));
 	pt->Set(JS_STR("escape"), v8::FunctionTemplate::New(_escape));
 	pt->Set(JS_STR("qualify"), v8::FunctionTemplate::New(_qualify));

@@ -333,7 +333,7 @@ JS_METHOD(_movefile) {
 	}
 	
 	SAVE_VALUE(0, args[0]);
-	return args.This();	
+	return args.This();
 }
 
 JS_METHOD(_copyfile) {
@@ -344,7 +344,7 @@ JS_METHOD(_copyfile) {
 	v8::String::Utf8Value name(LOAD_VALUE(0));
 	v8::String::Utf8Value newname(args[0]);
 
-	v8::Handle<v8::Value> result = _copy(*name, *newname);	
+	v8::Handle<v8::Value> result = _copy(*name, *newname);
 	if (result->IsTrue()) {
 		v8::Handle<v8::Value> fargs[] = { args[0] };
 		

@@ -12,7 +12,7 @@ while (1) {
 			cmd += ch;
 		}
 	}
-	if (cmd == "quit") { break; }
+	if (cmd == "quit" || cmd == "exit" || cmd == "bye") { break; }
 	var error = false;
 	try {
 		var result = eval(cmd);

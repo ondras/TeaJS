@@ -4,6 +4,10 @@
 
 #include <sqlite3.h>
 
+#define SQLITE_PTR sqlite3 * db = LOAD_PTR(0, sqlite3 *)
+#define SQLITE_ERRMSG sqlite3_errmsg(db)
+#define ASSERT_CONNECTED if (!db) { return JS_EXCEPTION("No database opened yet."); }
+
 namespace {
 
 v8::Persistent<v8::FunctionTemplate> rest;
@@ -25,15 +29,14 @@ JS_METHOD(_sqlite) {
  * Close DB connection
  */ 
 JS_METHOD(_close) {
-	sqlite3 * db = LOAD_PTR(0, sqlite3 *);
+	SQLITE_PTR;
 	
-	int result = sqlite3_close(db);
-	if (result == SQLITE_OK) {
+	if (db) {
+		int result = sqlite3_close(db);
+		if (result != SQLITE_OK) { return JS_EXCEPTION(SQLITE_ERRMSG); }
 		SAVE_PTR(0, NULL);
-		return JS_BOOL(true);
-	} else {
-		return JS_BOOL(false);
 	}
+	return args.This();
 }
 
 /**
@@ -44,34 +47,34 @@ JS_METHOD(_open) {
 		return JS_EXCEPTION("Invalid call format. Use 'sqlite.open(filename)'");
 	}
 	v8::String::Utf8Value filename(args[0]);
-	sqlite3 * db = LOAD_PTR(0, sqlite3 *);
+	SQLITE_PTR;
 
 	int result = sqlite3_open(*filename, &db);
 	
-	if (result == SQLITE_OK) {
-		SAVE_PTR(0, db);
-		return args.This();
-	} else {
-		return JS_BOOL(false);
-	}
+	if (result != SQLITE_OK) { return JS_EXCEPTION(SQLITE_ERRMSG); }
+
+	SAVE_PTR(0, db);
+	return args.This();
 }
 
 /**
  * Query takes a string argument and returns an instance of Result object
  */ 
 JS_METHOD(_query) {
+	SQLITE_PTR;
+	ASSERT_CONNECTED;
 	if (args.Length() < 1) {
 		return JS_EXCEPTION("No query specified");
 	}
 	v8::String::Utf8Value q(args[0]);
-	sqlite3 * db = LOAD_PTR(0, sqlite3 *);
+
 	char ** results;
 	int rows;
 	int cols;
 	char * someerror;
 	
 	int result = sqlite3_get_table(db, *q, &results, &rows, &cols, &someerror);
-	if (result != SQLITE_OK) { return JS_BOOL(false); }
+	if (result != SQLITE_OK) { return JS_EXCEPTION(SQLITE_ERRMSG); }
 	
 	int qc = args.This()->Get(JS_STR("queryCount"))->ToInteger()->Int32Value();
 	args.This()->Set(JS_STR("queryCount"), JS_INT(qc+1));
@@ -79,7 +82,11 @@ JS_METHOD(_query) {
 	int items = cols * (rows+1);
 	v8::Handle<v8::Array> data = v8::Array::New(items);
 	for (int i=0;i<items;i++) {
-		data->Set(JS_INT(i), JS_STR(results[i]));
+		if (results[i] == NULL) {
+			data->Set(JS_INT(i), v8::Null());
+		} else {
+			data->Set(JS_INT(i), JS_STR(results[i]));
+		}
 	}
 	sqlite3_free_table(results);
 	
@@ -87,27 +94,15 @@ JS_METHOD(_query) {
 	return rest->GetFunction()->NewInstance(3, resargs);
 }
 
-JS_METHOD(_errmsg) {
-	sqlite3 * db = LOAD_PTR(0, sqlite3 *);
-
-	return JS_STR(sqlite3_errmsg(db));
-}
-
-JS_METHOD(_errcode) {
-	sqlite3 * db = LOAD_PTR(0, sqlite3 *);
-
-	return JS_INT(sqlite3_errcode(db));
-}
-
 JS_METHOD(_changes) {
-	sqlite3 * db = LOAD_PTR(0, sqlite3 *);
-
+	SQLITE_PTR;
+	ASSERT_CONNECTED;
 	return JS_INT(sqlite3_changes(db));
 }
 
 JS_METHOD(_insertid) {
-	sqlite3 * db = LOAD_PTR(0, sqlite3 *);
-
+	SQLITE_PTR;
+	ASSERT_CONNECTED;
 	return JS_INT(sqlite3_last_insert_rowid(db));
 }
 
@@ -132,8 +127,6 @@ JS_METHOD(_fetchnames) {
 	v8::Handle<v8::Value> cols = LOAD_VALUE(2);
 	
 	int c = cols->ToInteger()->Int32Value();
-	if (c == 0) { return JS_BOOL(false); }
-	
 	v8::Handle<v8::Array> result = v8::Array::New(c);
 	for (int i=0;i<c;i++) {
 		result->Set(JS_INT(i), data->Get(JS_INT(i)));
@@ -218,8 +211,6 @@ SHARED_INIT() {
 	pt->Set(JS_STR("open"), v8::FunctionTemplate::New(_open));
 	pt->Set(JS_STR("close"), v8::FunctionTemplate::New(_close));
 	pt->Set(JS_STR("query"), v8::FunctionTemplate::New(_query));
-	pt->Set(JS_STR("errmsg"), v8::FunctionTemplate::New(_errmsg));
-	pt->Set(JS_STR("errcode"), v8::FunctionTemplate::New(_errcode));
 	pt->Set(JS_STR("changes"), v8::FunctionTemplate::New(_changes));
 	pt->Set(JS_STR("insertId"), v8::FunctionTemplate::New(_insertid));
 	

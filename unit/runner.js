@@ -113,7 +113,7 @@ var TestRunner = {
 		System.stdout("  "+total+" tests\n");
 		System.stdout("  "+results.passed+" passed\n");
 		System.stdout("  "+results.failed+" failed\n");
-		System.stdout("  "+results.errors+" errors\n");
+		System.stdout("  "+results.errors+" syntax errors\n");
 	},
 	
 	init: function() {

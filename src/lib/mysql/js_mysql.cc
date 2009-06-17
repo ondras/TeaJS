@@ -76,12 +76,13 @@ JS_METHOD(_query) {
 	}
 	v8::String::Utf8Value q(args[0]);
 	
-	int qc = args.This()->Get(JS_STR("queryCount"))->ToInteger()->Int32Value();
-	args.This()->Set(JS_STR("queryCount"), JS_INT(qc+1));
 	MYSQL * conn = LOAD_PTR(0, MYSQL *);
 	MYSQL_RES *res;
 	int code = mysql_real_query(conn, *q, q.length());
 	if (code != 0) { return JS_BOOL(false); }
+	
+	int qc = args.This()->Get(JS_STR("queryCount"))->ToInteger()->Int32Value();
+	args.This()->Set(JS_STR("queryCount"), JS_INT(qc+1));
 	
 	res = mysql_store_result(conn);
 	
@@ -303,7 +304,7 @@ SHARED_INIT() {
 	v8::Handle<v8::ObjectTemplate> resproto = rest->PrototypeTemplate();
 
 	/**
-	 * Result prototype methods (new MySQL().*)
+	 * Result prototype methods (new MySQL().query().*)
 	 */
 	resproto->Set(JS_STR("numRows"), v8::FunctionTemplate::New(_numrows));
 	resproto->Set(JS_STR("numFields"), v8::FunctionTemplate::New(_numfields));

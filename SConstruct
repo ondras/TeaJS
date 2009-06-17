@@ -38,6 +38,7 @@ else:
 opts = Options()
 opts.Add(BoolOption("mysql", "MySQL library", 1))
 opts.Add(BoolOption("gd", "GD library", 1))
+opts.Add(BoolOption("sqlite", "SQLite library", 1))
 opts.Add(BoolOption("socket", "Socket library", 1))
 opts.Add(BoolOption("module", "Build Apache module", 1))
 opts.Add(BoolOption("cgi", "Build CGI binray", 1))
@@ -176,6 +177,18 @@ if env["mysql"] == 1:
 	e.SharedLibrary(
 		target = "lib/mysql", 
 		source = ["src/js_gc.cc", "src/lib/mysql/js_mysql.cc"],
+		SHLIBPREFIX=""
+	)
+# if
+
+if env["sqlite"] == 1:
+	e = env.Clone()
+	e.Append(
+		LIBS = "sqlite3"
+	)
+	e.SharedLibrary(
+		target = "lib/sqlite", 
+		source = ["src/js_gc.cc", "src/lib/sqlite/js_sqlite.cc"],
 		SHLIBPREFIX=""
 	)
 # if

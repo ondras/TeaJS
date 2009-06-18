@@ -1,9 +1,13 @@
+/**
+ * This file tests the SQLite module.
+ * Database is created in memory, so no intermediate files are created.
+ */
+
 var assert = require("assert");
 var SQLite = require("sqlite").SQLite;
 
 exports.testSQLite = function() {
-	var name = "destdb_"+Math.random();
-	var db = new SQLite().open(name);
+	var db = new SQLite().open(":memory:");
 	
 	db.query("create table test(one varchar(10), two integer primary key)");
 	db.query("insert into test (one, two) values ('a', 1)");
@@ -25,6 +29,5 @@ exports.testSQLite = function() {
 	assert.assertEquals("fetch objects", "2", obj[1]["two"]);
 
 	db.close();
-	new File(name).remove();
 }
 

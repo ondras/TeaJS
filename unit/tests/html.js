@@ -1,3 +1,7 @@
+/**
+ * This file tests html HTML module.
+ */
+
 var assert = require("assert");
 var html = require("html").HTML;
 

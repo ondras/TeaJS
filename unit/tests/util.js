@@ -1,3 +1,7 @@
+/**
+ * This file tests the Util module.
+ */
+
 var assert = require("assert");
 var util = require("util").Util;
 

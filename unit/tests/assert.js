@@ -1,3 +1,7 @@
+/**
+ * This file tests some of the assertion funcions.
+ */
+
 var assert = require("assert");
 
 exports.testAssert = function() {

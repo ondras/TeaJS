@@ -1,3 +1,7 @@
+/**
+ * This file tests the GetOpt module.
+ */
+
 var assert = require("assert");
 var GO = require("getopt").GetOpt;
 

@@ -1,3 +1,7 @@
+/**
+ * This file tests the JS module
+ */
+
 var assert = require("assert");
 require("js");
 

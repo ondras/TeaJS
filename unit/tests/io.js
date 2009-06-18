@@ -1,3 +1,10 @@
+/**
+ * This file tests the built-in IO module.
+ * Several tests are performed with both files and directories.
+ * It is necessary to have write access to current directory. If anything fails here,
+ * please delete manually any intermediate files and/or directories created.
+ */
+
 var assert = require("assert");
 
 exports.testFile = function() {

@@ -50,7 +50,7 @@ var TestRunner = {
 			results.errors++;
 			if (this.verbosity > 0) { 
 				this.indent();
-				System.stdout("syntax error ("+e+")\n"); 
+				System.stdout("error ("+e+")\n"); 
 			}
 			this.depth--;
 			return results;
@@ -113,7 +113,7 @@ var TestRunner = {
 		System.stdout("  "+total+" tests\n");
 		System.stdout("  "+results.passed+" passed\n");
 		System.stdout("  "+results.failed+" failed\n");
-		System.stdout("  "+results.errors+" syntax errors\n");
+		System.stdout("  "+results.errors+" errors\n");
 	},
 	
 	init: function() {

@@ -29,6 +29,7 @@ void * mmap_read(char * name, size_t * size) {
 		size_t read = fread(& data[i], 1, s-i, f);
 		i += read;
 	}
+	fclose(f);
 #endif
 	return data;
 }

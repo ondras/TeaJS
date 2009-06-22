@@ -61,7 +61,8 @@ Help(opts.GenerateHelpText(env))
 conf = Configure(env)
 
 if ((env["os"] != "windows") and not (conf.CheckLib("v8"))):
-	Abort("Cannot find V8 library!")
+	print "Cannot find V8 library!"
+	sys.exit(1)
 # if
 
 # adjust variables based on user selection

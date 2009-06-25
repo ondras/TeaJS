@@ -1,3 +1,3 @@
 #!../v8cgi
 
-System.stdout(Util.serialize(System.env, true));
+system.stdout(JSON.stringify(system.env));

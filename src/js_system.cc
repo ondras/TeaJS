@@ -90,7 +90,7 @@ JS_METHOD(_stderr) {
 
 JS_METHOD(_system) {
 	if (args.Length() != 1) {
-		return JS_EXCEPTION("Wrong argument count. Use System.system(\"command\")");
+		return JS_EXCEPTION("Wrong argument count. Use system.system(\"command\")");
 	}
 	
 	v8::String::Utf8Value cmd(args[0]);
@@ -132,7 +132,7 @@ void setup_system(v8::Handle<v8::Object> global, char ** envp) {
 
 	v8::Handle<v8::Object> env = v8::Object::New();
 
-	global->Set(JS_STR("System"), system);
+	global->Set(JS_STR("system"), system);
 	system->Set(JS_STR("stdin"), v8::FunctionTemplate::New(_stdin)->GetFunction());
 	system->Set(JS_STR("stdout"), v8::FunctionTemplate::New(_stdout)->GetFunction());
 	system->Set(JS_STR("stderr"), v8::FunctionTemplate::New(_stderr)->GetFunction());

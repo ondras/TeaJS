@@ -1,11 +1,11 @@
 #!../v8cgi
 
 while (1) {
-	System.stdout("> ");
+	system.stdout("> ");
 	var cmd = "";
 	var ch = "";
 	while (1) {
-		ch = System.stdin(1);
+		ch = system.stdin(1);
 		if (ch == "\n") {
 			break;
 		} else { 
@@ -18,8 +18,8 @@ while (1) {
 		var result = eval(cmd);
 	} catch(e) {
 		error = true;
-		System.stdout(e+"\n");
+		system.stdout(e+"\n");
 	} finally {
-		if (!error && typeof(result) != "undefined") { System.stdout(result+"\n"); }
+		if (!error && typeof(result) != "undefined") { system.stdout(result+"\n"); }
 	}
 }

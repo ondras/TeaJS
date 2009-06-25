@@ -135,12 +135,21 @@ void v8cgi_App::prepare(char ** envp) {
 	/* do not wrap config file */
 	this->require(this->cfgfile, false); 
 	this->autoload();
-	
+}
+
+/**
+ * Setup system.args array of arguments.
+ * First item (system.args[0]) is the main file name
+ */
+void v8cgi_App::setup_args() {
 	v8::Handle<v8::Object> args = v8::Array::New();
+	args->Set(JS_INT(0), JS_STR(this->mainfile.c_str()));
+	
 	for (size_t i = 0; i < this->mainfile_args.size(); ++i) {
-		args->Set(JS_INT(i), JS_STR(this->mainfile_args.at(i).c_str()));
+		args->Set(JS_INT(i+1), JS_STR(this->mainfile_args.at(i).c_str()));
 	}
-	g->Set(JS_STR("arguments"), args);
+	v8::Handle<v8::Object> sys = JS_GLOBAL->Get(JS_STR("system"))->ToObject();
+	sys->Set(JS_STR("args"), args);
 }
 
 /**
@@ -202,6 +211,10 @@ int v8cgi_App::execute(bool change, char ** envp) {
 	
 	/* if requested, chdir */
 	if (change) { path_chdir(path_dirname(this->mainfile)); } 
+	
+	/* setup command line arguments */
+	this->setup_args();
+	
 	/* setup builtin request and response, if running as CGI */
 	this->http(); 
 
@@ -394,7 +407,7 @@ void v8cgi_App::js_error(std::string message) {
 		}
 	}
 	if (!cgi) {
-		context = JS_GLOBAL->Get(JS_STR("System"));
+		context = JS_GLOBAL->Get(JS_STR("system"));
 		if (context->IsUndefined()) {
 			this->error(message.c_str(), __FILE__, __LINE__);
 			return;
@@ -462,7 +475,7 @@ std::string v8cgi_App::findname(std::string name, bool forceLocal) {
  * Create global.response and global.request
  */
 void v8cgi_App::http() {
-	v8::Handle<v8::Object> sys = JS_GLOBAL->Get(JS_STR("System"))->ToObject();
+	v8::Handle<v8::Object> sys = JS_GLOBAL->Get(JS_STR("system"))->ToObject();
 	v8::Handle<v8::Value> env = sys->ToObject()->Get(JS_STR("env"));
 	v8::Handle<v8::Value> ss = env->ToObject()->Get(JS_STR("SERVER_SOFTWARE"));
 	if (!ss->IsString()) { return; }
@@ -489,7 +502,7 @@ void v8cgi_App::http() {
  */
 void v8cgi_App::findmain() {
 	v8::HandleScope handle_scope;
-	v8::Handle<v8::Value> sys = JS_GLOBAL->Get(JS_STR("System"));
+	v8::Handle<v8::Value> sys = JS_GLOBAL->Get(JS_STR("system"));
 	v8::Handle<v8::Value> env = sys->ToObject()->Get(JS_STR("env"));
 	v8::Handle<v8::Value> pt = env->ToObject()->Get(JS_STR("PATH_TRANSLATED"));
 	v8::Handle<v8::Value> sf = env->ToObject()->Get(JS_STR("SCRIPT_FILENAME"));

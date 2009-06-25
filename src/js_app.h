@@ -54,6 +54,7 @@ private:
 	void js_error(std::string message);
 	void autoload();
 	void clear_global();
+	void setup_args();
 	
 	std::string findname(std::string name, bool forceLocal);
 	v8::Handle<v8::Value> load_js(std::string filename, v8::Handle<v8::Object> exports, bool wrap);

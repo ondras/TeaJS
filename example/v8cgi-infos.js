@@ -1,3 +1,5 @@
+#!../v8cgi
+
 /**
  * HTML rendering of the global object
  *

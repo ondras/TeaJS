@@ -1,3 +1,10 @@
+/*
+ * There are multiple caching levels in v8cgi.
+ * - getSource/getHandle checks file's MTIME and provides source code / DSO handle
+ * - getScript checks file's MTIME and provides compiled source code
+ * - getExports returns module's "exports" object. No checks are performed, exports are valid through whole request.
+ */
+
 #ifndef _JS_CACHE_H
 #define _JS_CACHE_H
 

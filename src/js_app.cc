@@ -1,5 +1,5 @@
 /**
- * v8cgi app file
+ * v8cgi app file. This class represents (f)cgi binary; apache module inherits from it.
  */
 
 #include <sstream>

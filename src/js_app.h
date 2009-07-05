@@ -9,26 +9,38 @@
 #include "js_cache.h"
 #include "js_gc.h"
 
+/**
+ * This class defines a basic v8-based application.
+ */
 class v8cgi_App {
 public:
 	typedef std::vector<v8::Persistent<v8::Function> > funcvector;
 	typedef std::stack<std::string> pathstack;
 
 	virtual ~v8cgi_App() {};
-	virtual int init(int argc, char ** argv); /* once per app lifetime */
-	int execute(bool change, char ** envp); /* once per request */
+	/* once per app lifetime */
+	virtual int init(int argc, char ** argv); 
+	/* once per request */
+	int execute(bool change, char ** envp); 
 	v8::Handle<v8::Object> include(std::string name);
 	v8::Handle<v8::Object> require(std::string name, bool wrap);
 	
-	funcvector onexit;	/* list of "onexit" functions */
+	/* list of "onexit" functions */
+	funcvector onexit;
 
-	virtual size_t reader (char * destination, size_t size); /* stdin */
-	virtual size_t writer (const char * source, size_t size); /* stdout */
-	virtual void error(const char * data, const char * file, int line); /* stderr */
+	/* stdin */
+	virtual size_t reader (char * destination, size_t size);
+	/* stdout */
+	virtual size_t writer (const char * source, size_t size);
+	/* stderr */
+	virtual void error(const char * data, const char * file, int line);
 
 protected:
-	std::string cfgfile; /* config file */
+	/* config file */
+	std::string cfgfile;
+	/* create new v8 execution context */
 	void create_context();
+	/* delete existing context */
 	void delete_context();
 
 private:

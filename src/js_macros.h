@@ -1,3 +1,7 @@
+/**
+ * Shorthands for various lengthy V8 syntaxt constructs.
+ */
+
 #ifndef _JS_MACROS_H
 #define _JS_MACROS_H
 

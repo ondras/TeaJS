@@ -1,5 +1,6 @@
 /**
- * v8cgi - apache module
+ * v8cgi - apache module. 
+ * Extends v8cgi_App by adding customized initialization and (std)IO routines
  */
 #include <stdlib.h>
 #include <string.h>
@@ -86,7 +87,7 @@ public:
 	
 	int init(int argc, char ** argv) { 
 #ifdef REUSE_CONTEXT
-		v8cgi_App::create_context();	
+		v8cgi_App::create_context();
 #endif
 		return 0; 
 	}
@@ -126,18 +127,18 @@ static v8cgi_Module app;
  * This is called from Apache every time request arrives
  */
 static int mod_v8cgi_handler(request_rec *r) {
-    const apr_array_header_t *arr;
-    const apr_table_entry_t *elts;
+	const apr_array_header_t *arr;
+	const apr_table_entry_t *elts;
 
-    if (!r->handler || strcmp(r->handler, "v8cgi-script")) { return DECLINED; }
+	if (!r->handler || strcmp(r->handler, "v8cgi-script")) { return DECLINED; }
 
 	ap_setup_client_block(r, REQUEST_CHUNKED_DECHUNK);
-    ap_add_common_vars(r);
-    ap_add_cgi_vars(r);
+	ap_add_common_vars(r);
+	ap_add_cgi_vars(r);
 
-    /* extract the CGI environment  */
-    arr = apr_table_elts(r->subprocess_env);
-    elts = (const apr_table_entry_t*) arr->elts;
+	/* extract the CGI environment  */
+	arr = apr_table_elts(r->subprocess_env);
+	elts = (const apr_table_entry_t*) arr->elts;
 	
 	char ** envp = new char *[arr->nelts + 1];
 	envp[arr->nelts] = NULL;
@@ -145,7 +146,7 @@ static int mod_v8cgi_handler(request_rec *r) {
 	size_t size = 0;
 	size_t len1 = 0;
 	size_t len2 = 0;
-    for (int i=0;i<arr->nelts;i++) {
+	for (int i=0;i<arr->nelts;i++) {
 		len1 = strlen(elts[i].key);
 		len2 = strlen(elts[i].val);
 		size = len1 + len2 + 2;
@@ -156,7 +157,7 @@ static int mod_v8cgi_handler(request_rec *r) {
 		
 		strncpy(envp[i], elts[i].key, len1);
 		strncpy(&(envp[i][len1+1]), elts[i].val, len2);
-    }
+	}
 
 	int result = app.execute(r, envp);
 	
@@ -176,7 +177,7 @@ static int mod_v8cgi_handler(request_rec *r) {
  * Module initialization 
  */
 static int mod_v8cgi_init_handler(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp, server_rec *s) { 
-    ap_add_version_component(p, "mod_v8cgi");
+	ap_add_version_component(p, "mod_v8cgi");
 	v8cgi_config * cfg = (v8cgi_config *) ap_get_module_config(s->module_config, &v8cgi_module);
 	app.init(0, NULL);
 	app.apacheConfig(cfg);
@@ -194,9 +195,9 @@ static void mod_v8cgi_child_init(apr_pool_t *p, server_rec *s) {
  * Register relevant hooks
  */
 static void mod_v8cgi_register_hooks(apr_pool_t *p ) {
-    ap_hook_handler(mod_v8cgi_handler, NULL, NULL, APR_HOOK_MIDDLE);
-    ap_hook_post_config(mod_v8cgi_init_handler, NULL, NULL, APR_HOOK_MIDDLE);
-    ap_hook_child_init(mod_v8cgi_child_init, NULL, NULL, APR_HOOK_MIDDLE);
+	ap_hook_handler(mod_v8cgi_handler, NULL, NULL, APR_HOOK_MIDDLE);
+	ap_hook_post_config(mod_v8cgi_init_handler, NULL, NULL, APR_HOOK_MIDDLE);
+	ap_hook_child_init(mod_v8cgi_child_init, NULL, NULL, APR_HOOK_MIDDLE);
 }
 
 /**
@@ -231,7 +232,7 @@ static const command_rec mod_v8cgi_cmds[] = {
 };
 
 /**
- * Module (re-)declaration 
+ * Module (re-)declaration
  */
 extern "C" { 
 	module AP_MODULE_DECLARE_DATA v8cgi_module = {

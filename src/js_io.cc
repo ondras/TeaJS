@@ -1,3 +1,8 @@
+/**
+ * IO library defines File and Directory classes.
+ * Some compatibility macros are defined for Win32 environment.
+ */
+
 #include <v8.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -8,7 +13,7 @@
 #include "js_common.h"
 #include "js_path.h"
 
-// access()
+/* access() */
 #ifdef HAVE_UNISTD_H
 #	include <unistd.h>
 #else
@@ -17,20 +22,20 @@
 #	define access(path,mode) _access(path,mode)
 #endif
 
-// directory listing
+/* directory listing */
 #ifdef HAVE_DIRENT_H
 #	include <dirent.h>
 #else
 #	include <io.h>
 #endif
 
-// mkdir()
+/* mkdir() */
 #ifndef HAVE_MKDIR
 #	include <direct.h>
 #	define mkdir(name, mode) _mkdir(name)
 #endif
 
-// rmdir()
+/* rmdir() */
 #ifndef HAVE_RMDIR
 #	define rmdir(name) _rmdir(name)
 #endif
@@ -235,9 +240,7 @@ JS_METHOD(_write) {
 		return JS_EXCEPTION("File must be opened before writing");
 	}
 	
-
 	FILE * f = LOAD_PTR(1, FILE *);
-	
 	
 	if (args[0]->IsArray()) {
 		v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(args[0]);
@@ -405,7 +408,8 @@ void setup_io(v8::Handle<v8::Object> target) {
 	v8::Handle<v8::FunctionTemplate> dt = v8::FunctionTemplate::New(_directory);
 	dt->SetClassName(JS_STR("Directory"));
 	ot = dt->InstanceTemplate();
-	ot->SetInternalFieldCount(1); /* dirname */
+	/* dirname */
+	ot->SetInternalFieldCount(1); 
 
 	pt = dt->PrototypeTemplate();
 

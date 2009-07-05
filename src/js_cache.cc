@@ -22,7 +22,7 @@
 bool Cache::isCached(std::string filename) {
 	struct stat st;
 	int result = stat(filename.c_str(), &st);
-	if (result != 0) { return false; }	
+	if (result != 0) { return false; 
 
 	TimeValue::iterator it = modified.find(filename);
 	if (it == modified.end()) { return false; } /* not seen yet */

@@ -68,3 +68,8 @@ exports.testGetoptMain = function() {
 	assert.assertEquals("optional value before --", true, go.get("d")[0]);
 	assert.assertEquals("main value after --", "xx-a", go.get("").join(""));
 }
+
+exports.testIssue17 = function() {
+	var go = setup();
+	go.parse(["-c", "a"]);
+}

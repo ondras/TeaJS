@@ -1,3 +1,7 @@
+/**
+ * Features defined in [global.]system object
+ */
+
 #include <v8.h>
 #include <string>
 #include <stdlib.h>

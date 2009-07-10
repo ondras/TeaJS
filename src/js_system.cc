@@ -1,7 +1,3 @@
-/**
- * Features defined in [global.]system object
- */
-
 #include <v8.h>
 #include <string>
 #include <stdlib.h>
@@ -127,8 +123,6 @@ JS_METHOD(_usleep) {
 
 }
 
-extern char ** environ;
-
 void setup_system(v8::Handle<v8::Object> global, char ** envp) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::ObjectTemplate> systemt = v8::ObjectTemplate::New();
@@ -152,16 +146,12 @@ void setup_system(v8::Handle<v8::Object> global, char ** envp) {
 	char ch;
 	
 	/* extract environment variables and create JS object */
-	char ** e = envp;
-	if (e == NULL) { e = environ; }
-	if (e == NULL) { return; }
-	
-	for (i = 0; e[i] != NULL; i++) {
+	for (i = 0; envp[i] != NULL; i++) {
 		done = false;
 		name = "";
 		value = "";
-		for (j = 0; e[i][j] != '\0'; j++) {
-			ch = e[i][j];
+		for (j = 0; envp[i][j] != '\0'; j++) {
+			ch = envp[i][j];
 			if (!done) {
 				if (ch == '=') {
 					done = true;

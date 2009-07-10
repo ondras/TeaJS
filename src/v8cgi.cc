@@ -25,6 +25,8 @@
 	}
 #endif
 
+extern char ** environ;
+
 int main(int argc, char ** argv) {
 	int result = 0;
 	v8cgi_App app;
@@ -40,7 +42,7 @@ int main(int argc, char ** argv) {
 	while (FCGI_Accept() >= 0  && !exit_requested) {
 #endif
 
-		result = app.execute(false, NULL);
+		result = app.execute(false, environ);
 
 #ifdef FASTCGI
 		if (exit_requested) { 

@@ -40,6 +40,7 @@ opts.Add(BoolOption("mysql", "MySQL library", 1))
 opts.Add(BoolOption("gd", "GD library", 1))
 opts.Add(BoolOption("sqlite", "SQLite library", 1))
 opts.Add(BoolOption("socket", "Socket library", 1))
+opts.Add(BoolOption("process", "Process library", 1))
 opts.Add(BoolOption("module", "Build Apache module", 1))
 opts.Add(BoolOption("cgi", "Build CGI binray", 1))
 opts.Add(BoolOption("fcgi", "FastCGI support (for CGI binary)", 0))
@@ -210,6 +211,15 @@ if env["socket"] == 1:
 	e.SharedLibrary(
 		target = "lib/socket", 
 		source = ["src/lib/socket/js_socket.cc"],
+		SHLIBPREFIX=""
+	)
+# if
+
+if env["process"] == 1:
+	e = env.Clone()
+	e.SharedLibrary(
+		target = "lib/process", 
+		source = ["src/lib/process/js_process.cc"],
 		SHLIBPREFIX=""
 	)
 # if

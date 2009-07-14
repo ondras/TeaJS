@@ -1,3 +1,7 @@
+/**
+ * Socket library. Provides a simple OO abstraction atop several socket-related functions.
+ */
+
 #include <v8.h>
 #include "js_macros.h"
 #include "js_common.h"

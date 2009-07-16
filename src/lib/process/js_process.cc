@@ -5,9 +5,19 @@
 #include <v8.h>
 #include <string>
 #include "js_macros.h"
+#include "js_common.h"
 #include <stdlib.h>
+#ifndef _JS_NULL
+#define JS_NULL v8::Null()
+#endif
 
 namespace {
+
+JS_METHOD(_process) {
+	ASSERT_CONSTRUCTOR;
+	SAVE_PTR(0, NULL);
+	return args.This();
+}
 
 JS_METHOD(_system) {
 	if (args.Length() != 1) {
@@ -52,8 +62,14 @@ JS_METHOD(_exec) {
 
 SHARED_INIT() {
 	v8::HandleScope handle_scope;
-	
+	v8::Handle<v8::FunctionTemplate> funct = v8::FunctionTemplate::New(_process);
+       funct->SetClassName(JS_STR("Process"));
+	v8::Handle<v8::ObjectTemplate> ot = funct->InstanceTemplate();
+	ot->SetInternalFieldCount(1); /* connection */
+	v8::Handle<v8::ObjectTemplate> process = funct->PrototypeTemplate();
+
 	/* this module provides a set of (static) functions */
-	exports->Set(JS_STR("system"), v8::FunctionTemplate::New(_system)->GetFunction());
-	exports->Set(JS_STR("exec"), v8::FunctionTemplate::New(_exec)->GetFunction());
+	process->Set(JS_STR("system"), v8::FunctionTemplate::New(_system)->GetFunction());
+	process->Set(JS_STR("exec"), v8::FunctionTemplate::New(_exec)->GetFunction());
+	exports->Set(JS_STR("Process"), funct->GetFunction());
 }

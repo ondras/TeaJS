@@ -63,9 +63,9 @@ JS_METHOD(_exec) {
 SHARED_INIT() {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::FunctionTemplate> funct = v8::FunctionTemplate::New(_process);
-       funct->SetClassName(JS_STR("Process"));
+	funct->SetClassName(JS_STR("Process"));
 	v8::Handle<v8::ObjectTemplate> ot = funct->InstanceTemplate();
-	ot->SetInternalFieldCount(1); /* connection */
+	ot->SetInternalFieldCount(1);
 	v8::Handle<v8::ObjectTemplate> process = funct->PrototypeTemplate();
 
 	/* this module provides a set of (static) functions */

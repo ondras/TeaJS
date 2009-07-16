@@ -21,7 +21,7 @@ JS_METHOD(_process) {
 
 JS_METHOD(_system) {
 	if (args.Length() != 1) {
-		return JS_EXCEPTION("Wrong argument count. Use include(\"process\").system(\"command\")");
+		return JS_EXCEPTION("Wrong argument count. Use new Process().system(\"command\")");
 	}
 	
 	v8::String::Utf8Value cmd(args[0]);
@@ -35,7 +35,7 @@ JS_METHOD(_system) {
 
 JS_METHOD(_exec) {
 	if (args.Length() != 1) {
-		return JS_EXCEPTION("Wrong argument count. Use include(\"process\").exec(\"command\")");
+		return JS_EXCEPTION("Wrong argument count. Use new Process().exec(\"command\")");
 	}
 	
 	std::string data;

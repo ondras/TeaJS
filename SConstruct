@@ -92,12 +92,12 @@ if conf.CheckFunc("sleep"):
 # default values
 
 env.Append(
-	LIBS = ["v8"], 
-	CPPPATH = ["src"], 
-	CCFLAGS = ["-Wall", "-O3", "-m32"], 
+	LIBS = ["v8"],
+	CPPPATH = ["src"],
+	CCFLAGS = ["-Wall", "-O3"],
 	CPPDEFINES = [],
 	LIBPATH = "",
-	LINKFLAGS = ["-m32"]
+	LINKFLAGS = []
 )
 
 if env["os"] == "posix":
@@ -115,8 +115,8 @@ env = conf.Finish()
 
 env.Append(
 	CPPDEFINES = [
-		"CONFIG_PATH=" + env["config_file"], 
-		env["os"] 
+		"CONFIG_PATH=" + env["config_file"],
+		env["os"]
 	],
 	CPPPATH = env["v8_path"] + "/include",
 	LIBPATH = env["v8_path"]

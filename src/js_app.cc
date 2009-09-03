@@ -70,10 +70,17 @@ JS_METHOD(_onexit) {
 }
 
 /**
- * does not work atm.
+ * global.exit - terminate execution
  */
 JS_METHOD(_exit) {
-	v8::Context::GetCurrent()->Exit();
+	v8cgi_App * app = APP_PTR;
+	app->terminated = true;
+	v8::V8::TerminateExecution();
+	
+	/* do something at least a bit complex so the stack guard can throw the termination exception */
+	v8::Handle<v8::String> source = JS_STR("(function(){})()");
+	v8::Script::Compile(source)->Run();
+
 	return v8::Undefined();
 }
 
@@ -121,11 +128,7 @@ void v8cgi_App::prepare(char ** envp) {
 	g->Set(JS_STR("include"), v8::FunctionTemplate::New(_include)->GetFunction());
 	g->Set(JS_STR("require"), v8::FunctionTemplate::New(_require)->GetFunction());
 	g->Set(JS_STR("onexit"), v8::FunctionTemplate::New(_onexit)->GetFunction());
-/**
- * exit() function would be nice, but ATM there is no way to achieve this functionality in V8
- *
 	g->Set(JS_STR("exit"), v8::FunctionTemplate::New(_exit)->GetFunction());
- */
 	g->Set(JS_STR("global"), g);
 	g->Set(JS_STR("Config"), v8::Object::New());
 
@@ -189,6 +192,8 @@ int v8cgi_App::execute(bool change, char ** envp) {
 	 */
 	this->create_context();
 #endif
+
+	this->terminated = false;
 
 	try {
 		/* prepare JS environment: config, default libraries */
@@ -355,8 +360,9 @@ v8::Handle<v8::Value> v8cgi_App::load_js(std::string filename, v8::Handle<v8::Ob
 		throw this->format_exception(&tc);
 	} else {
 		v8::Handle<v8::Value> result = script->Run();
+		if (this->terminated) { return v8::Undefined(); }
 		if (tc.HasCaught()) { throw this->format_exception(&tc); }
-		
+
 		if (wrap) {
 			v8::Handle<v8::Function> fun = v8::Handle<v8::Function>::Cast(result);
 			v8::Handle<v8::Value> params[1] = {exports}; 

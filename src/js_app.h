@@ -25,6 +25,9 @@ public:
 	v8::Handle<v8::Object> include(std::string name);
 	v8::Handle<v8::Object> require(std::string name, bool wrap);
 	
+	/* termination mark. if present, termination exception is not handled */
+	bool terminated;
+
 	/* list of "onexit" functions */
 	funcvector onexit;
 

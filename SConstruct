@@ -28,6 +28,12 @@ if sys.platform.find("win") != -1 and sys.platform.find("darwin") == -1:
 	apr_include = "c:/"
 	config_path = "c:/v8cgi.conf"
 	os_string = "windows"
+if sys.platform.find("darwin") != -1:
+	mysql_include = "/opt/local/include/mysql5/mysql"
+	apache_include = "/opt/local/apache2/include"
+	apr_include = "/opt/local/include/apr-1"
+	config_path = "/etc/v8cgi.conf"
+	os_string = "darwin"
 else:
 	mysql_include = "/usr/include/mysql"
 	pgsql_include = "/usr/include/postgresql"
@@ -58,7 +64,7 @@ opts.Add(("apache_path", "Apache header path", apache_include))
 opts.Add(("apr_path", "APR header path", apr_include))
 
 opts.Add(PathOption("v8_path", "Directory with V8", "../v8"))
-opts.Add(EnumOption("os", "Operating system", os_string, allowed_values = ["windows", "posix"]))
+opts.Add(EnumOption("os", "Operating system", os_string, allowed_values = ["windows", "posix", "darwin"]))
 opts.Add(("config_file", "Config file", config_path))
 
 env = Environment(options=opts)

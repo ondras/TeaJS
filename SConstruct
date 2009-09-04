@@ -30,6 +30,7 @@ if sys.platform.find("win") != -1 and sys.platform.find("darwin") == -1:
 	os_string = "windows"
 if sys.platform.find("darwin") != -1:
 	mysql_include = "/opt/local/include/mysql5/mysql"
+	pgsql_include = "/opt/local/include/postgresql83"
 	apache_include = "/opt/local/apache2/include"
 	apr_include = "/opt/local/include/apr-1"
 	config_path = "/etc/v8cgi.conf"
@@ -180,16 +181,27 @@ if env["mysql"] == 1:
 			LIBS = ["wsock32", "user32", "advapi32"],
 			LINKFLAGS = ["/nodefaultlib:\"libcmtd\""]
 		)
+	if env["os"] == "darwin":
+		e.Append(
+			LIBPATH = ["/opt/local/lib/", "/opt/local/lib/mysql5/mysql"]
+		)
 	# if
 	e.Append(
 		CPPPATH = env["mysql_path"],
 		LIBS = "mysqlclient"
 	)
-	e.SharedLibrary(
-		target = "lib/mysql",
-		source = ["src/js_gc.cc", "src/lib/mysql/js_mysql.cc"],
-		SHLIBPREFIX=""
-	)
+	if env["os"] == "darwin":
+		e.SharedLibrary(
+			target = "lib/mysql.so",
+			source = ["src/js_gc.cc", "src/lib/mysql/js_mysql.cc"],
+			SHLIBPREFIX=""
+		)
+	else:
+		e.SharedLibrary(
+			target = "lib/mysql",
+			source = ["src/js_gc.cc", "src/lib/mysql/js_mysql.cc"],
+			SHLIBPREFIX=""
+		)
 # if
 
 if env["pgsql"] == 1:
@@ -198,11 +210,18 @@ if env["pgsql"] == 1:
 		CPPPATH = env["pgsql_path"],
 		LIBS = "pq"
 	)
-	e.SharedLibrary(
-		target = "lib/pgsql",
-		source = ["src/js_gc.cc", "src/lib/pgsql/js_pgsql.cc"],
-		SHLIBPREFIX=""
-	)
+	if env["os"] == "darwin":
+		e.SharedLibrary(
+			target = "lib/pgsql",
+			source = ["src/js_gc.cc", "src/lib/pgsql/js_pgsql.cc"],
+			SHLIBPREFIX=""
+		)
+	else:
+		e.SharedLibrary(
+			target = "lib/pgsql",
+			source = ["src/js_gc.cc", "src/lib/pgsql/js_pgsql.cc"],
+			SHLIBPREFIX=""
+		)
 # if
 
 if env["sqlite"] == 1:
@@ -223,11 +242,18 @@ if env["gd"] == 1:
 	e.Append(
 		LIBS = [libname]
 	)
-	e.SharedLibrary(
-		target = "lib/gd", 
-		source = ["src/js_common.cc", "src/lib/gd/js_gd.cc"],
-		SHLIBPREFIX=""
-	)
+	if env["os"] == "darwin":
+		e.SharedLibrary(
+			target = "lib/gd.so", 
+			source = ["src/js_common.cc", "src/lib/gd/js_gd.cc"],
+			SHLIBPREFIX=""
+		)
+	else:
+		e.SharedLibrary(
+			target = "lib/gd", 
+			source = ["src/js_common.cc", "src/lib/gd/js_gd.cc"],
+			SHLIBPREFIX=""
+		)
 # if
 
 if env["socket"] == 1:
@@ -253,6 +279,11 @@ if env["module"] == 1:
 	e.Append(
 		CPPPATH = [env["apache_path"], env["apr_path"]]
 	)
+	if env["os"] == "darwin":
+		e.Append(
+			LINKFLAGS = "-bundle_loader /opt/local/apache2/bin/httpd",
+			LIBS = ["apr-1", "aprutil-1"]
+		)
 	if env["os"] == "windows":
 		e.Append(
 			LIBS = ["libapr-1", "libhttpd"]
@@ -262,11 +293,18 @@ if env["module"] == 1:
 	s = []
 	s[:] = sources[:]
 	s.append("src/mod_v8cgi.cc")
-	e.SharedLibrary(
-		target = "mod_v8cgi", 
-		source = s,
-		SHLIBPREFIX=""
-	)
+	if env["os"] == "darwin":
+		e.LoadableModule(
+			target = "mod_v8cgi.so", 
+			source = s,
+			SHLIBPREFIX=""
+		)
+	else:
+		e.SharedLibrary(
+			target = "mod_v8cgi", 
+			source = s,
+			SHLIBPREFIX=""
+		)
 # if
 
 if env["cgi"] == 1:

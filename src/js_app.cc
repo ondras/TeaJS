@@ -349,24 +349,25 @@ v8::Handle<v8::Value> v8cgi_App::load_js(std::string filename, v8::Handle<v8::Ob
 	v8::HandleScope handle_scope;
 	v8::TryCatch tc;
 
-#ifdef REUSE_CONTEXT
 	v8::Handle<v8::Script> script = this->cache.getScript(filename, wrap);
-#else
-	std::string source = this->cache.getSource(filename, wrap);
-	v8::Handle<v8::Script> script = v8::Script::Compile(JS_STR(source.c_str()), JS_STR(filename.c_str()));
-#endif
 	
+	/* compilation error? */
 	if (tc.HasCaught()) {
 		throw this->format_exception(&tc);
 	} else {
+		/* run the script */
 		v8::Handle<v8::Value> result = script->Run();
+		/* exit() called */
 		if (this->terminated) { return v8::Undefined(); }
+		/* runtime error? */
 		if (tc.HasCaught()) { throw this->format_exception(&tc); }
 
+		/* unwrap exports, call the inner code */
 		if (wrap) {
 			v8::Handle<v8::Function> fun = v8::Handle<v8::Function>::Cast(result);
 			v8::Handle<v8::Value> params[1] = {exports}; 
 			result = fun->Call(JS_GLOBAL, 1, params);
+			/* runtime error in inner code */
 			if (tc.HasCaught()) { throw this->format_exception(&tc); }
 			return exports;
 		}

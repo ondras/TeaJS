@@ -51,9 +51,9 @@ JS_METHOD(_exec) {
 	pclose(stream);
 	
 	if(data.c_str() != NULL) {
-	return JS_STR(data.c_str());
+		return JS_STR(data.c_str());
 	} else {
-	return JS_NULL;
+		return JS_NULL;
 	}
 }
 

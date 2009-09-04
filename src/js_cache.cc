@@ -61,7 +61,6 @@ void Cache::erase(std::string filename) {
 		it3->second.Dispose();
 		scripts.erase(it3); 
 	}
-	
 }
 
 /**
@@ -163,7 +162,8 @@ v8::Handle<v8::Script> Cache::getScript(std::string filename, bool wrap) {
 		printf("cache miss\n"); 
 #endif	
 		std::string source = getSource(filename, wrap);
-		v8::Handle<v8::Script> script = v8::Script::Compile(JS_STR(source.c_str()), JS_STR(filename.c_str()));		
+		/* context-independent compiled script */
+		v8::Handle<v8::Script> script = v8::Script::New(JS_STR(source.c_str()), JS_STR(filename.c_str()));		
 		v8::Persistent<v8::Script> result = v8::Persistent<v8::Script>::New(script);
 		scripts[filename] = result;
 		return result;

@@ -15,6 +15,7 @@ sources = [ "src/%s" % s for s in sources ]
 
 config_path = ""
 mysql_include = ""
+pgsql_include = ""
 os_string = ""
 apache_include = ""
 apr_include = ""
@@ -22,12 +23,14 @@ apr_include = ""
 # platform-based default values
 if sys.platform.find("win") != -1 and sys.platform.find("darwin") == -1:
 	mysql_include = "c:/"
+	pgsql_include = "c:/"
 	apache_include = "c:/"
 	apr_include = "c:/"
 	config_path = "c:/v8cgi.conf"
 	os_string = "windows"
 else:
 	mysql_include = "/usr/include/mysql"
+	pgsql_include = "/usr/include/postgresql"
 	apache_include = "/usr/include/apache2"
 	apr_include = "/usr/include/apr-1.0"
 	config_path = "/etc/v8cgi.conf"
@@ -37,6 +40,7 @@ else:
 # command line options
 opts = Options()
 opts.Add(BoolOption("mysql", "MySQL library", 1))
+opts.Add(BoolOption("pgsql", "MySQL library", 1))
 opts.Add(BoolOption("gd", "GD library", 1))
 opts.Add(BoolOption("sqlite", "SQLite library", 1))
 opts.Add(BoolOption("socket", "Socket library", 1))
@@ -49,6 +53,7 @@ opts.Add(BoolOption("verbose", "Verbose debugging messages", 0))
 opts.Add(BoolOption("reuse_context", "Reuse context for multiple requests", 0))
 
 opts.Add(("mysql_path", "MySQL header path", mysql_include))
+opts.Add(("pgsql_path", "PostgreSQL header path", pgsql_include))
 opts.Add(("apache_path", "Apache header path", apache_include))
 opts.Add(("apr_path", "APR header path", apr_include))
 
@@ -175,8 +180,21 @@ if env["mysql"] == 1:
 		LIBS = "mysqlclient"
 	)
 	e.SharedLibrary(
-		target = "lib/mysql", 
+		target = "lib/mysql",
 		source = ["src/js_gc.cc", "src/lib/mysql/js_mysql.cc"],
+		SHLIBPREFIX=""
+	)
+# if
+
+if env["pgsql"] == 1:
+	e = env.Clone()
+	e.Append(
+		CPPPATH = env["pgsql_path"],
+		LIBS = "pq"
+	)
+	e.SharedLibrary(
+		target = "lib/pgsql",
+		source = ["src/js_gc.cc", "src/lib/pgsql/js_pgsql.cc"],
 		SHLIBPREFIX=""
 	)
 # if

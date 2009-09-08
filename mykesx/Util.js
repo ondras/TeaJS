@@ -1,6 +1,11 @@
 // Util.js
 
+// A rather random collection of useful functions.
+// Includes some PHP-like handy routines.
+// The date/time formatting routines are rather custom.  They work with unix timestamps.
+
 Util = {
+	// NOTE: This is ripped from Helma!
 	/**
 	 * creates a random string (numbers and chars)
 	 * @param len length of key
@@ -85,28 +90,12 @@ Util = {
 			return "Yesterday";
 		}
 		return date.format('MM/dd/yyyy');
-		//	var f = date.getMonth();
-		//	f = date.getDate();
-		//	f = date.getFullYear();
-		//	return (date.getMonth() + 1).format('##') + '/' + date.getDate().format('##') + '/' + date.getFullYear();
 	},
 
 	timeOnlyString:  function(timestamp) {
 		timestamp = parseInt(timestamp);
 		var date = new Date(timestamp * 1000);
 		return date.format('hh:mm:ss a');
-		//	var hour = date.getHours();
-		//	var ampm = 'AM';
-		//	if (hour > 11) {
-		//		ampm = 'PM';
-		//		if (hour > 12) {
-		//			hour -= 12;
-		//		}
-		//	}
-		//	hour = hour.format('##');
-		//	var minutes = date.getMinutes().format('##');
-		//	var seconds = date.getSeconds().format('##');
-		//	return hour +':' + minutes + ':' + seconds + ' ' + ampm;
 	},
 
 	dateString:  function(timestamp) {
@@ -122,180 +111,12 @@ Util = {
 			return "Yesterday " + date.format('hh:mm:ss a');
 		}
 		return date.format('MM/dd/yyyy hh:mm:ss a');
-		//	var hour = date.getHours();
-		//	var ampm = 'AM';
-		//	if (hour > 11) {
-		//		ampm = 'PM';
-		//		if (hour > 12) {
-		//			hour -= 12;
-		//		}
-		//	}
-		//	hour = hour.format('##');
-		//	var minutes = date.getMinutes().format('##');
-		//	return (date.getMonth()+1).format('##') + '/' + date.getDate().format('##') + '/' + date.getFullYear() + ' ' + hour + ':' + minutes + ' ' + ampm;
 	},
 
 	dateStringLocale:  function(timestamp) {
 		return new Date(timestamp * 1000).toLocaleString();
 	},
 
-	/*
-	//returns utf8 encoded charachter of a unicode value.
-	//code must be a number indicating the Unicode value.
-	//returned value is a string between 1 and 4 charachters.
-	ode2ut:fcode) {
-		if (code < 128) return chr(code);
-		if (code < 2048) return chr(192 + (code >> 6)) + chr(128 + (code & 63));
-		if (code < 65536) return chr(224 + (code >> 12)) + chr(128 + ((code >> 6) & 63)) + chr(128 + (code & 63));
-		if (code < 2097152) return chr(240 + (code >> 18)) + chr(128 + ((code >> 12) & 63)) + chr(128 + ((code >> 6) & 63)) + chr(128 + (code & 63));
-	}
-
-	//it is a private function for internal use in utf8Encode function 
-	//Encodes a unicode string to UTF8 format.
-	encodeUTF8:  function(str) {
-		function _utf8Encode(str) {
-			var utf8str = new Array();
-			for (var i = 0; i < str.length; i++) {
-				utf8str[i] = code2utf(str.charCodeAt(i));
-			}
-			return utf8str.join('');
-		}
-
-		var utf8str = new Array();
-		var pos, j = 0;
-		var tmpStr = '';
-
-		while ((pos = str.search(/[^\x00-\x7F]/)) != -1) {
-			tmpStr = str.match(/([^\x00-\x7F]+[\x00-\x7F]{0,10})+/)[0];
-			utf8str[j++] = str.substr(0, pos);
-			utf8str[j++] = _utf8Encode(tmpStr);
-			str = str.substr(pos + tmpStr.length);
-		}
-
-		utf8str[j++] = str;
-		return utf8str.join('');
-	}
-	*/
-
-	//it is a private function for internal use in utf8Decode function 
-	//Decodes a UTF8 formated string
-	decodeUTF8:  function(utf8str) {
-		//an alias of String.fromCharCode
-		function chr(code) {
-			return String.fromCharCode(code);
-		}
-		function _utf8Decode(utf8str) {
-			var str = new Array();
-			var code, code2, code3, code4, j = 0;
-			for (var i = 0; i < utf8str.length;) {
-				code = utf8str.charCodeAt(i++);
-				if (code > 127) code2 = utf8str.charCodeAt(i++);
-				if (code > 223) code3 = utf8str.charCodeAt(i++);
-				if (code > 239) code4 = utf8str.charCodeAt(i++);
-
-				if (code < 128) str[j++] = chr(code);
-				else if (code < 224) str[j++] = chr(((code - 192) << 6) + (code2 - 128));
-				else if (code < 240) str[j++] = chr(((code - 224) << 12) + ((code2 - 128) << 6) + (code3 - 128));
-				else str[j++] = chr(((code - 240) << 18) + ((code2 - 128) << 12) + ((code3 - 128) << 6) + (code4 - 128));
-			}
-			return str.join('');
-		}
-
-		var str = new Array();
-		var pos = 0;
-		var tmpStr = '';
-		var j = 0;
-		while ((pos = utf8str.search(/[^\x00-\x7F]/)) != -1) {
-			tmpStr = utf8str.match(/([^\x00-\x7F]+[\x00-\x7F]{0,10})+/)[0];
-			str[j++] = utf8str.substr(0, pos) + _utf8Decode(tmpStr);
-			utf8str = utf8str.substr(pos + tmpStr.length);
-		}
-
-		str[j++] = utf8str;
-		return str.join('');
-	},
-
-	/*
-	Util.encodeUTF8 = function(s) {
-		for (var c, i = -1,
-		l = (s = s.split("")).length, o = String.fromCharCode; ++i < l;
-		s[i] = (c = s[i].charCodeAt(0)) >= 127 ? o(0xc0 | (c >>> 6)) + o(0x80 | (c & 0x3f)) : s[i]);
-		return s.join("");
-	}
-	Util.decodeUTF8 = function(s) {
-		for (var a, b, i = -1,
-		l = (s = s.split("")).length, o = String.fromCharCode, c = "charCodeAt"; ++i < l; ((a = s[i][c](0)) & 0x80) && (s[i] = (a & 0xfc) == 0xc0 && ((b = s[i + 1][c](0)) & 0xc0) == 0x80 ? o(((a & 0x03) << 6) + (b & 0x3f)) : o(128), s[++i] = ""));
-		return s.join("");
-	}
-	*/
-
-
-	encodeUTF8:  function(string) {
-		string = string.replace(/rn/g, "\n");
-		var utftext = "";
-
-		for (var n = 0; n < string.length; n++) {
-			var c = string.charCodeAt(n);
-			if (c < 128) {
-				utftext += String.fromCharCode(c);
-			}
-			else if ((c > 127) && (c < 2048)) {
-				utftext += String.fromCharCode((c >> 6) | 192);
-				utftext += String.fromCharCode((c & 63) | 128);
-			}
-			else {
-				utftext += String.fromCharCode((c >> 12) | 224);
-				utftext += String.fromCharCode(((c >> 6) & 63) | 128);
-				utftext += String.fromCharCode((c & 63) | 128);
-			}
-		}
-		return utftext;
-	},
-
-	/*
-	decodeUTF8:  function(utftext) {
-		var string = "";
-		if (utftext) {
-		var i = 0;
-		var c = c1 = c2 = 0;
-
-		while (i < utftext.length) {
-			c = utftext.charCodeAt(i);
-			if (c < 128) {
-				string += String.fromCharCode(c);
-				i++;
-			}
-			else if ((c > 191) && (c < 224)) {
-				c2 = utftext.charCodeAt(i + 1);
-				string += String.fromCharCode(((c & 31) << 6) | (c2 & 63));
-				i += 2;
-			}
-			else {
-				c2 = utftext.charCodeAt(i + 1);
-				c3 = utftext.charCodeAt(i + 2);
-				string += String.fromCharCode(((c & 15) << 12) | ((c2 & 63) << 6) | (c3 & 63));
-				i += 3;
-			}
-		}
-		}
-		return string;
-	}
-	*/
-
-	/*
-	decodeUTF8:  function(s) {
-		var buffer = new java.lang.String((new java.lang.String(s)).getBytes("ISO-8859-1"), "UTF-8");
-	//	var buffer = new java.lang.String((new java.lang.String(s)).getBytes("UTF-8"), "Latin1");
-		return String(buffer);
-		return s;
-		var buffer = new java.lang.String(s);
-		return s;
-	//	return buffer;
-		return new java.lang.String(buffer.getBytes("UTF-8"));
-	}
-	*/
-
-	// http://sportstwo.com/forums/images/buttons/Generic/viewpost.gif 
 	parseBBCode:  function(text) {
 		text = text.replace(/\</igm, '&lt;');
 		text = text.replace(/\r/gm, '');

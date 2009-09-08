@@ -1,9 +1,13 @@
+// Json utility class.
+// This class contains routines for encoding and decoding Json,
+// as well as formulating ExtJS style Json responses.
+
 var Json = {
 	encode: function(obj) {
-		return JSON.stringify(obj);
+		return JSON.stringify(obj);	// native v8 version
 	},
 	decode: function(s) {
-		return JSON.parse(s);
+		return JSON.parse(s);		// native v8 version
 	},
 	success: function(obj) {
 		obj = obj || {};

@@ -1,3 +1,9 @@
+// This is an application configuration file.
+// Ideally, there is one of these per virtual host in apache!
+// This file would be outside the document root so it can't be
+// served!  It contains MySQL username/passwords and that sort
+// of thing.
+
 AppConfig = {
 	dbRead: {
 		host: 'localhost',

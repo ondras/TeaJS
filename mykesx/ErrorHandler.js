@@ -1,3 +1,22 @@
+//
+// This function takes an exception object and formats it
+// for display on the screen.
+//
+// To use it, you put code like this in your executable .sjs files:
+/*
+try {
+    // the typical body of whatever the script should do to generate a page...
+	foo(); // no such function!
+}
+catch (e) {
+	errorHandler(e);
+}
+*/
+
+// NOTE: the try/catch should ideally be automatically added by mod_v8 and
+// this would be the default errorHandler.  I see it as something like onexit(),
+// where applications can override it with their own handlers.
+
 errorHandler = function(e) {
 	response.status(500);
 	ob_end_clean();
@@ -11,9 +30,7 @@ errorHandler = function(e) {
 	dump(e);
 	println("<h2>Server Environment:</h2>");
 	dump(system.env);
-	
-	println(JSON.stringify(e));
 	exit();
 };
 
-//exports.errorHandler = errorHandler;
+exports.errorHandler = errorHandler;

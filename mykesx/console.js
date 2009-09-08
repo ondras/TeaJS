@@ -1,3 +1,8 @@
+// mimicks console object in firefox/firebug.
+// useful for server-side script debugging.
+// output is written to a file, specified in AppConfig class.
+// typically, I'd tail -f on the output file to see the messages as they occur
+
 console = {
 	log: function(s) {
 		if (AppConfig.consoleFile) {

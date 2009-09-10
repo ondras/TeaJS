@@ -221,19 +221,34 @@ int v8cgi_App::execute(bool change, char ** envp) {
 	this->setup_args();
 	
 	/* setup builtin request and response, if running as CGI */
-	this->http(); 
-
-	try {
-		/* do not wrap main file */
-		this->require(this->mainfile, false); 
-	} catch (std::string e) {
-		/**
-		 * FIXME: mainfile errors should be configurable - display/log
-		 */
-		this->error(e.c_str(), __FILE__, __LINE__);
-//		this->js_error(e.c_str()); /* error when executing main file -> goes to ??? */
-		this->finish();
-		return 1;
+	if (this->http()) {
+	 try {
+	  v8::String::Utf8Value name(JS_STR("requestHandler.js"));
+	  std::string filename = *name;
+	  this->include(filename);
+	 } catch (std::string e) {
+		 /**
+		  * FIXME: mainfile errors should be configurable - display/log
+		  */
+		 this->error(e.c_str(), __FILE__, __LINE__);
+ //		this->js_error(e.c_str()); /* error when executing main file -> goes to ??? */
+		 this->finish();
+		 return 1;
+	 }
+	}
+	else {
+	 try {
+		 /* do not wrap main file */
+		 this->require(this->mainfile, false); 
+	 } catch (std::string e) {
+		 /**
+		  * FIXME: mainfile errors should be configurable - display/log
+		  */
+		 this->error(e.c_str(), __FILE__, __LINE__);
+ //		this->js_error(e.c_str()); /* error when executing main file -> goes to ??? */
+		 this->finish();
+		 return 1;
+	 }
 	}
 	
 	this->finish();
@@ -481,11 +496,11 @@ std::string v8cgi_App::findname(std::string name, bool forceLocal) {
 /**
  * Create global.response and global.request
  */
-void v8cgi_App::http() {
+bool v8cgi_App::http() {
 	v8::Handle<v8::Object> sys = JS_GLOBAL->Get(JS_STR("system"))->ToObject();
 	v8::Handle<v8::Value> env = sys->ToObject()->Get(JS_STR("env"));
 	v8::Handle<v8::Value> ss = env->ToObject()->Get(JS_STR("SERVER_SOFTWARE"));
-	if (!ss->IsString()) { return; }
+	if (!ss->IsString()) { return false; }
 	v8::Handle<v8::Object> http = JS_GLOBAL->Get(JS_STR("HTTP"))->ToObject();
 	v8::Handle<v8::Value> req = http->Get(JS_STR("ServerRequest"));
 	v8::Handle<v8::Value> res = http->Get(JS_STR("ServerResponse"));
@@ -502,6 +517,7 @@ void v8cgi_App::http() {
 
 	JS_GLOBAL->Set(JS_STR("response"), resf->NewInstance(1, resargs));
 	JS_GLOBAL->Set(JS_STR("request"), reqf->NewInstance(2, reqargs));
+	return true;
 }
 
 /**

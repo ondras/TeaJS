@@ -65,7 +65,7 @@ private:
 	void prepare(char ** envp);
 	void findmain();
 	void finish();
-	void http();
+	bool http();
 	void js_error(std::string message);
 	void autoload();
 	void clear_global();

@@ -5,7 +5,7 @@
 
 console = {
 	log: function(s) {
-		if (AppConfig.consoleFile) {
+		if (AppConfig && AppConfig.consoleFile) {
 			var f = new File(AppConfig.consoleFile);
 			if (f.open('a')) {
 				f.write(s + '\n');

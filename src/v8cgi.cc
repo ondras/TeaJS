@@ -18,7 +18,7 @@
 	
 	void handle_sigterm(int param) {
 		exit_requested = true;
-	}
+ 	}
 
 	void handle_sigusr1(int param) {
 		exit_requested = true;

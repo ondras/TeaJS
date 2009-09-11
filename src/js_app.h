@@ -74,6 +74,7 @@ private:
 	std::string findname(std::string name, bool forceLocal);
 	v8::Handle<v8::Value> load_js(std::string filename, v8::Handle<v8::Object> exports, bool wrap);
 	v8::Handle<v8::Value> load_dso(std::string filename, v8::Handle<v8::Object> exports);
+	v8::Handle<v8::Value> get_config(std::string name);
 };
 
 #endif

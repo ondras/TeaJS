@@ -47,9 +47,6 @@ void Cache::mark(std::string filename) {
  * Remove file from all available caches
  */
 void Cache::erase(std::string filename) {
-	SourceValue::iterator it1 = sources.find(filename);
-	if (it1 != sources.end()) { sources.erase(it1); }
-
 	HandleValue::iterator it2 = handles.find(filename);
 	if (it2 != handles.end()) { 
 		dlclose(it2->second);
@@ -67,51 +64,35 @@ void Cache::erase(std::string filename) {
  * Return source code for a given file
  */
 std::string Cache::getSource(std::string filename, bool wrap) {
-#ifdef VERBOSE
-	printf("[getSource] cache try for '%s' .. ", filename.c_str()); 
-#endif	
-	if (isCached(filename)) {
-#ifdef VERBOSE
-		printf("cache hit\n"); 
-#endif	
-		SourceValue::iterator it = sources.find(filename);
-		return it->second;
-	} else {
-#ifdef VERBOSE
-		printf("cache miss\n"); 
-#endif	
-		FILE * file = fopen(filename.c_str(), "rb");
-		if (file == NULL) { 
-			std::string s = "Error reading '";
-			s += filename;
-			s += "'";
-			throw s; 
-		}
-		
-		mark(filename); /* mark as cached */
-		fseek(file, 0, SEEK_END);
-		size_t size = ftell(file);
-		rewind(file);
-		char* chars = new char[size + 1];
-		chars[size] = '\0';
-		for (unsigned int i = 0; i < size;) {
-			size_t read = fread(&chars[i], 1, size - i, file);
-			i += read;
-		}
-		fclose(file);
-		std::string source = chars;
-		delete[] chars;
-
-		/* remove shebang line */
-		if (source.find('#',0) == 0 && source.find('!',1) == 1 ) {
-			unsigned int pfix = source.find('\n',0);
-			source.erase(0,pfix);
-		};
-		
-		if (wrap) { source = wrapExports(source); }
-		sources[filename] = source;
-		return source;
+	FILE * file = fopen(filename.c_str(), "rb");
+	if (file == NULL) { 
+		std::string s = "Error reading '";
+		s += filename;
+		s += "'";
+		throw s; 
 	}
+	
+	fseek(file, 0, SEEK_END);
+	size_t size = ftell(file);
+	rewind(file);
+	char* chars = new char[size + 1];
+	chars[size] = '\0';
+	for (unsigned int i = 0; i < size;) {
+		size_t read = fread(&chars[i], 1, size - i, file);
+		i += read;
+	}
+	fclose(file);
+	std::string source = chars;
+	delete[] chars;
+
+	/* remove shebang line */
+	if (source.find('#',0) == 0 && source.find('!',1) == 1 ) {
+		unsigned int pfix = source.find('\n',0);
+		source.erase(0,pfix);
+	};
+	
+	if (wrap) { source = wrapExports(source); }
+	return source;
 }
 
 /**
@@ -153,20 +134,24 @@ v8::Handle<v8::Script> Cache::getScript(std::string filename, bool wrap) {
 #endif	
 	if (isCached(filename)) {
 #ifdef VERBOSE
-		printf("cache hit\n"); 
+		printf("[getScript] cache hit\n"); 
 #endif	
 		ScriptValue::iterator it = scripts.find(filename);
 		return it->second;
 	} else {
 #ifdef VERBOSE
-		printf("cache miss\n"); 
+		printf("[getScript] cache miss\n"); 
 #endif	
 		std::string source = getSource(filename, wrap);
 		/* context-independent compiled script */
 		v8::Handle<v8::Script> script = v8::Script::New(JS_STR(source.c_str()), JS_STR(filename.c_str()));		
-		v8::Persistent<v8::Script> result = v8::Persistent<v8::Script>::New(script);
-		scripts[filename] = result;
-		return result;
+		if (!script.IsEmpty()) {
+			mark(filename); /* mark as cached */
+			v8::Persistent<v8::Script> result = v8::Persistent<v8::Script>::New(script);
+			scripts[filename] = result;
+			return result;
+		}
+		return script;
 	}
 }
 

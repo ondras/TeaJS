@@ -24,3 +24,9 @@ Config["smtpPort"] = 25;
 
 // default From: header
 Config["smtpFrom"] = "";
+
+// explicit HTTP request handler
+Config["httpHandler"] = null;
+
+// Uncaught exceptions go to stdout (true) or stderr (false)
+Config["showErrors"] = false;

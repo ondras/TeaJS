@@ -161,7 +161,7 @@ void v8cgi_App::setup_args() {
 void v8cgi_App::autoload() {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::Value> config = JS_GLOBAL->Get(JS_STR("Config"));
-	v8::Handle<v8::Array> list = v8::Handle<v8::Array>::Cast(config->ToObject()->Get(JS_STR("libraryAutoload")));
+	v8::Handle<v8::Array> list = v8::Handle<v8::Array>::Cast(this->get_config("libraryAutoload"));
 	int cnt = list->Length();
 	v8::Handle<v8::Value> dummy;
 	
@@ -222,33 +222,27 @@ int v8cgi_App::execute(bool change, char ** envp) {
 	
 	/* setup builtin request and response, if running as CGI */
 	if (this->http()) {
-	 try {
-	  v8::String::Utf8Value name(JS_STR("requestHandler.js"));
-	  std::string filename = *name;
-	  this->include(filename);
-	 } catch (std::string e) {
-		 /**
-		  * FIXME: mainfile errors should be configurable - display/log
-		  */
-		 this->error(e.c_str(), __FILE__, __LINE__);
- //		this->js_error(e.c_str()); /* error when executing main file -> goes to ??? */
-		 this->finish();
-		 return 1;
-	 }
+		/* do we have a forced http handler? */
+		v8::Handle<v8::Value> handler = this->get_config("httpHandler");
+		if (handler->ToBoolean()->IsTrue()) {
+			v8::String::Utf8Value name(handler);
+			this->mainfile = *name;
+		}
 	}
-	else {
-	 try {
-		 /* do not wrap main file */
-		 this->require(this->mainfile, false); 
-	 } catch (std::string e) {
-		 /**
-		  * FIXME: mainfile errors should be configurable - display/log
-		  */
-		 this->error(e.c_str(), __FILE__, __LINE__);
- //		this->js_error(e.c_str()); /* error when executing main file -> goes to ??? */
-		 this->finish();
-		 return 1;
-	 }
+
+	try {
+		/* do not wrap main file */
+		this->require(this->mainfile, false); 
+	} catch (std::string e) {
+		/* error when executing main file */
+		v8::Handle<v8::Value> show = this->get_config("showErrors");
+		if (show->ToBoolean()->IsTrue()) {
+			this->js_error(e.c_str()); 
+		} else {
+			this->error(e.c_str(), __FILE__, __LINE__);
+		}
+		this->finish();
+		return 1;
 	}
 	
 	this->finish();
@@ -326,6 +320,7 @@ v8::Handle<v8::Object> v8cgi_App::require(std::string name, bool wrap) {
 	v8::Handle<v8::Object> exports = this->cache.getExports(filename);
 	if (!exports.IsEmpty()) { return exports; }
 	
+	
 	/* add new blank exports to cache */
 	exports = v8::Object::New();
 	this->cache.addExports(filename, exports);
@@ -363,7 +358,7 @@ v8::Handle<v8::Object> v8cgi_App::require(std::string name, bool wrap) {
 v8::Handle<v8::Value> v8cgi_App::load_js(std::string filename, v8::Handle<v8::Object> exports, bool wrap) {
 	v8::HandleScope handle_scope;
 	v8::TryCatch tc;
-
+	
 	v8::Handle<v8::Script> script = this->cache.getScript(filename, wrap);
 	
 	/* compilation error? */
@@ -452,8 +447,7 @@ std::string v8cgi_App::findname(std::string name, bool forceLocal) {
 	const char * suffixes[] = {"js", "so", "dll"};
 	
 	/* try to fetch the Config.libraryPath option */
-	v8::Handle<v8::Value> config = JS_GLOBAL->Get(JS_STR("Config"));
-	v8::Handle<v8::Value> prefix = config->ToObject()->Get(JS_STR("libraryPath"));
+	v8::Handle<v8::Value> prefix = this->get_config("libraryPath");
 	v8::String::Utf8Value pfx(prefix);
 
 	std::string fullPath = "";
@@ -462,7 +456,6 @@ std::string v8cgi_App::findname(std::string name, bool forceLocal) {
 	if (path_isabsolute(name)) { 
 		fullPath = name;
 	} else { 
-		
 		if (!forceLocal && name.at(0) != '.') {
 			/* "global" module */
 			fullPath = std::string(*pfx);
@@ -671,6 +664,14 @@ void v8cgi_App::clear_global() {
 		v8::Handle<v8::String> key = keys->Get(JS_INT(i))->ToString();
 		JS_GLOBAL->Delete(key);
 	}
+}
+
+/**
+ * Retrieve a configuration value
+ */
+v8::Handle<v8::Value> v8cgi_App::get_config(std::string name) {
+	v8::Handle<v8::Value> config = JS_GLOBAL->Get(JS_STR("Config"));
+	return config->ToObject()->Get(JS_STR(name.c_str()));
 }
 
 /**

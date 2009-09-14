@@ -28,6 +28,7 @@ if sys.platform.find("win") != -1 and sys.platform.find("darwin") == -1:
 	apr_include = "c:/"
 	config_path = "c:/v8cgi.conf"
 	os_string = "windows"
+	xercesc_include = "c:/"
 if sys.platform.find("darwin") != -1:
 	mysql_include = "/opt/local/include/mysql5/mysql"
 	pgsql_include = "/opt/local/include/postgresql83"
@@ -35,6 +36,7 @@ if sys.platform.find("darwin") != -1:
 	apr_include = "/opt/local/include/apr-1"
 	config_path = "/etc/v8cgi.conf"
 	os_string = "darwin"
+	xercesc_include = "/opt/local/include/xercesc3"
 else:
 	mysql_include = "/usr/include/mysql"
 	pgsql_include = "/usr/include/postgresql"
@@ -42,12 +44,13 @@ else:
 	apr_include = "/usr/include/apr-1.0"
 	config_path = "/etc/v8cgi.conf"
 	os_string = "posix"
+	xercesc_include = "/usr/include/xercesc"
 # endif 
 
 # command line options
 opts = Options()
 opts.Add(BoolOption("mysql", "MySQL library", 1))
-opts.Add(BoolOption("pgsql", "MySQL library", 1))
+opts.Add(BoolOption("pgsql", "PostgreSQL library", 1))
 opts.Add(BoolOption("gd", "GD library", 1))
 opts.Add(BoolOption("sqlite", "SQLite library", 1))
 opts.Add(BoolOption("socket", "Socket library", 1))
@@ -58,11 +61,13 @@ opts.Add(BoolOption("fcgi", "FastCGI support (for CGI binary)", 0))
 opts.Add(BoolOption("debug", "Debugging support", 0))
 opts.Add(BoolOption("verbose", "Verbose debugging messages", 0))
 opts.Add(BoolOption("reuse_context", "Reuse context for multiple requests", 0))
+opts.Add(BoolOption("dom", "DOM Level 3 library (for XML/XHTML)", 1))
 
 opts.Add(("mysql_path", "MySQL header path", mysql_include))
 opts.Add(("pgsql_path", "PostgreSQL header path", pgsql_include))
 opts.Add(("apache_path", "Apache header path", apache_include))
 opts.Add(("apr_path", "APR header path", apr_include))
+opts.Add(("xercesc_path", "Xerces-C++ header path", xercesc_include))
 
 opts.Add(PathOption("v8_path", "Directory with V8", "../v8"))
 opts.Add(EnumOption("os", "Operating system", os_string, allowed_values = ["windows", "posix", "darwin"]))
@@ -313,4 +318,24 @@ if env["cgi"] == 1:
 		source = sources, 
 		target = "v8cgi"
 	)
+# if
+
+if env["dom"] == 1:
+	e = env.Clone()
+	e.Append(
+		CPPPATH = env["xercesc_path"],
+		LIBS = "xerces-c"
+	)
+	if env["os"] == "darwin":
+		e.SharedLibrary(
+			target = "lib/dom",
+			source = ["src/js_gc.cc", "src/lib/dom/js_dom.cc"],
+			SHLIBPREFIX=""
+		)
+	else:
+		e.SharedLibrary(
+			target = "lib/dom",
+			source = ["src/js_gc.cc", "src/lib/dom/js_dom.cc"],
+			SHLIBPREFIX=""
+		)
 # if

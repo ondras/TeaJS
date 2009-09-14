@@ -2,28 +2,28 @@ see http://code.google.com/p/v8cgi/wiki/Installation
 
 For Ubuntu Jaunty:
 
-NOTE: replace ~/src with path to where you checkout and build v8 and v8cgi!
+NOTE: replace ~/src with the path where you checkout and build v8 and v8cgi!
 
 NOTE: If you don't like to use vi to edit files, use gedit instead.
 
 ---------------------------------------------------------------------------
 
-- prerequisites:
-sudo apt-get install mysqlclient15-dev libgd2-xpm-dev apache-threaded-dev
+- prerequisites (for compiling all optional components):
+sudo apt-get install mysqlclient15-dev libsqlite3-dev libpq-dev libgd2-xpm-dev apache-threaded-dev libxerces-c-dev	## NOTE: if DOM support is not required, then the libxerces-c-dev package can be omitted
 
 
 - build (replace ~/src with path to where you compile these):
 mkdir ~/src
 cd ~/src
-svn checkout v8 (see actual command at google code)
-svn checkout v8cgi (see actual command at google code)
+svn checkout http://v8.googlecode.com/svn/trunk/ v8  ## (check for updated instructions at google code: http://code.google.com/p/v8/source/checkout)
+svn checkout http://v8cgi.googlecode.com/svn/trunk/ v8cgi  ## (check for updated instructions at google code: http://code.google.com/p/v8cgi/source/checkout)
 chdir v8
 scons arch=x64 library=shared
-	OR if not x64 OS:
+##	OR if not using an x64 OS:
 scons library=shared
-sudo libv8.so /usr/lib/libv8.so
+sudo cp libv8.so /usr/lib/libv8.so
 cd ../v8cgi
-scons module=1 gd=1 mysql=1
+scons module=1 gd=1 mysql=1 pgsql=1 sqlite=1 dom=1
 sudo cp v8cgi.config.posix /etc/v8cgi.config
 
 
@@ -32,14 +32,14 @@ sudo vi /etc/v8cgi.config
 Config["libraryPath"] = '~/src/v8cgi/lib';
 
 
-- configure apache module:
+- configure the apache module:
 sudo vi /etc/apache2/mods-available/v8cgi.load
 * The only line in the file should be:
 LoadModule v8cgi_module ~/src/v8cgi/mod_v8cgi.so
 --
 sudo vi /etc/apache2/mods-available/v8cgi.conf
 * The only line in the file should be:
-AddHandler v8cgi-script .sjs .jst
+AddHandler v8cgi-script .sjs .ssjs .jst
 
 
 - enable the mod:

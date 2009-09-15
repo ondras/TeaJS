@@ -39,7 +39,7 @@ if sys.platform.find("darwin") != -1:
 	xercesc_include = "/opt/local/include/xercesc3"
 else:
 	mysql_include = "/usr/include/mysql"
-	pgsql_include = "/usr/include/postgresql"
+	pgsql_include = "`/usr/bin/pg_config --includedir`"
 	apache_include = "/usr/include/apache2"
 	apr_include = "/usr/include/apr-1.0"
 	config_path = "/etc/v8cgi.conf"

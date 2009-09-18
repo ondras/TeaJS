@@ -20,6 +20,7 @@ os_string = ""
 apache_include = ""
 apr_include = ""
 
+
 # platform-based default values
 if sys.platform.find("win") != -1 and sys.platform.find("darwin") == -1:
 	mysql_include = "c:/"
@@ -29,7 +30,7 @@ if sys.platform.find("win") != -1 and sys.platform.find("darwin") == -1:
 	config_path = "c:/v8cgi.conf"
 	os_string = "windows"
 	xercesc_include = "c:/"
-if sys.platform.find("darwin") != -1:
+elif sys.platform.find("darwin") != -1:
 	mysql_include = "/opt/local/include/mysql5/mysql"
 	pgsql_include = "/opt/local/include/postgresql83"
 	apache_include = "/opt/local/apache2/include"

@@ -8,20 +8,20 @@
 var assert = require("assert");
 
 exports.testFile = function() {
-	var n1 = "testfile_"+Math.random();
-	var n2 = "testfile_"+Math.random();
+	var n1 = "n1_testfile_"+Math.random();
+	var n2 = "n2_testfile_"+Math.random();
 	
 	var f = new File(n1);
 	assert.assertEquals("non-existing file", false, f.exists());
 
-	f.open("w").write("abc").write([10,11,12]).close();
+	f.open("wb").write("abc").write([10,11,12]).close();
 	assert.assertEquals("existing file", true, f.exists());
 	assert.assertEquals("isFile", true, f.isFile());
 	
 	var stat = f.stat();
 	assert.assertEquals("file size", 6, stat.size);
 	
-	f.open("r");
+	f.open("rb");
 	var data = f.read(3);
 	assert.assertEquals("text read", "abc", data);
 	var data = f.read(false, true);
@@ -32,13 +32,13 @@ exports.testFile = function() {
 	f.move(n2);
 	assert.assertEquals("move exists target", true, f.exists());
 	assert.assertEquals("move removes source", false, old.exists());
-	
+
 	var n = f.copy(n1);
 	assert.assertEquals("copy exists target", true, n.exists());
 	assert.assertEquals("copy exists source", true, f.exists());
-	
-	f.remove();
+
 	n.remove();
+	f.remove();
 	assert.assertEquals("deleted file #1", false, f.exists());
 	assert.assertEquals("deleted file #2", false, n.exists());
 }

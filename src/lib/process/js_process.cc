@@ -7,8 +7,11 @@
 #include "js_macros.h"
 #include "js_common.h"
 #include <stdlib.h>
-#ifndef _JS_NULL
-#define JS_NULL v8::Null()
+
+// popen(), pclose
+#ifndef HAVE_POPEN
+#	define popen(name, mode) _popen(name, mode)
+#	define pclose(file) _pclose(file)
 #endif
 
 namespace {
@@ -40,7 +43,7 @@ JS_METHOD(_exec) {
 	
 	std::string data;
 	FILE *stream;
-	int MAX_BUFFER = 256;
+	const int MAX_BUFFER = 256;
 	char buffer[MAX_BUFFER];
 
 	v8::String::Utf8Value cmd(args[0]);

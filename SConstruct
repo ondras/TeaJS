@@ -107,6 +107,9 @@ if conf.CheckFunc("getcwd"):
 if conf.CheckFunc("sleep"):
 	env.Append(CPPDEFINES = ["HAVE_SLEEP"])
 
+if conf.CheckFunc("popen"):
+	env.Append(CPPDEFINES = ["HAVE_POPEN"])
+
 # default values
 
 env.Append(

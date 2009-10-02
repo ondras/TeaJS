@@ -157,7 +157,7 @@ if env["os"] == "posix":
 
 if env["os"] == "darwin":
 	env.Append(
-		LINKFLAGS = ["-undefined dynamic_lookup"]
+		SHLINKFLAGS = "-undefined dynamic_lookup"
 	)
 # if
 

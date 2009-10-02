@@ -155,6 +155,12 @@ if env["os"] == "posix":
 	env.Append(LIBS = ["dl"])
 # if
 
+if env["os"] == "darwin":
+	env.Append(
+		LINKFLAGS = ["-undefined dynamic_lookup"]
+	)
+# if
+
 if env["os"] == "windows":
 	env.Append(
 		LIBS = ["ws2_32"],

@@ -127,13 +127,6 @@ if env["os"] == "posix":
 	)
 # if
 
-if ((env["os"] != "windows") and not (conf.CheckLib("v8"))):
-	print("Cannot find V8 library!")
-	sys.exit(1)
-# if
-
-env = conf.Finish()
-
 env.Append(
 	CPPDEFINES = [
 		"CONFIG_PATH=" + env["config_file"],
@@ -142,6 +135,13 @@ env.Append(
 	CPPPATH = env["v8_path"] + "/include",
 	LIBPATH = env["v8_path"]
 )
+
+if ((env["os"] != "windows") and not (conf.CheckLib("v8"))):
+	print("Cannot find V8 library!")
+	sys.exit(1)
+# if
+
+env = conf.Finish()
 
 if env["fcgi"] == 1:
 	env.Append(

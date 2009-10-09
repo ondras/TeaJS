@@ -30,6 +30,7 @@ if sys.platform.find("win") != -1 and sys.platform.find("darwin") == -1:
 	config_path = "c:/v8cgi.conf"
 	os_string = "windows"
 	xercesc_include = "c:/"
+	gl_include = "c:/"
 elif sys.platform.find("darwin") != -1:
 	mysql_include = "/opt/local/include/mysql5/mysql"
 	pgsql_include = "/opt/local/include/postgresql83"
@@ -38,6 +39,7 @@ elif sys.platform.find("darwin") != -1:
 	config_path = "/etc/v8cgi.conf"
 	os_string = "darwin"
 	xercesc_include = "/opt/local/include/xercesc3"
+	gl_include = "/opt/local/include/GL"
 else:
 	mysql_include = "/usr/include/mysql"
 	pgsql_include = "`/usr/bin/pg_config --includedir`"
@@ -46,6 +48,7 @@ else:
 	config_path = "/etc/v8cgi.conf"
 	os_string = "posix"
 	xercesc_include = "/usr/include/xercesc"
+	gl_include = "/usr/include/GL"
 # endif 
 
 # command line options
@@ -63,12 +66,14 @@ opts.Add(BoolOption("debug", "Debugging support", 0))
 opts.Add(BoolOption("verbose", "Verbose debugging messages", 0))
 opts.Add(BoolOption("reuse_context", "Reuse context for multiple requests", 0))
 opts.Add(BoolOption("dom", "DOM Level 3 library (for XML/XHTML)", 1))
+opts.Add(BoolOption("gl", "OpenGL library", 1))
 
 opts.Add(("mysql_path", "MySQL header path", mysql_include))
 opts.Add(("pgsql_path", "PostgreSQL header path", pgsql_include))
 opts.Add(("apache_path", "Apache header path", apache_include))
 opts.Add(("apr_path", "APR header path", apr_include))
 opts.Add(("xercesc_path", "Xerces-C++ header path", xercesc_include))
+opts.Add(("gl_path", "OpenGL header path", gl_include))
 
 opts.Add(PathOption("v8_path", "Directory with V8", "../v8"))
 opts.Add(EnumOption("os", "Operating system", os_string, allowed_values = ["windows", "posix", "darwin"]))
@@ -346,6 +351,25 @@ if env["dom"] == 1:
 		e.SharedLibrary(
 			target = "lib/dom",
 			source = ["src/js_gc.cc", "src/lib/dom/js_dom.cc"],
+			SHLIBPREFIX=""
+		)
+# if
+
+if env["gl"] == 1:
+	e = env.Clone()
+	e.Append(
+		LIBS = ["glut", "GLU", "GL", "GLEW"]
+	)
+	if env["os"] == "darwin":
+		e.SharedLibrary(
+			target = "lib/GL.so",
+			source = ["src/js_gc.cc", "src/lib/GL/js_GL.cc", "src/lib/GL/glbindings/glbind.cpp", "src/lib/GL/glesbindings/glesbind.cpp", "src/lib/GL/glubindings/glubind.cpp", "src/lib/GL/glutbindings/glutbind.cpp"],
+			SHLIBPREFIX=""
+		)
+	else:
+		e.SharedLibrary(
+			target = "lib/GL",
+			source = ["src/js_gc.cc", "src/lib/GL/js_GL.cc", "src/lib/GL/glbindings/glbind.cpp", "src/lib/GL/glesbindings/glesbind.cpp", "src/lib/GL/glubindings/glubind.cpp", "src/lib/GL/glutbindings/glutbind.cpp"],
 			SHLIBPREFIX=""
 		)
 # if

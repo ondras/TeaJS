@@ -166,11 +166,12 @@ static int mod_v8cgi_handler(request_rec *r) {
 	}
 	free(envp);
 	
-	if (result) {
-		return HTTP_INTERNAL_SERVER_ERROR;
-	} else {
+//  Ok is safer, because HTTP_INTERNAL_SERVER_ERROR overwrites any content already generated
+//	if (result) {
+//		return HTTP_INTERNAL_SERVER_ERROR;
+//	} else {
 		return OK;
-	}
+//	}
 }
 
 /**

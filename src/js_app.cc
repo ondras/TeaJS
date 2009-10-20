@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <v8.h>
+#include <v8-debug.h>
 
 #ifdef FASTCGI
 #  include <fcgi_stdio.h>
@@ -93,7 +94,7 @@ JS_METHOD(_exit) {
  * any arguments after the v8_args but before the program_file are
  * used by v8cgi.
  */
-static const char * v8cgi_usage = "v8cgi [v8_args --] [-c path] program_file [argument ...]";
+static const char * v8cgi_usage = "v8cgi [v8_args --] [-c path] [-d port] program_file [argument ...]";
 
 /**
  * To be executed only once - process command line arguments, set config file name
@@ -535,73 +536,92 @@ void v8cgi_App::findmain() {
 
 /**
  * Process command line arguments.
- * @returns {bool} True if we were able to (optionaly) set a config file and 
- * (non-optionally) set a mainfile. False if usage was invalid.
+ * @returns {bool} True if we were able to understand arguments and 
+ * set a mainfile. False if usage was invalid.
  */
 void v8cgi_App::process_args(int argc, char ** argv) {
 	std::string err = "Invalid command line usage.\n";
 	err += "Correct usage: ";
 	err += v8cgi_usage;
 
-	// see the v8cgi_usage definition for the format
+	/* see the v8cgi_usage definition for the format */
 	
-	// we must have at least one arg
+	/* we must have at least one arg */
 	if (argc == 1) { throw err; }
 	
 	int index = 0;
 	
-	// see if we have v8 options
+	/* see if we have v8 options */
 	bool have_v8args = false;
 	for (; index < argc; ++index) {
-		// FIXME: if there is a standalone "--" after the name of the script
-		// then this breaks.  I can't figure out a solution to this, so
-		// for now we don't support any standalone "--" after the script name.
-		// One solution (and the way it currently works) is to require "--"
-		// before all other args even if no v8 args are used, but that seems
-		// I don't like this, but it is where we are right now.
+		/* FIXME: if there is a standalone "--" after the name of the script
+		 then this breaks.  I can't figure out a solution to this, so
+		 for now we don't support any standalone "--" after the script name.
+		 One solution (and the way it currently works) is to require "--"
+		 before all other args even if no v8 args are used, but that seems
+		 I don't like this, but it is where we are right now. */
 		if (std::string(argv[index]) == "--") {
-			// treat all previous arguments as v8 arguments
+			/* treat all previous arguments as v8 arguments */
 			int v8argc = index;
 			v8::V8::SetFlagsFromCommandLine(&v8argc, argv, true);
-			++index; // skip over the "--"
+			index++; /* skip over the "--" */
 			have_v8args = true;
 			break;
 		}
 	}
 	
-	// if there were no v8 args, then reset index to the first argument
+	/* if there were no v8 args, then reset index to the first argument */
 	if (!have_v8args) index = 1;
 	
-	// we haven't found a mainfile yet, so there MUST be more arguments
-	if (index >= argc) { throw err; }
 	
-	// Only the very next argument can be the "-c".  if it isn't
-	// then set the cfgfile to the one passed in at compile time
-	if (std::string(argv[index]) == "-c") {
-		// make sure there is an argument after the "-c"
-		if (index + 1 >= argc) { 
-			throw err; 
-		} else {
-			++index; // skip over the "-c"
+	/* scan for v8cgi-specific arguments now */
+	while (1) {
+		/* we haven't found a mainfile yet, so there MUST be more arguments */
+		if (index >= argc) { throw err; }
+		std::string optname(argv[index]);
+		if (optname[0] != '-') { break; } /* not starting with "-" => mainfile */
+		if (optname.length() != 2) { throw err; } /* one-character options only */
+		index++; /* skip the option name */
+		
+		if (index >= argc) { throw err; } /* missing option value */
+		
+		switch (optname[1]) {
+			case 'c':
+				this->cfgfile = argv[index];		
+#ifdef VERBOSE
+				printf("cfgfile: %s\n", argv[index]);
+#endif
+			break;
+			
+			case 'd':
+				v8::Debug::EnableAgent("v8cgi", atoi(argv[index]));
+#ifdef VERBOSE
+				printf("port: %s\n", argv[index]);
+#endif
+			break;
+			
+			default:
+				throw err;
+			break;
 		}
 		
-		//printf("cfgfile: %s\n", argv[index]);
-		this->cfgfile = argv[index];
-		++index; // skip over the config file
-	}
-
-	// argv[index] MUST be the program_file.  If it doesn't
-	// exist then we have an error.
+		index++; /* skip the option value */
+	} 
+	
+	/* argv[index] MUST be the program_file.  If it doesn't
+	 exist then we have an error. */
 	if (index >= argc) {
 		throw err;
 	} else {
 		this->mainfile = argv[index];
-		++index; // skip over the program_file
+		index++; /* skip over the program_file */
 	}
 	
-	// all the rest of the arguments are arguments to the program_file
+	/* all the rest of the arguments are arguments to the program_file */
 	for (; index < argc; ++index) {
-		//printf("program_arg: %s\n", argv[index]);
+#ifdef VERBOSE
+		printf("program_arg: %s\n", argv[index]);
+#endif
 		this->mainfile_args.push_back(std::string(argv[index]));
 	}
 }

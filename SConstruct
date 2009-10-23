@@ -120,7 +120,6 @@ if conf.CheckFunc("popen"):
 env.Append(
 	LIBS = ["v8"],
 	CPPPATH = ["src"],
-	CCFLAGS = ["-Wall", "-O3"],
 	CPPDEFINES = [],
 	LIBPATH = "",
 	LINKFLAGS = []
@@ -157,12 +156,16 @@ if env["fcgi"] == 1:
 # if
 
 if env["os"] == "posix":
-	env.Append(LIBS = ["dl"])
+	env.Append(
+		LIBS = ["dl"],
+		CCFLAGS = ["-Wall", "-O3"]
+	)
 # if
 
 if env["os"] == "darwin":
 	env.Append(
-		SHLINKFLAGS = "-undefined dynamic_lookup"
+		SHLINKFLAGS = "-undefined dynamic_lookup",
+		CCFLAGS = ["-Wall", "-O3"]
 	)
 # if
 
@@ -171,7 +174,8 @@ if env["os"] == "windows":
 		LIBS = ["ws2_32"],
 		CPPDEFINES = ["USING_V8_SHARED", "WIN32"],
 		LIBPATH = os.environ["LIBPATH"].split(";"),
-		CPPPATH = os.environ["INCLUDE"].split(";")
+		CPPPATH = os.environ["INCLUDE"].split(";"),
+		CCFLAGS = ["/O2", "/W3", "/EHsc"]
 	)
 # if
 

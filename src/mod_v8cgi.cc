@@ -159,7 +159,7 @@ static int mod_v8cgi_handler(request_rec *r) {
 		strncpy(&(envp[i][len1+1]), elts[i].val, len2);
 	}
 
-	int result = app.execute(r, envp);
+	app.execute(r, envp);
 	
 	for (int i=0;i<arr->nelts;i++) {
 		free(envp[i]);

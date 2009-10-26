@@ -29,4 +29,4 @@ Config["smtpFrom"] = "";
 Config["httpHandler"] = null;
 
 // Uncaught exceptions go to stdout (true) or stderr (false)
-Config["showErrors"] = false;
+Config["showErrors"] = true;

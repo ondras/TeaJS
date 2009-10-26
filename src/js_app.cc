@@ -682,7 +682,7 @@ void v8cgi_App::clear_global() {
 	int length = keys->Length();
 	for (int i=0;i<length;i++) {
 		v8::Handle<v8::String> key = keys->Get(JS_INT(i))->ToString();
-		JS_GLOBAL->Delete(key);
+		JS_GLOBAL->ForceDelete(key);
 	}
 }
 

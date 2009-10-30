@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <map>
 #include <stdio.h>
-#include <stropts.h>
 #include <string.h>
 #include <sstream>
 
@@ -1586,18 +1585,18 @@ namespace xdom {
     SAVE_PTR(0, NULL);
     GC * gc = GC_PTR;
     gc->add( args.This(), "~StdInInputSource");
-    StdInInputSource * stdin = NULL;
+    StdInInputSource * my_stdin = NULL;
     if (args[0]->IsExternal()) {
-      stdin = RECAST(args[0],StdInInputSource *);
+      my_stdin = RECAST(args[0],StdInInputSource *);
     }
     else if (args[0]->IsObject()) {
-      stdin = RECAST(args[0]->ToObject()->GetInternalField(0),StdInInputSource *);
+      my_stdin = RECAST(args[0]->ToObject()->GetInternalField(0),StdInInputSource *);
     }
-    if (stdin==NULL) {
-      return JS_EXCEPTION("[_stdin()] ERROR: \"stdin\" is a null pointer");
+    if (my_stdin==NULL) {
+      return JS_EXCEPTION("[_stdin()] ERROR: \"my_stdin\" is a null pointer");
     }
     else {
-      SAVE_PTR(0, stdin);
+      SAVE_PTR(0, my_stdin);
       return args.This();
     }
   }
@@ -1605,7 +1604,7 @@ namespace xdom {
   JS_METHOD(_stdin_destructor) {
     /* TryCatch tc; */
     STDIN;
-    XTRY( stdin->~StdInInputSource(); );
+    XTRY( my_stdin->~StdInInputSource(); );
     return args.This();
   }
 
@@ -2607,7 +2606,7 @@ namespace xdom {
         dom = RECAST(args[0],xercesc_3_0::DOMImplementation *);
       }
       else if (args[0]->IsString()) {
-	XTRY( dom = xercesc_3_0::DOMImplementationRegistry::getDOMImplementation(*String::Value(args[0]->ToString())); );
+	XTRY( dom = xercesc_3_0::DOMImplementationRegistry::getDOMImplementation((XMLCh *) *String::Utf8Value(args[0]->ToString())); );
       }
       else if (args[0]->IsObject()) {
 	if (args[0]->ToObject()->Has(JS_STR("_domtype_"))) {
@@ -2632,7 +2631,7 @@ namespace xdom {
 	  else {
 	    schemaType = X("LS");
 	    if (args[0]->ToObject()->Has(JS_STR("schema"))) {
-	      schemaType = *String::Value( args[0]->ToObject()->Get(JS_STR("schema"))->ToString() );
+	      schemaType = (XMLCh *) *String::Utf8Value( args[0]->ToObject()->Get(JS_STR("schema"))->ToString() );
 	    }
 	    XTRY( dom = xercesc_3_0::DOMImplementationRegistry::getDOMImplementation((const XMLCh *)schemaType); );
 	  }
@@ -4227,7 +4226,7 @@ namespace xdom {
       return JS_EXCEPTION("[_nodegetnamespaceuri()] ERROR: Too many input parameters");
     NODE;
     Handle<String> ret;
-    XTRY( ret = JS_STR(node->getNamespaceURI()); );
+    XTRY( ret = JS_STR((char *) node->getNamespaceURI()); );
     return ret;
   }
 
@@ -4237,7 +4236,7 @@ namespace xdom {
       return JS_EXCEPTION("[_nodegetprefix()] ERROR: Too many input parameters");
     NODE;
     Handle<String> ret;
-    XTRY( ret = JS_STR(node->getPrefix()); );
+    XTRY( ret = JS_STR((char *)node->getPrefix()); );
     return ret;
   }
 
@@ -4247,7 +4246,7 @@ namespace xdom {
       return JS_EXCEPTION("[_nodegetlocalname()] ERROR: Too many input parameters");
     NODE;
     Handle<String> ret;
-    XTRY( ret = JS_STR(node->getLocalName()); );
+    XTRY( ret = JS_STR((char *)node->getLocalName()); );
     return ret;
   }
 
@@ -9077,21 +9076,18 @@ SHARED_INIT() {
   // ********************************************************
 
   //	*
-  //	*	Globally exported symbols:
-  //	*	(will be visible within JavaScript)
+  //	*	Exported symbols:
   //	*
 
-  v8::Handle<v8::Object> global = JS_GLOBAL;
-
-  global->Set(JS_STR("DOMException"), xdom::fdomexcpt->GetFunction());
-  global->Set(JS_STR("DOMImplementation"), xdom::fdom->GetFunction());
-  global->Set(JS_STR("DOMImplementationLS"), xdom::fdomls->GetFunction());
-  global->Set(JS_STR("DOMImplementationSource"), xdom::fdomsource->GetFunction());
-  global->Set(JS_STR("DOMImplementationRegistry"), xdom::fdomreg->GetFunction());
-  global->Set(JS_STR("DOMLSParser"), xdom::fparser->GetFunction());
-  global->Set(JS_STR("DOMLSSerializer"), xdom::fserializer->GetFunction());
-  global->Set(JS_STR("DOMTypeInfo"), xdom::ftypeinfo->GetFunction());
-  global->Set(JS_STR("DOMNode"), xdom::fnode->GetFunction());
-  global->Set(JS_STR("XMLURL"), xdom::fxmlurl->GetFunction());
-  global->Set(JS_STR("MemBufInputSource"), xdom::fmembufinput->GetFunction());
+  exports->Set(JS_STR("DOMException"), xdom::fdomexcpt->GetFunction());
+  exports->Set(JS_STR("DOMImplementation"), xdom::fdom->GetFunction());
+  exports->Set(JS_STR("DOMImplementationLS"), xdom::fdomls->GetFunction());
+  exports->Set(JS_STR("DOMImplementationSource"), xdom::fdomsource->GetFunction());
+  exports->Set(JS_STR("DOMImplementationRegistry"), xdom::fdomreg->GetFunction());
+  exports->Set(JS_STR("DOMLSParser"), xdom::fparser->GetFunction());
+  exports->Set(JS_STR("DOMLSSerializer"), xdom::fserializer->GetFunction());
+  exports->Set(JS_STR("DOMTypeInfo"), xdom::ftypeinfo->GetFunction());
+  exports->Set(JS_STR("DOMNode"), xdom::fnode->GetFunction());
+  exports->Set(JS_STR("XMLURL"), xdom::fxmlurl->GetFunction());
+  exports->Set(JS_STR("MemBufInputSource"), xdom::fmembufinput->GetFunction());
 }

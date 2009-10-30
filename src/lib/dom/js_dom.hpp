@@ -133,8 +133,8 @@
 #define XMEM				DOM_LOAD_XMEM(xmem)
 
 #define DOM_LOAD_STDIN(stdin)		StdInInputSource * stdin = LOAD_PTR(0,StdInInputSource *)
-#define DOM_STDIN			DOM_LOAD_STDIN(stdin)
-#define STDIN				DOM_LOAD_STDIN(stdin)
+#define DOM_STDIN			DOM_LOAD_STDIN(my_stdin)
+#define STDIN				DOM_LOAD_STDIN(my_stdin)
 
 #define DOM_LOAD_XMLURL(xmlurl)		XMLURL * xmlurl = LOAD_PTR(0,XMLURL *)
 #define DOM_XMLURL			DOM_LOAD_XMLURL(xmlurl)

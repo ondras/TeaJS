@@ -127,19 +127,21 @@ env = conf.Finish()
 if env["os"] == "posix":
 	env.Append(
 		LIBS = ["dl"],
+		CPPDEFINES = ["DSO_EXT=so"]
 	)
 # if
 
 if env["os"] == "darwin":
 	env.Append(
 		SHLINKFLAGS = "-undefined dynamic_lookup",
+		CPPDEFINES = ["DSO_EXT=so"]
 	)
 # if
 
 if env["os"] == "windows":
 	env.Append(
 		LIBS = ["ws2_32"],
-		CPPDEFINES = ["USING_V8_SHARED", "WIN32", "_WIN32_WINNT=0x0501", "HAVE_RINT"],
+		CPPDEFINES = ["USING_V8_SHARED", "WIN32", "_WIN32_WINNT=0x0501", "HAVE_RINT", "DSO_EXT=dll"],
 	)
 # if
 

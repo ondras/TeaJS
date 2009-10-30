@@ -333,7 +333,7 @@ v8::Handle<v8::Object> v8cgi_App::require(std::string name, bool wrap) {
 	try {
 		size_t index = filename.find_last_of(".");
 		std::string ext = filename.substr(index+1);
-		if (ext == "so" || ext == "dll") {
+		if (ext == STRING(DSO_EXT)) {
 			data = this->load_dso(filename, exports);
 		} else {
 			data = this->load_js(filename, exports, wrap);

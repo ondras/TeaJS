@@ -8,12 +8,6 @@
 #include "js_common.h"
 #include <stdlib.h>
 
-// popen(), pclose
-#ifndef HAVE_POPEN
-#	define popen(name, mode) _popen(name, mode)
-#	define pclose(file) _pclose(file)
-#endif
-
 namespace {
 
 JS_METHOD(_process) {

@@ -22,11 +22,9 @@
 
 #ifndef windows
 #   include <dlfcn.h>
-#	define DLSYM dlsym
 #else
 #   include <windows.h>
-#	define DLSYM GetProcAddress
-#   define dlsym(x,y) (void*)GetProcAddress((HMODULE)x,y)
+#	define dlsym(x, y) GetProcAddress((HMODULE)x, y)
 #endif
 
 /**
@@ -394,10 +392,9 @@ v8::Handle<v8::Value> v8cgi_App::load_dso(std::string filename, v8::Handle<v8::O
 	v8::HandleScope handle_scope;
 	void * handle = this->cache.getHandle(filename);
 
-	typedef void (*funcdef)(v8::Handle<v8::Object>);
-	typedef funcdef (*dlsym_t)(void *, const char *);
-	funcdef func;
-	func = ((dlsym_t)(DLSYM))(handle, "init");	
+	typedef void (*init_t)(v8::Handle<v8::Object>);
+
+	init_t func = (init_t) dlsym(handle, "init");	
 	
 	if (!func) {
 		std::string error = "Cannot initialize shared library '";

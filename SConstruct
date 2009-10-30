@@ -20,7 +20,6 @@ os_string = ""
 apache_include = ""
 apr_include = ""
 
-
 # platform-based default values
 if sys.platform.find("win") != -1 and sys.platform.find("darwin") == -1:
 	mysql_include = "c:/"
@@ -54,7 +53,7 @@ else:
 # command line options
 vars = Variables()
 vars.Add(BoolVariable("mysql", "MySQL library", 1))
-vars.Add(BoolVariable("pgsql", "PostgreSQL library", 1))
+vars.Add(BoolVariable("pgsql", "PostgreSQL library", 0))
 vars.Add(BoolVariable("gd", "GD library", 1))
 vars.Add(BoolVariable("sqlite", "SQLite library", 1))
 vars.Add(BoolVariable("socket", "Socket library", 1))
@@ -79,50 +78,37 @@ vars.Add(PathVariable("v8_path", "Directory with V8", "../v8"))
 vars.Add(EnumVariable("os", "Operating system", os_string, allowed_values = ["windows", "posix", "darwin"]))
 vars.Add(("config_file", "Config file", config_path))
 
+vars.Add(("cpppath", "Additional include paths (semicolon separated)", ""))
+vars.Add(("libpath", "Additional library paths (semicolon separated)", ""))
+
 env = Environment(variables=vars)
 
 Help(vars.GenerateHelpText(env))
 conf = Configure(env)
 
-# adjust variables based on user selection
-if conf.CheckCHeader("unistd.h", include_quotes = "<>"):
-	env.Append(CPPDEFINES = ["HAVE_UNISTD_H"])
-
-if conf.CheckCHeader("dirent.h", include_quotes = "<>"):
-	env.Append(CPPDEFINES = ["HAVE_DIRENT_H"])
-
 if conf.CheckCHeader("sys/mman.h", include_quotes = "<>"):
 	env.Append(CPPDEFINES = ["HAVE_MMAN_H"])
-
-if not conf.CheckFunc("close"):
-	env.Append(CPPDEFINES = ["HAVE_WINSOCK"])
-
-if conf.CheckFunc("mkdir"):
-	env.Append(CPPDEFINES = ["HAVE_MKDIR"])
-
-if conf.CheckFunc("rmdir"):
-	env.Append(CPPDEFINES = ["HAVE_RMDIR"])
-
-if conf.CheckFunc("chdir"):
-	env.Append(CPPDEFINES = ["HAVE_CHDIR"])
-
-if conf.CheckFunc("getcwd"):
-	env.Append(CPPDEFINES = ["HAVE_GETCWD"])
 
 if conf.CheckFunc("sleep"):
 	env.Append(CPPDEFINES = ["HAVE_SLEEP"])
 
-if conf.CheckFunc("popen"):
-	env.Append(CPPDEFINES = ["HAVE_POPEN"])
-
 # default values
-
 env.Append(
 	LIBS = ["v8"],
-	CPPPATH = ["src"],
-	CPPDEFINES = [],
-	LIBPATH = "",
+	CCFLAGS = ["-Wall", "-O3"],
+	CPPPATH = ["src", env["v8_path"] + "/include"],
+	LIBPATH = env["v8_path"],
+	CPPDEFINES = [
+		"CONFIG_PATH=" + env["config_file"],
+		env["os"]
+	],
 	LINKFLAGS = []
+)
+	
+# additional paths
+env.Append(
+	CPPPATH = env["cpppath"].split(";"),
+	LIBPATH = env["libpath"].split(";")
 )
 
 if env["os"] == "posix":
@@ -131,15 +117,6 @@ if env["os"] == "posix":
 	)
 # if
 
-env.Append(
-	CPPDEFINES = [
-		"CONFIG_PATH=" + env["config_file"],
-		env["os"]
-	],
-	CPPPATH = env["v8_path"] + "/include",
-	LIBPATH = env["v8_path"]
-)
-
 if ((env["os"] != "windows") and not (conf.CheckLib("v8"))):
 	print("Cannot find V8 library!")
 	sys.exit(1)
@@ -147,35 +124,22 @@ if ((env["os"] != "windows") and not (conf.CheckLib("v8"))):
 
 env = conf.Finish()
 
-if env["fcgi"] == 1:
-	env.Append(
-		LIBS = ["fcgi"],
-		CPPPATH = ["src/fcgi/include"],
-		CPPDEFINES = ["FASTCGI"]
-	)
-# if
-
 if env["os"] == "posix":
 	env.Append(
 		LIBS = ["dl"],
-		CCFLAGS = ["-Wall", "-O3"]
 	)
 # if
 
 if env["os"] == "darwin":
 	env.Append(
 		SHLINKFLAGS = "-undefined dynamic_lookup",
-		CCFLAGS = ["-Wall", "-O3"]
 	)
 # if
 
 if env["os"] == "windows":
 	env.Append(
 		LIBS = ["ws2_32"],
-		CPPDEFINES = ["USING_V8_SHARED", "WIN32"],
-		LIBPATH = os.environ["LIBPATH"].split(";"),
-		CPPPATH = os.environ["INCLUDE"].split(";"),
-		CCFLAGS = ["/O2", "/W3", "/EHsc"]
+		CPPDEFINES = ["USING_V8_SHARED", "WIN32", "_WIN32_WINNT=0x0501", "HAVE_RINT"],
 	)
 # if
 
@@ -202,17 +166,21 @@ if env["mysql"] == 1:
 	e = env.Clone()
 	if env["os"] == "windows":
 		e.Append(
-			LIBS = ["wsock32", "user32", "advapi32"],
-			LINKFLAGS = ["/nodefaultlib:\"libcmtd\""]
+			LIBS = ["wsock32", "user32", "advapi32", "mysql"],
 		)
 	if env["os"] == "darwin":
 		e.Append(
-			LIBPATH = ["/opt/local/lib/", "/opt/local/lib/mysql5/mysql"]
+			LIBPATH = ["/opt/local/lib/", "/opt/local/lib/mysql5/mysql"],
+			LIBS = ["mysqlclient"]
+		)
+	# if
+	if env["os"] == "posix":
+		e.Append(
+			LIBS = ["mysqlclient"]
 		)
 	# if
 	e.Append(
 		CPPPATH = env["mysql_path"],
-		LIBS = "mysqlclient"
 	)
 	if env["os"] == "darwin":
 		e.SharedLibrary(
@@ -251,7 +219,7 @@ if env["pgsql"] == 1:
 if env["sqlite"] == 1:
 	e = env.Clone()
 	e.Append(
-		LIBS = "sqlite3"
+		LIBS = ["sqlite3"]
 	)
 	e.SharedLibrary(
 		target = "lib/sqlite", 
@@ -298,47 +266,6 @@ if env["process"] == 1:
 	)
 # if
 
-if env["module"] == 1:
-	e = env.Clone()
-	e.Append(
-		CPPPATH = [env["apache_path"], env["apr_path"]]
-	)
-	if env["os"] == "darwin":
-		e.Append(
-			LINKFLAGS = "-bundle_loader /opt/local/apache2/bin/httpd",
-			LIBS = ["apr-1", "aprutil-1"]
-		)
-	if env["os"] == "windows":
-		e.Append(
-			LIBS = ["libapr-1", "libhttpd"]
-		)
-	# if
-	
-	s = []
-	s[:] = sources[:]
-	s.append("src/mod_v8cgi.cc")
-	if env["os"] == "darwin":
-		e.LoadableModule(
-			target = "mod_v8cgi.so", 
-			source = s,
-			SHLIBPREFIX=""
-		)
-	else:
-		e.SharedLibrary(
-			target = "mod_v8cgi", 
-			source = s,
-			SHLIBPREFIX=""
-		)
-# if
-
-if env["cgi"] == 1:
-	sources.append("src/v8cgi.cc")
-	env.Program(
-		source = sources, 
-		target = "v8cgi"
-	)
-# if
-
 if env["dom"] == 1:
 	e = env.Clone()
 	e.Append(
@@ -376,4 +303,52 @@ if env["gl"] == 1:
 			source = ["src/js_gc.cc", "src/lib/GL/js_GL.cc", "src/lib/GL/glbindings/glbind.cpp", "src/lib/GL/glesbindings/glesbind.cpp", "src/lib/GL/glubindings/glubind.cpp", "src/lib/GL/glutbindings/glutbind.cpp"],
 			SHLIBPREFIX=""
 		)
+# if
+
+if env["module"] == 1:
+	e = env.Clone()
+	e.Append(
+		CPPPATH = [env["apache_path"], env["apr_path"]]
+	)
+	if env["os"] == "darwin":
+		e.Append(
+			LINKFLAGS = "-bundle_loader /opt/local/apache2/bin/httpd",
+			LIBS = ["apr-1", "aprutil-1"]
+		)
+	if env["os"] == "windows":
+		e.Append(
+			LIBS = ["libapr-1", "libhttpd"]
+		)
+	# if
+	
+	s = []
+	s[:] = sources[:]
+	s.append("src/mod_v8cgi.cc")
+	if env["os"] == "darwin":
+		e.LoadableModule(
+			target = "mod_v8cgi.so", 
+			source = s,
+			SHLIBPREFIX=""
+		)
+	else:
+		e.SharedLibrary(
+			target = "mod_v8cgi", 
+			source = s,
+			SHLIBPREFIX=""
+		)
+# if
+
+if env["cgi"] == 1:
+	if env["fcgi"] == 1:
+		env.Append(
+			LIBS = ["fcgi"],
+			CPPPATH = ["src/fcgi/include"],
+			CPPDEFINES = ["FASTCGI"]
+		)
+	# if
+	sources.append("src/v8cgi.cc")
+	env.Program(
+		source = sources, 
+		target = "v8cgi"
+	)
 # if

@@ -13,31 +13,13 @@
 #include "js_common.h"
 #include "js_path.h"
 
-/* access() */
-#ifdef HAVE_UNISTD_H
-#	include <unistd.h>
+#include <unistd.h>
+#include <dirent.h>
+
+#ifdef windows
+#	define MKDIR(a, b) mkdir(a)
 #else
-#	include <io.h>
-#	define F_OK 0
-#	define access(path,mode) _access(path,mode)
-#endif
-
-/* directory listing */
-#ifdef HAVE_DIRENT_H
-#	include <dirent.h>
-#else
-#	include <io.h>
-#endif
-
-/* mkdir() */
-#ifndef HAVE_MKDIR
-#	include <direct.h>
-#	define mkdir(name, mode) _mkdir(name)
-#endif
-
-/* rmdir() */
-#ifndef HAVE_RMDIR
-#	define rmdir(name) _rmdir(name)
+#	define MKDIR mkdir
 #endif
 
 #define TYPE_FILE 0
@@ -55,15 +37,21 @@ v8::Handle<v8::Value> list_items(char * name, int type) {
 	v8::Handle<v8::Array> result = v8::Array::New();
 	int cnt = 0;
 
-#ifdef HAVE_DIRENT_H
 	DIR * dp;
 	struct dirent * ep;
-	int cond = (type == TYPE_FILE ? DT_REG : DT_DIR);
+	struct stat st;
+	std::string path;
+	int cond = (type == TYPE_FILE ? 0 : S_IFDIR);
 	
 	dp = opendir(name);
 	if (dp == NULL) { return JS_EXCEPTION("Directory cannot be opened"); }
 	while ((ep = readdir(dp))) { 
-		if (ep->d_type == cond) {
+		path = name;
+		path += "/";
+		path += ep->d_name;
+		if (stat(path.c_str(), &st) != 0) { continue; } /* cannot access */
+		
+		if ((st.st_mode & S_IFDIR) == cond) {
 			std::string name = ep->d_name;
 			if (type == TYPE_FILE) {
 				result->Set(JS_INT(cnt++), JS_STR(ep->d_name));
@@ -73,31 +61,6 @@ v8::Handle<v8::Value> list_items(char * name, int type) {
 		}
 	}
 	closedir(dp);
-#else
-	_finddata_t * info = (_finddata_t *) malloc(sizeof(_finddata_t));
-	unsigned int value = (type == TYPE_FILE ? 0 : _A_SUBDIR);
-
-	std::string path = name;
-	path += "/*";
-
-	intptr_t ptr = _findfirst(path.c_str(), info);
-	
-	if (ptr != -1L) {
-		do {
-			if ((info->attrib & _A_SUBDIR) == value) {
-				std::string name = info->name;
-				if (type == TYPE_FILE) {
-					result->Set(JS_INT(cnt++), JS_STR(info->name));
-				} else if (name != "." && name != "..") {
-					result->Set(JS_INT(cnt++), JS_STR(info->name));
-				}
-			}
-		} while (_findnext(ptr, info) == 0);
-		_findclose(ptr);
-	}
-	free(info);
-#endif
-	
 	return handle_scope.Close(result);
 }
 
@@ -116,7 +79,7 @@ JS_METHOD(_create) {
 		mode = args[0]->Int32Value();
 	}
 
-	int result = mkdir(*name, mode);
+	int result = MKDIR(*name, mode);
 	if (result != 0) {
 		return JS_EXCEPTION("Cannot create directory");
 	}

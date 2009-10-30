@@ -8,7 +8,6 @@
 #else
 #   include <windows.h>
 #   define dlopen(x,y) (void*)LoadLibrary(x)
-#   define dlsym(x,y) (void*)GetProcAddress((HMODULE)x,y)
 #   define dlclose(x) FreeLibrary((HMODULE)x)
 #endif
 

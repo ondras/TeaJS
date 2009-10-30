@@ -9,20 +9,8 @@
 #include <limits.h>
 #include <stdlib.h>
 
-// chdir()
-#ifndef HAVE_CHDIR
-#	include <direct.h>
-#	define chdir(name) _chdir(name)
-#endif
-
-// getcwd()
-#ifndef HAVE_GETCWD
-#	include <direct.h>
-#	define getcwd(name, bytes) _getcwd(name, bytes)
-#endif
-
 #ifdef windows
-#	define PATH_MAX _MAX_PATH
+#	include <io.h>
 #	define realpath(in, out) _fullpath(out, in, PATH_MAX)
 #endif
 

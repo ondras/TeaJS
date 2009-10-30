@@ -10,13 +10,10 @@
 #include <errno.h>
 #include <string.h>
 
-#ifdef HAVE_WINSOCK
+#ifdef windows
 #  include <winsock2.h>
 #  include <ws2tcpip.h>
 #  define close(s) closesocket(s)
-#  define errno WSAGetLastError()
-#  define h_errno WSAGetLastError()
-#  define ssize_t SSIZE_T
 #else
 #  include <unistd.h>
 #  include <sys/socket.h>
@@ -45,7 +42,7 @@ namespace {
 
 typedef union sock_addr {
     struct sockaddr_in in;
-#ifndef HAVE_WINSOCK
+#ifndef windows
     struct sockaddr_un un;
 #endif
     struct sockaddr_in6 in6;
@@ -62,7 +59,7 @@ typedef union sock_addr {
 inline int create_addr(char * address, int port, int family, sock_addr_t * result, socklen_t * len) {
 	unsigned int length = strlen(address);
     switch (family) {
-#ifndef HAVE_WINSOCK
+#ifndef windows
 		case PF_UNIX: {
 			struct sockaddr_un *addr = (struct sockaddr_un*) result;
 			memset(addr, 0, sizeof(sockaddr_un));
@@ -82,7 +79,7 @@ inline int create_addr(char * address, int port, int family, sock_addr_t * resul
 			memset(addr, 0, sizeof(*addr)); 
 			addr->sin_family = AF_INET;
 
-#ifdef HAVE_WINSOCK
+#ifdef windows
 			int size = sizeof(struct sockaddr_in);
 			int pton_ret = WSAStringToAddress(address, AF_INET, NULL, (sockaddr *) result, &size);
 			if (pton_ret != 0) { return 1; }
@@ -99,7 +96,7 @@ inline int create_addr(char * address, int port, int family, sock_addr_t * resul
 			memset(addr, 0, sizeof(*addr));
 			addr->sin6_family = AF_INET6;
 
-#ifdef HAVE_WINSOCK
+#ifdef windows
 			int size = sizeof(struct sockaddr_in6);
 			int pton_ret = WSAStringToAddress(address, AF_INET6, NULL, (sockaddr *) result, &size);
 			if (pton_ret != 0) { return 1; }
@@ -122,7 +119,7 @@ inline int create_addr(char * address, int port, int family, sock_addr_t * resul
  */
 inline v8::Handle<v8::Value> create_peer(sockaddr * addr) {
     switch (addr->sa_family) {
-#ifndef HAVE_WINSOCK
+#ifndef windows
 		case AF_UNIX: {
 			v8::Handle<v8::Array> result = v8::Array::New(1);
 			sockaddr_un * addr_un = (sockaddr_un *) addr;
@@ -135,7 +132,7 @@ inline v8::Handle<v8::Value> create_peer(sockaddr * addr) {
 			char * buf = new char[INET6_ADDRSTRLEN];
 			sockaddr_in6 * addr_in6 = (sockaddr_in6 *) addr;
 
-#ifdef HAVE_WINSOCK
+#ifdef windows
 			DWORD len = INET6_ADDRSTRLEN;
 			WSAAddressToString(addr, sizeof(struct sockaddr), NULL, buf, &len);
 #else			
@@ -152,7 +149,7 @@ inline v8::Handle<v8::Value> create_peer(sockaddr * addr) {
 			char * buf = new char[INET_ADDRSTRLEN];
 			sockaddr_in * addr_in = (sockaddr_in *) addr;
 
-#ifdef HAVE_WINSOCK
+#ifdef windows
 			DWORD len = INET_ADDRSTRLEN;
 			WSAAddressToString(addr, sizeof(struct sockaddr), NULL, buf, &len);
 #else			
@@ -487,7 +484,7 @@ JS_METHOD(_getpeername) {
 SHARED_INIT() {
 	v8::HandleScope handle_scope;
 
-#ifdef HAVE_WINSOCK
+#ifdef windows
     WSADATA wsaData;
     WORD wVersionRequested = MAKEWORD(2, 0);
     WSAStartup(wVersionRequested, &wsaData);

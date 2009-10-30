@@ -41,7 +41,7 @@ v8::Handle<v8::Value> list_items(char * name, int type) {
 	struct dirent * ep;
 	struct stat st;
 	std::string path;
-	int cond = (type == TYPE_FILE ? 0 : S_IFDIR);
+	unsigned int cond = (type == TYPE_FILE ? 0 : S_IFDIR);
 	
 	dp = opendir(name);
 	if (dp == NULL) { return JS_EXCEPTION("Directory cannot be opened"); }

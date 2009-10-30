@@ -29,6 +29,7 @@ exports.testDate = function() {
 	d.setFullYear(2006);
 	
 	var result = d.format("! d j N S w z W m n t L Y y a A g G h H i s U");
-	var str = "! 04 4 3 th 3 3 01 01 1 31 0 2006 06 am AM 3 3 03 03 02 01 1136340121";
+	var ts = 1136343721 + d.getTimezoneOffset()*60;
+	var str = "! 04 4 3 th 3 3 01 01 1 31 0 2006 06 am AM 3 3 03 03 02 01 "+ts;
 	assert.assertEquals("date format", str, result);
 }

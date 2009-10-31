@@ -62,7 +62,7 @@ void Cache::erase(std::string filename) {
 /**
  * Return source code for a given file
  */
-std::string Cache::getSource(std::string filename, bool wrap) {
+std::string Cache::getSource(std::string filename) {
 	FILE * file = fopen(filename.c_str(), "rb");
 	if (file == NULL) { 
 		std::string s = "Error reading '";
@@ -90,7 +90,7 @@ std::string Cache::getSource(std::string filename, bool wrap) {
 		source.erase(0,pfix);
 	};
 	
-	if (wrap) { source = wrapExports(source); }
+	source = this->wrapExports(source);
 	return source;
 }
 
@@ -101,7 +101,7 @@ void * Cache::getHandle(std::string filename) {
 #ifdef VERBOSE
 	printf("[getHandle] cache try for '%s' .. ", filename.c_str()); 
 #endif	
-	if (isCached(filename)) {
+	if (this->isCached(filename)) {
 #ifdef VERBOSE
 		printf("cache hit\n"); 
 #endif	
@@ -118,7 +118,7 @@ void * Cache::getHandle(std::string filename) {
 			error += "'";
 			throw error;
 		}
-		mark(filename); /* mark as cached */
+		this->mark(filename); /* mark as cached */
 		handles[filename] = handle;
 		return handle;
 	}
@@ -127,11 +127,11 @@ void * Cache::getHandle(std::string filename) {
 /**
  * Return compiled script from a given file
  */
-v8::Handle<v8::Script> Cache::getScript(std::string filename, bool wrap) {
+v8::Handle<v8::Script> Cache::getScript(std::string filename) {
 #ifdef VERBOSE
 	printf("[getScript] cache try for '%s' .. ", filename.c_str()); 
 #endif	
-	if (isCached(filename)) {
+	if (this->isCached(filename)) {
 #ifdef VERBOSE
 		printf("[getScript] cache hit\n"); 
 #endif	
@@ -140,12 +140,12 @@ v8::Handle<v8::Script> Cache::getScript(std::string filename, bool wrap) {
 	} else {
 #ifdef VERBOSE
 		printf("[getScript] cache miss\n"); 
-#endif	
-		std::string source = getSource(filename, wrap);
+#endif
+		std::string source = this->getSource(filename);
 		/* context-independent compiled script */
 		v8::Handle<v8::Script> script = v8::Script::New(JS_STR(source.c_str()), JS_STR(filename.c_str()));		
 		if (!script.IsEmpty()) {
-			mark(filename); /* mark as cached */
+			this->mark(filename); /* mark as cached */
 			v8::Persistent<v8::Script> result = v8::Persistent<v8::Script>::New(script);
 			scripts[filename] = result;
 			return result;
@@ -207,4 +207,15 @@ void Cache::clearExports() {
 		it->second.Clear();
 	}
 	exports.clear();
+}
+
+/**
+ * Wrap a string with exports envelope
+ */
+std::string Cache::wrapExports(std::string code) {
+	std::string result = "";
+	result += "(function(exports, module){";
+	result += code;
+	result += "})";
+	return result;
 }

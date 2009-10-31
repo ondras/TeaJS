@@ -50,7 +50,7 @@ JS_METHOD(_require) {
 	v8::String::Utf8Value file(args[0]);
 	v8::Handle<v8::Object> exports;
 	try {
-		exports = app->require(*file, true);
+		exports = app->require(*file);
 	} catch (std::string e) {
 		return JS_EXCEPTION(e.c_str());
 	}
@@ -134,8 +134,9 @@ void v8cgi_App::prepare(char ** envp) {
 	setup_system(g, envp);
 	setup_io(g);
 	
-	/* do not wrap config file */
-	this->require(this->cfgfile, false); 
+	/* config file */
+	this->include(this->cfgfile); 
+	
 	this->autoload();
 }
 
@@ -197,17 +198,10 @@ int v8cgi_App::execute(bool change, char ** envp) {
 	try {
 		/* prepare JS environment: config, default libraries */
 		this->prepare(envp); 
-	} catch (std::string e) {
-		/* error with config file or default libs -> goes to stderr */
-		this->error(e.c_str(), __FILE__, __LINE__); 
-		this->finish();
-		return 1;
-	}
-	try {
 		/* try to locate main file */
 		this->findmain();
 	} catch (std::string e) {
-		/* cannot locate main file -> goes to stderr */
+		/* error with config file or default libs -> goes to stderr */
 		this->error(e.c_str(), __FILE__, __LINE__); 
 		this->finish();
 		return 1;
@@ -216,7 +210,7 @@ int v8cgi_App::execute(bool change, char ** envp) {
 	/* if requested, chdir */
 	if (change) { path_chdir(path_dirname(this->mainfile)); } 
 	
-	/* setup command line arguments */
+	/* pass command line arguments to system.args */
 	this->setup_args();
 	
 	/* setup builtin request and response, if running as CGI */
@@ -230,8 +224,8 @@ int v8cgi_App::execute(bool change, char ** envp) {
 	}
 
 	try {
-		/* do not wrap main file */
-		this->require(this->mainfile, false); 
+		/* require the mainfile */
+		this->require(this->mainfile); 
 	} catch (std::string e) {
 		/* error when executing main file */
 		v8::Handle<v8::Value> show = this->get_config("showErrors");
@@ -284,7 +278,7 @@ void v8cgi_App::finish() {
 v8::Handle<v8::Object> v8cgi_App::include(std::string name) {
 	v8::HandleScope handle_scope;
 
-	v8::Handle<v8::Object> exports = this->require(name, true);
+	v8::Handle<v8::Object> exports = this->require(name);
 	v8::Handle<v8::Array> names = exports->GetPropertyNames();
 	for (unsigned i=0;i<names->Length();i++) {
 		v8::Handle<v8::Value> name = names->Get(JS_INT(i));
@@ -297,14 +291,13 @@ v8::Handle<v8::Object> v8cgi_App::include(std::string name) {
 /**
  * Require a module
  * @param {std::string} name
- * @param {bool} wrap Should we wrap the module in an "exports" envelope?
  */
-v8::Handle<v8::Object> v8cgi_App::require(std::string name, bool wrap) {
+v8::Handle<v8::Object> v8cgi_App::require(std::string name) {
 	v8::HandleScope handle_scope;
 #ifdef VERBOSE
 	printf("[require] looking for '%s'\n", name.c_str()); 
 #endif	
-	std::string filename = this->findname(name, !wrap);
+	std::string filename = this->resolve_module(name);
 #ifdef VERBOSE
 	printf("[require] resolved as '%s'\n", filename.c_str()); 
 #endif	
@@ -317,12 +310,16 @@ v8::Handle<v8::Object> v8cgi_App::require(std::string name, bool wrap) {
 	}
 	
 	v8::Handle<v8::Object> exports = this->cache.getExports(filename);
+	/* check if exports are cached */
 	if (!exports.IsEmpty()) { return exports; }
-	
-	
+
 	/* add new blank exports to cache */
 	exports = v8::Object::New();
 	this->cache.addExports(filename, exports);
+
+	/* create the "module" variable" */
+	v8::Handle<v8::Object> module = v8::Object::New();
+	module->Set(JS_STR("id"), JS_STR(filename.c_str()));
 
 	/* prepare path to stack */
 	this->paths.push(path_dirname(filename)); 
@@ -334,9 +331,9 @@ v8::Handle<v8::Object> v8cgi_App::require(std::string name, bool wrap) {
 		size_t index = filename.find_last_of(".");
 		std::string ext = filename.substr(index+1);
 		if (ext == STRING(DSO_EXT)) {
-			data = this->load_dso(filename, exports);
+			data = this->load_dso(filename, exports, module);
 		} else {
-			data = this->load_js(filename, exports, wrap);
+			data = this->load_js(filename, exports, module);
 		}
 	} catch (std::string e) {
 		this->paths.pop(); 
@@ -354,45 +351,38 @@ v8::Handle<v8::Object> v8cgi_App::require(std::string name, bool wrap) {
 /**
  * Include a js module
  */
-v8::Handle<v8::Value> v8cgi_App::load_js(std::string filename, v8::Handle<v8::Object> exports, bool wrap) {
+v8::Handle<v8::Value> v8cgi_App::load_js(std::string filename, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module) {
 	v8::HandleScope handle_scope;
 	v8::TryCatch tc;
-	
-	v8::Handle<v8::Script> script = this->cache.getScript(filename, wrap);
+
+	/* compiled script wrapped in anonymous function */
+	v8::Handle<v8::Script> script = this->cache.getScript(filename);
 	
 	/* compilation error? */
 	if (tc.HasCaught()) {
 		throw this->format_exception(&tc);
 	} else {
-		/* run the script */
+		/* run the script, no error should happen here */
 		v8::Handle<v8::Value> result = script->Run();
-		/* exit() called */
-		if (this->terminated) { return v8::Undefined(); }
-		/* runtime error? */
-		if (tc.HasCaught()) { throw this->format_exception(&tc); }
 
-		/* unwrap exports, call the inner code */
-		if (wrap) {
-			v8::Handle<v8::Function> fun = v8::Handle<v8::Function>::Cast(result);
-			v8::Handle<v8::Value> params[1] = {exports}; 
-			result = fun->Call(JS_GLOBAL, 1, params);
-			/* runtime error in inner code */
-			if (tc.HasCaught()) { throw this->format_exception(&tc); }
-			return exports;
-		}
-		
-		return handle_scope.Close(result);
+		v8::Handle<v8::Function> fun = v8::Handle<v8::Function>::Cast(result);
+		v8::Handle<v8::Value> params[2] = {exports, module}; 
+		result = fun->Call(JS_GLOBAL, 2, params);
+
+		/* runtime error in inner code */
+		if (tc.HasCaught() && !this->terminated) { throw this->format_exception(&tc); }
+		return exports;
 	}
 }
 
 /**
  * Include a dso module
  */
-v8::Handle<v8::Value> v8cgi_App::load_dso(std::string filename, v8::Handle<v8::Object> exports) {
+v8::Handle<v8::Value> v8cgi_App::load_dso(std::string filename, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module) {
 	v8::HandleScope handle_scope;
 	void * handle = this->cache.getHandle(filename);
 
-	typedef void (*init_t)(v8::Handle<v8::Object>);
+	typedef void (*init_t)(v8::Handle<v8::Object>, v8::Handle<v8::Object>);
 
 	init_t func = (init_t) dlsym(handle, "init");	
 	
@@ -403,7 +393,7 @@ v8::Handle<v8::Value> v8cgi_App::load_dso(std::string filename, v8::Handle<v8::O
 		throw error;
 	}
 	
-	func(exports);
+	func(exports, module);
 	return handle_scope.Close(exports);	
 }
 
@@ -436,46 +426,57 @@ void v8cgi_App::js_error(std::string message) {
 }
 
 /**
- * Try to find absolute file name. If !local, libraryPath is used
+ * Fully expand/resolve module name
  */
-std::string v8cgi_App::findname(std::string name, bool forceLocal) {
+std::string v8cgi_App::resolve_module(std::string name) {
 	if (!name.length()) { return std::string(""); }
 
-	/* try all these suffixes if file does not exist */
-	const char * suffixes[] = {"js", "so", "dll"};
-	
-	/* try to fetch the Config.libraryPath option */
-	v8::Handle<v8::Value> prefix = this->get_config("libraryPath");
-	v8::String::Utf8Value pfx(prefix);
-
-	std::string fullPath = "";
-	
-	/* v8cgi non-standard extension - absolute path */
-	if (path_isabsolute(name)) { 
-		fullPath = name;
-	} else { 
-		if (!forceLocal && name.at(0) != '.') {
-			/* "global" module */
-			fullPath = std::string(*pfx);
-		} else { 
-			/* "local" module */
-			fullPath = this->paths.empty() ? path_getcwd() : this->paths.top();
-		}
-		fullPath += "/";
-		fullPath += name;
-	}
-
+	if (path_isabsolute(name)) {
+		/* v8cgi non-standard extension - absolute path */
 #ifdef VERBOSE
-	printf("[findname] expanded to '%s'\n", fullPath.c_str()); 
+		printf("[resolve_module] expanded to '%s'\n", name.c_str()); 
 #endif	
+		return this->find_extension(name);
+	} else if (name.at(0) == '.') {
+		/* local module, relative to current path */
+		std::string path = this->paths.empty() ? path_getcwd() : this->paths.top();
+		path += "/";
+		path += name;
+#ifdef VERBOSE
+		printf("[resolve_module] expanded to '%s'\n", path.c_str()); 
+#endif	
+		return this->find_extension(path);
+	} else {
+		/* global module, relative to some of the given searchpaths */
 
+		/* try to fetch the Config.libraryPath option */
+		v8::Handle<v8::Value> prefix = this->get_config("libraryPath");
+		v8::String::Utf8Value pfx(prefix);
+		std::string path(*pfx);
+		path += "/";
+		path += name;
+		
+#ifdef VERBOSE
+		printf("[resolve_module] expanded to '%s'\n", path.c_str()); 
+#endif	
+		return this->find_extension(path);
+	}
+}
+
+/**
+ * Try to adjust file's extension in order to locate an existing file
+ */
+std::string v8cgi_App::find_extension(std::string path) {
 	/* remove /./, /../ etc */
-	fullPath = path_normalize(fullPath); 
+	std::string fullPath = path_normalize(path); 
 	if (path_file_exists(fullPath)) { return fullPath; }
 	
+	/* suffixes to be tried if file does not exist */
+	const char * suffixes[] = {"js", STRING(DSO_EXT)};
+
 	/* try all suffixes */
 	std::string path2; 
-	for (int j=0;j<3;j++) {
+	for (int j=0;j<2;j++) {
 		path2 = fullPath;
 		path2 += ".";
 		path2 += suffixes[j];
@@ -611,6 +612,13 @@ void v8cgi_App::process_args(int argc, char ** argv) {
 		throw err;
 	} else {
 		this->mainfile = argv[index];
+		/* expand mainfile to absolute path */
+		if (!path_isabsolute(this->mainfile)) {
+			std::string tmp = path_getcwd();
+			tmp += "/";
+			tmp += this->mainfile;
+			this->mainfile = path_normalize(this->mainfile);
+		}
 		index++; /* skip over the program_file */
 	}
 	

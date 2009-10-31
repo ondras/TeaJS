@@ -23,7 +23,7 @@ public:
 	/* once per request */
 	int execute(bool change, char ** envp); 
 	v8::Handle<v8::Object> include(std::string name);
-	v8::Handle<v8::Object> require(std::string name, bool wrap);
+	v8::Handle<v8::Object> require(std::string name);
 	
 	/* termination mark. if present, termination exception is not handled */
 	bool terminated;
@@ -71,9 +71,10 @@ private:
 	void clear_global();
 	void setup_args();
 	
-	std::string findname(std::string name, bool forceLocal);
-	v8::Handle<v8::Value> load_js(std::string filename, v8::Handle<v8::Object> exports, bool wrap);
-	v8::Handle<v8::Value> load_dso(std::string filename, v8::Handle<v8::Object> exports);
+	std::string resolve_module(std::string name);
+	std::string find_extension(std::string path);
+	v8::Handle<v8::Value> load_js(std::string filename, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module);
+	v8::Handle<v8::Value> load_dso(std::string filename, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module);
 	v8::Handle<v8::Value> get_config(std::string name);
 };
 

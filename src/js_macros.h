@@ -29,9 +29,9 @@
 #define ASSERT_CONSTRUCTOR if (!args.IsConstructCall()) { return JS_EXCEPTION("Invalid call format. Please use the 'new' operator."); }
 
 #ifdef _WIN32
-#   define SHARED_INIT() extern "C" __declspec(dllexport) void init(v8::Handle<v8::Object> exports)
+#   define SHARED_INIT() extern "C" __declspec(dllexport) void init(v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module)
 #else
-#   define SHARED_INIT() extern "C" void init(v8::Handle<v8::Object> exports)
+#   define SHARED_INIT() extern "C" void init(v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module)
 #endif
 
 #endif

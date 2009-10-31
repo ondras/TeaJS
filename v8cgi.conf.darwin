@@ -1,3 +1,6 @@
+var Config = {};
+exports.Config = Config;
+
 // put default .js and .so files here
 Config["libraryPath"] = "/usr/local/lib/v8cgi";
 

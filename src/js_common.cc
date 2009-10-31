@@ -62,14 +62,3 @@ int mmap_write(char * name, void * data, size_t size) {
 #endif
 	return 0;
 }
-
-/**
- * Wrap a string with exports envelope
- */
-std::string wrapExports(std::string what) {
-	std::string result = "";
-	result += "(function(exports){";
-	result += what;
-	result += "})";
-	return result;
-}

@@ -15,7 +15,7 @@
 class Cache {
 public:
 	void * getHandle(std::string filename);
-	v8::Handle<v8::Script> getScript(std::string filename, bool wrap);
+	v8::Handle<v8::Script> getScript(std::string filename);
 	v8::Handle<v8::Object> getExports(std::string filename);
 	void clearExports();
 	void addExports(std::string filename, v8::Handle<v8::Object> obj);
@@ -36,7 +36,8 @@ private:
 	/* exports */
 	ExportsValue exports;
 	
-	std::string getSource(std::string filename, bool wrap);
+	std::string getSource(std::string filename);
+	std::string wrapExports(std::string code);
 	void mark(std::string filename);
 	bool isCached(std::string filename);
 	void erase(std::string filename);

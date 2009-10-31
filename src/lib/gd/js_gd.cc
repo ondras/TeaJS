@@ -623,7 +623,7 @@ JS_METHOD(_string) {
 		}
 		return arr;
 	} else {
-		return JS_STR(result);
+		return JS_EXCEPTION(result);
 	}
 }
 

@@ -448,18 +448,36 @@ std::string v8cgi_App::resolve_module(std::string name) {
 		return this->find_extension(path);
 	} else {
 		/* global module, relative to some of the given searchpaths */
-
-		/* try to fetch the Config.libraryPath option */
-		v8::Handle<v8::Value> prefix = this->get_config("libraryPath");
-		v8::String::Utf8Value pfx(prefix);
-		std::string path(*pfx);
-		path += "/";
-		path += name;
+		v8::Handle<v8::Object> req = JS_GLOBAL->Get(JS_STR("require"))->ToObject();
+		v8::Handle<v8::Value> paths = req->Get(JS_STR("paths"));
+		if (paths->IsUndefined()) { paths = this->get_config("libraryPath"); } /* backwards compatibility */
 		
+		/* convert to array of search paths */
+		v8::Handle<v8::Array> arr;
+		if (paths->IsArray()) {
+			arr = v8::Handle<v8::Array>::Cast(paths);
+		} else {
+			arr = v8::Array::New(1);
+			arr->Set(JS_INT(0), paths);
+		}
+		
+		int length = arr->Length();
+		v8::Handle<v8::Value> prefix;
+		
+		for (int i=0;i<length;i++) {
+			prefix = arr->Get(JS_INT(i));
+			v8::String::Utf8Value pfx(prefix);
+			std::string path(*pfx);
+			path += "/";
+			path += name;
 #ifdef VERBOSE
 		printf("[resolve_module] expanded to '%s'\n", path.c_str()); 
 #endif	
-		return this->find_extension(path);
+			path = this->find_extension(path);
+			if (path != "") { return path; }
+		}
+		
+		return std::string("");
 	}
 }
 

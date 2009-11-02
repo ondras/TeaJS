@@ -367,7 +367,7 @@ v8::Handle<v8::Value> v8cgi_App::load_js(std::string filename, v8::Handle<v8::Ob
 
 		v8::Handle<v8::Function> fun = v8::Handle<v8::Function>::Cast(result);
 		v8::Handle<v8::Value> params[2] = {exports, module}; 
-		result = fun->Call(JS_GLOBAL, 2, params);
+		result = fun->Call(exports, 2, params);
 
 		/* runtime error in inner code */
 		if (tc.HasCaught() && !this->terminated) { throw this->format_exception(&tc); }

@@ -384,7 +384,8 @@ JS_METHOD(_line) {
 JS_METHOD(_polygon) {
 	GD_PTR;
 	GD_COLOR(1);
-	
+
+	if (!args[0]->IsArray()) { return JS_EXCEPTION("Non-array argument passed to polygon()"); }
 	v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(args[0]);
 	gdPointPtr points = gdPoints(arr);
 	gdImagePolygon(ptr, points, arr->Length(), color);
@@ -396,6 +397,7 @@ JS_METHOD(_openpolygon) {
 	GD_PTR;
 	GD_COLOR(1);
 	
+	if (!args[0]->IsArray()) { return JS_EXCEPTION("Non-array argument passed to openPolygon()"); }
 	v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(args[0]);
 	gdPointPtr points = gdPoints(arr);
 	gdImageOpenPolygon(ptr, points, arr->Length(), color);
@@ -433,6 +435,7 @@ JS_METHOD(_filledpolygon) {
 	GD_PTR;
 	GD_COLOR(1);
 	
+	if (!args[0]->IsArray()) { return JS_EXCEPTION("Non-array argument passed to filledPolygon()"); }
 	v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(args[0]);
 	gdPointPtr points = gdPoints(arr);
 	gdImageFilledPolygon(ptr, points, arr->Length(), color);
@@ -537,6 +540,7 @@ JS_METHOD(_settile) {
 
 JS_METHOD(_setstyle) {
 	GD_PTR;
+	if (!args[0]->IsArray()) { return JS_EXCEPTION("Non-array argument passed to setStyle()"); }
 	v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(args[0]);
 	unsigned int len = arr->Length();
 	

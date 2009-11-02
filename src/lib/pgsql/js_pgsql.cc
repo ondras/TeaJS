@@ -8,6 +8,7 @@
  *	2. http://www.postgresql.org/docs/8.4/static/libpq-async.html
  *
  *	Initial version: 2009-08-17, Ryan RAFFERTY
+ * 	Minor segfault fixes Ondrej ZARA
  */
 
 #include <stdlib.h>
@@ -234,61 +235,61 @@ namespace pgsql {
    *	  array members are used as a prepared SQL
    *	  statement (c.f. "pg_query_params()" in PHP)
    */
-  JS_METHOD(_query) {
-    PGSQL_PTR_CON;
-    ASSERT_CONNECTED;
-    uint32_t len = args.Length();
-    if (len < 1)
-      return JS_EXCEPTION("No query specified");
-    if (len > 1) {
-      v8::Handle<v8::Value> * fargs = new v8::Handle<v8::Value>[len];
-      for (uint32_t i=0;i<len;i++)
-	fargs[i] = args[i];
-      v8::Handle<v8::Value> f = args.This()->Get(JS_STR("queryParams"));
-      v8::Handle<v8::Function> queryParams = v8::Handle<v8::Function>::Cast(f);
-      v8::Local<v8::Value> ret = queryParams->Call(args.This(), len, fargs);
-      delete[] fargs;
-      return ret;
-    }
-    v8::String::Utf8Value q(args[0]);
-    pq::PGresult *res;
-    res = pq::PQexec(conn, *q);
-    int code = -1;
-    if (!(!res))
-      code = pq::PQresultStatus(res);
-    if (code != pq::PGRES_COMMAND_OK && code != pq::PGRES_TUPLES_OK) {
-      const char * errPrefix = "[js_pgsql.cc @ _query] ERROR: ";
-      const char * errPostfix = ")";
-      char errTmp[10];
-      sprintf(errTmp, "%d", code);
-      const char * errMid = strdup(errTmp);
-      char * errMsg = strdup(errPrefix);
-      strcat(errMsg, PGSQL_ERROR);
-      strcat(errMsg, " (");
-      strcat(errMsg, errMid);
-      strcat(errMsg, errPostfix);
-      pq::PQclear(res);
-      return JS_EXCEPTION(errMsg);
-    }
-    int qc = args.This()->Get(JS_STR("queryCount"))->ToInteger()->Int32Value();
-    args.This()->Set(JS_STR("queryCount"), JS_INT(qc+1));
-    if (res) {
-      v8::Handle<v8::Value> resargs[] = { v8::External::New((void *) res) };
-      return rslt->GetFunction()->NewInstance(1, resargs);
-    }
-    else
-      if (pq::PQntuples(res)) {
-	// pq::PQclear(res);
-	std::string ex = PGSQL_ERROR;
-	if (conn) {
-	  pq::PQfinish(conn);
-	  SAVE_PTR(0, NULL);
+JS_METHOD(_query) {
+	PGSQL_PTR_CON;
+	ASSERT_CONNECTED;
+	uint32_t len = args.Length();
+	if (len < 1) {
+		return JS_EXCEPTION("No query specified");
 	}
-	return JS_EXCEPTION(ex.c_str());
-      }
-      else
-        return args.This();
-  }
+	if (len > 1) {
+		v8::Handle<v8::Value> * fargs = new v8::Handle<v8::Value>[len];
+		for (uint32_t i=0;i<len;i++) {
+			fargs[i] = args[i];
+		}
+		v8::Handle<v8::Value> f = args.This()->Get(JS_STR("queryParams"));
+		v8::Handle<v8::Function> queryParams = v8::Handle<v8::Function>::Cast(f);
+		v8::Local<v8::Value> ret = queryParams->Call(args.This(), len, fargs);
+		delete[] fargs;
+		return ret;
+	}
+	v8::String::Utf8Value q(args[0]);
+	pq::PGresult *res;
+	res = pq::PQexec(conn, *q);
+	int code = -1;
+	if (!(!res)) {
+		code = pq::PQresultStatus(res);
+	}
+	if (code != pq::PGRES_COMMAND_OK && code != pq::PGRES_TUPLES_OK) {
+		char errTmp[10];
+		sprintf(errTmp, "%d", code);
+		std::string error = "[js_pgsql.cc @ _query] ERROR: ";
+		error += PGSQL_ERROR;
+		error += " (";
+		error += errTmp;
+		error += ")";
+		pq::PQclear(res);
+		return JS_EXCEPTION(error.c_str());
+	}
+	int qc = args.This()->Get(JS_STR("queryCount"))->ToInteger()->Int32Value();
+	args.This()->Set(JS_STR("queryCount"), JS_INT(qc+1));
+	if (res) {
+		v8::Handle<v8::Value> resargs[] = { v8::External::New((void *) res) };
+		return rslt->GetFunction()->NewInstance(1, resargs);
+	} else {
+		 if (pq::PQntuples(res)) {
+			// pq::PQclear(res);
+			std::string ex = PGSQL_ERROR;
+			if (conn) {
+				pq::PQfinish(conn);
+				SAVE_PTR(0, NULL);
+			}
+			return JS_EXCEPTION(ex.c_str());
+		} else {
+			return args.This();
+		}
+	}
+}
 
   /**
    *	QUERYPARAMS method
@@ -711,44 +712,42 @@ namespace pgsql {
 	return JS_BOOL(TRUE);
   }
 
-  JS_METHOD(_execute) {
-    PGSQL_PTR_CON;
-    ASSERT_CONNECTED;
-    v8::String::Utf8Value n(args[0]);
-    v8::Handle<v8::Array> tmp ( v8::Handle<v8::Array>::Cast(args[1]) );
-    uint32_t len = tmp->Length();
-    char ** q = (char **)malloc(len);
-    for(uint32_t i = 0; i < len; i++) {
-	uint32_t n = tmp->Get(JS_INT(i))->ToString()->Utf8Length();
-	v8::String::Utf8Value tval(tmp->Get(JS_INT(i))->ToString());
-	q[i] = new char[n + 1];
-	q[i] = strdup(*tval);
-    }
-    pq::PGresult * res = pq::PQexecPrepared(conn, *n, len, (const char* const*)q, NULL, NULL, 0);
-    int code = -1;
-    if (!(!res))
-      code = pq::PQresultStatus(res);
-    if (code != pq::PGRES_COMMAND_OK && code != pq::PGRES_TUPLES_OK) {
-      std::stringstream msg;
-      msg << "[js_pgsql.cc @ _execute()] ERROR: (";
-      msg << code;
-      msg << ") ";
-      msg << PGSQL_ERROR;
-      std::string err(msg.str());
-      pq::PQclear(res);
-      return JS_EXCEPTION(err.c_str());
-    }
-    if (!res) {
-      std::stringstream msg;
-      msg << "[js_pgsql.cc @ _execute()] ERROR: null result";
-      std::string err(msg.str());
-      return JS_EXCEPTION(err.c_str());
-    }
-    else {
-      v8::Handle<v8::Value> resargs[] = { v8::External::New((void *) res) };
-      return rslt->GetFunction()->NewInstance(1, resargs);
-    }
-  }
+JS_METHOD(_execute) {
+	PGSQL_PTR_CON;
+	ASSERT_CONNECTED;
+	v8::String::Utf8Value n(args[0]);
+	v8::Handle<v8::Array> tmp ( v8::Handle<v8::Array>::Cast(args[1]) );
+	uint32_t len = tmp->Length();
+	char ** q = (char **)malloc(len);
+	for(uint32_t i = 0; i < len; i++) {
+		uint32_t n = tmp->Get(JS_INT(i))->ToString()->Utf8Length();
+		v8::String::Utf8Value tval(tmp->Get(JS_INT(i))->ToString());
+		q[i] = new char[n + 1];
+		q[i] = strdup(*tval);
+	}
+	pq::PGresult * res = pq::PQexecPrepared(conn, *n, len, (const char* const*)q, NULL, NULL, 0);
+	int code = -1;
+	if (!(!res)) { code = pq::PQresultStatus(res); }
+	if (code != pq::PGRES_COMMAND_OK && code != pq::PGRES_TUPLES_OK) {
+		std::stringstream msg;
+		msg << "[js_pgsql.cc @ _execute()] ERROR: (";
+		msg << code;
+		msg << ") ";
+		msg << PGSQL_ERROR;
+		std::string err(msg.str());
+		pq::PQclear(res);
+		return JS_EXCEPTION(err.c_str());
+	}
+	if (!res) {
+		std::stringstream msg;
+		msg << "[js_pgsql.cc @ _execute()] ERROR: null result";
+		std::string err(msg.str());
+		return JS_EXCEPTION(err.c_str());
+	} else {
+		v8::Handle<v8::Value> resargs[] = { v8::External::New((void *) res) };
+		return rslt->GetFunction()->NewInstance(1, resargs);
+	}
+}
 
   JS_METHOD(_sendexecute) {
     PGSQL_PTR_CON;

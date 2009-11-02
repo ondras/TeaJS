@@ -62,8 +62,8 @@ JS_METHOD(_require) {
  */
 JS_METHOD(_onexit) {
 	v8cgi_App * app = APP_PTR;
-
-	v8::Persistent<v8::Function> fun  = v8::Persistent<v8::Function>::New(v8::Handle<v8::Function>::Cast(args[0]));
+	if (!args[0]->IsFunction()) { return JS_EXCEPTION("Non-function passed to onexit()"); }
+	v8::Persistent<v8::Function> fun = v8::Persistent<v8::Function>::New(v8::Handle<v8::Function>::Cast(args[0]));
 	app->onexit.push_back(fun);
 	return v8::Undefined();
 }
@@ -406,7 +406,7 @@ void v8cgi_App::js_error(std::string message) {
 	v8::Local<v8::Value> context = JS_GLOBAL->Get(JS_STR("response"));
 	if (context->IsObject()) {
 		v8::Local<v8::Value> print = context->ToObject()->Get(JS_STR("write"));
-		if (print->IsObject()) {
+		if (print->IsFunction()) {
 			fun = v8::Local<v8::Function>::Cast(print);
 			cgi = 1;
 		}

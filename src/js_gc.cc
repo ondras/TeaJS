@@ -34,7 +34,7 @@ void GC::add(v8::Handle<v8::Value> object, const char * method) {
 }
 
 /**
- * Execute ongargagecollection callback
+ * Execute ongarbagecollection callback
  */
 void GC::go(objlist::iterator it) {
 	v8::HandleScope handle_scope;

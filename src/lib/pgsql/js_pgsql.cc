@@ -14,7 +14,6 @@
 #include <stdlib.h>
 #include <map>
 #include <stdio.h>
-#include <stropts.h>
 #include <string.h>
 #include <sstream>
 
@@ -31,7 +30,9 @@ namespace pgsql {
   #include <pthread.h>
 
   namespace pq {
+#ifndef windows
     #include <postgres_fe.h>
+#endif
     #include <libpq-fe.h>
     #include <libpq/libpq-fs.h>
   }

@@ -39,7 +39,6 @@ public:
 			if (!env) { env = getenv("SCRIPT_FILENAME"); }
 			if (env) {
 				this->mainfile = std::string(env);
-				path_chdir(path_dirname(this->mainfile));
 				return 0;
 			}
 		}

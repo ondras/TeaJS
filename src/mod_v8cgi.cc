@@ -13,6 +13,7 @@
 #include "apr_pools.h"
 
 #include "js_app.h"
+#include "js_path.h"
 #include "js_macros.h"
 
 typedef struct {
@@ -82,20 +83,16 @@ public:
 	int execute(request_rec * request, char ** envp) {
 		this->output_started = false;
 		this->request = request;
-		return v8cgi_App::execute(true, envp);
+		this->mainfile = std::string(request->filename);
+		path_chdir(path_dirname(this->mainfile));
+		return v8cgi_App::execute(envp);
 	}
 	
-	int init(int argc, char ** argv) { 
-#ifdef REUSE_CONTEXT
-		v8cgi_App::create_context();
-#endif
-		return 0; 
-	}
-	
-	void apacheConfig(v8cgi_config * cfg) {
+	void init(v8cgi_config * cfg) { 
+		v8cgi_App::init();
 		this->cfgfile = cfg->config;
 	}
-
+	
 private:
 	request_rec * request;
 	bool output_started;
@@ -180,8 +177,7 @@ static int mod_v8cgi_handler(request_rec *r) {
 static int mod_v8cgi_init_handler(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp, server_rec *s) { 
 	ap_add_version_component(p, "mod_v8cgi");
 	v8cgi_config * cfg = (v8cgi_config *) ap_get_module_config(s->module_config, &v8cgi_module);
-	app.init(0, NULL);
-	app.apacheConfig(cfg);
+	app.init(cfg);
     return OK;
 }
 

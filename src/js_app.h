@@ -19,9 +19,9 @@ public:
 
 	virtual ~v8cgi_App() {};
 	/* once per app lifetime */
-	virtual int init(int argc, char ** argv); 
+	virtual void init(); 
 	/* once per request */
-	int execute(bool change, char ** envp); 
+	int execute(char ** envp); 
 	v8::Handle<v8::Object> include(std::string name);
 	v8::Handle<v8::Object> require(std::string name);
 	
@@ -32,15 +32,19 @@ public:
 	funcvector onexit;
 
 	/* stdin */
-	virtual size_t reader (char * destination, size_t size);
+	virtual size_t reader (char * destination, size_t size) = 0;
 	/* stdout */
-	virtual size_t writer (const char * source, size_t size);
+	virtual size_t writer (const char * source, size_t size) = 0;
 	/* stderr */
-	virtual void error(const char * data, const char * file, int line);
+	virtual void error(const char * data, const char * file, int line) = 0;
 
 protected:
 	/* config file */
 	std::string cfgfile;
+	/* main script file */
+	std::string mainfile; 
+	/* arguments after mainfile */
+	std::vector<std::string> mainfile_args; 
 	/* create new v8 execution context */
 	void create_context();
 	/* delete existing context */
@@ -49,10 +53,6 @@ protected:
 private:
 	/* current active context */
 	v8::Persistent<v8::Context> context; 
-	/* command-line specified file */
-	std::string mainfile; 
-	/* arguments after mainfile */
-	std::vector<std::string> mainfile_args; 
 	/* cache */
 	Cache cache;
 	/* GC notification engine */
@@ -61,7 +61,6 @@ private:
 	pathstack paths;
 
 	std::string format_exception(v8::TryCatch* try_catch);
-	virtual void process_args(int argc, char ** argv);
 	void prepare(char ** envp);
 	void findmain();
 	void finish();
@@ -69,7 +68,6 @@ private:
 	void js_error(std::string message);
 	void autoload();
 	void clear_global();
-	void setup_args();
 	
 	std::string resolve_module(std::string name);
 	std::string find_extension(std::string path);

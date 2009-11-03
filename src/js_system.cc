@@ -112,14 +112,23 @@ JS_METHOD(_usleep) {
 
 }
 
-void setup_system(v8::Handle<v8::Object> global, char ** envp) {
+void setup_system(v8::Handle<v8::Object> global, char ** envp, std::string mainfile, std::vector<std::string> args) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::ObjectTemplate> systemt = v8::ObjectTemplate::New();
 	v8::Handle<v8::Object> system = systemt->NewInstance();
-
 	v8::Handle<v8::Object> env = v8::Object::New();
-
 	global->Set(JS_STR("system"), system);
+	
+	/**
+	 * Create system.args 
+	 */
+	v8::Handle<v8::Array> arr = v8::Array::New();
+	arr->Set(JS_INT(0), JS_STR(mainfile.c_str()));
+	for (size_t i = 0; i < args.size(); ++i) {
+		arr->Set(JS_INT(i+1), JS_STR(args.at(i).c_str()));
+	}
+	system->Set(JS_STR("args"), arr);
+	
 	system->Set(JS_STR("stdin"), v8::FunctionTemplate::New(_stdin)->GetFunction());
 	system->Set(JS_STR("stdout"), v8::FunctionTemplate::New(_stdout)->GetFunction());
 	system->Set(JS_STR("stderr"), v8::FunctionTemplate::New(_stderr)->GetFunction());

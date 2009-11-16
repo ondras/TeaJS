@@ -35,12 +35,7 @@ public:
 		
 		if (argc == 1) {
 			/* no command-line arguments, try looking for CGI env vars */
-			char * env = getenv("PATH_TRANSLATED");
-			if (!env) { env = getenv("SCRIPT_FILENAME"); }
-			if (env) {
-				this->mainfile = std::string(env);
-				return 0;
-			}
+			if (!this->fromEnvVars()) { return 0; }
 		}
 		
 		try {
@@ -76,6 +71,15 @@ public:
 		fwrite((void *) "\n", sizeof(char), 1, stderr);
 	}
 
+	int fromEnvVars() {
+		char * env = getenv("PATH_TRANSLATED");
+		if (!env) { env = getenv("SCRIPT_FILENAME"); }
+		if (env) {
+			this->mainfile = std::string(env);
+			return 0;
+		}
+		return 1;
+	}
 private:
 
 	/**
@@ -204,6 +208,7 @@ int main(int argc, char ** argv) {
 	 * FastCGI main loop
 	 */
 	while (FCGI_Accept() >= 0  && !exit_requested) {
+		cgi.fromEnvVars();
 #endif
 
 		result = cgi.execute(environ);

@@ -443,12 +443,9 @@ std::string v8cgi_App::resolve_module(std::string name) {
 std::string v8cgi_App::find_extension(std::string path) {
 	/* remove /./, /../ etc */
 	std::string fullPath = path_normalize(path); 
-	if (path_file_exists(fullPath)) { return fullPath; }
 	
-	/* suffixes to be tried if file does not exist */
+	/* first, try suffixes */
 	const char * suffixes[] = {"js", STRING(DSO_EXT)};
-
-	/* try all suffixes */
 	std::string path2; 
 	for (int j=0;j<2;j++) {
 		path2 = fullPath;
@@ -456,6 +453,10 @@ std::string v8cgi_App::find_extension(std::string path) {
 		path2 += suffixes[j];
 		if (path_file_exists(path2)) { return path2; }
 	}
+
+	/* if the path already exists (extension to commonjs modules 1.1), use it */
+	if (path_file_exists(fullPath)) { return fullPath; }
+	
 	return std::string("");
 }
 

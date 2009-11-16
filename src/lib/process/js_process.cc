@@ -29,7 +29,6 @@ JS_METHOD(_system) {
 /**
  * The initial .exec method for stream buffering system commands
  */
-
 JS_METHOD(_exec) {
 	if (args.Length() != 1) {
 		return JS_EXCEPTION("Wrong argument count. Use new Process().exec(\"command\")");
@@ -54,7 +53,6 @@ JS_METHOD(_exec) {
 	}
 }
 
-
 }
 
 SHARED_INIT() {
@@ -68,5 +66,6 @@ SHARED_INIT() {
 	/* this module provides a set of (static) functions */
 	process->Set(JS_STR("system"), v8::FunctionTemplate::New(_system)->GetFunction());
 	process->Set(JS_STR("exec"), v8::FunctionTemplate::New(_exec)->GetFunction());
+
 	exports->Set(JS_STR("Process"), funct->GetFunction());
 }

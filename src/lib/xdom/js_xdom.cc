@@ -47,7 +47,7 @@ namespace xdom {
   using namespace v8;
   //XERCES_CPP_NAMESPACE_USE;
 
-  #include "js_dom.hpp"
+  #include "js_xdom.hpp"
 
   //	**********************************************		//
   //	**********************************************		//

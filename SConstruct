@@ -58,7 +58,7 @@ vars.Add(BoolVariable("gd", "GD library", 1))
 vars.Add(BoolVariable("sqlite", "SQLite library", 1))
 vars.Add(BoolVariable("socket", "Socket library", 1))
 vars.Add(BoolVariable("process", "Process library", 1))
-vars.Add(BoolVariable("dom", "DOM Level 3 library (for XML/XHTML)", 0))
+vars.Add(BoolVariable("xdom", "DOM Level 3 library (xerces based, for XML/XHTML)", 0))
 vars.Add(BoolVariable("gl", "OpenGL library", 0))
 vars.Add(BoolVariable("module", "Build Apache module", 1))
 vars.Add(BoolVariable("cgi", "Build CGI binary", 1))
@@ -268,7 +268,7 @@ if env["process"] == 1:
 	)
 # if
 
-if env["dom"] == 1:
+if env["xdom"] == 1:
 	e = env.Clone()
 	e.Append(
 		CPPPATH = env["xercesc_path"],
@@ -276,14 +276,14 @@ if env["dom"] == 1:
 	)
 	if env["os"] == "darwin":
 		e.SharedLibrary(
-			target = "lib/dom",
-			source = ["src/js_gc.cc", "src/lib/dom/js_dom.cc"],
+			target = "lib/xdom",
+			source = ["src/js_gc.cc", "src/lib/dom/js_xdom.cc"],
 			SHLIBPREFIX=""
 		)
 	else:
 		e.SharedLibrary(
-			target = "lib/dom",
-			source = ["src/js_gc.cc", "src/lib/dom/js_dom.cc"],
+			target = "lib/xdom",
+			source = ["src/js_gc.cc", "src/lib/dom/js_xdom.cc"],
 			SHLIBPREFIX=""
 		)
 # if

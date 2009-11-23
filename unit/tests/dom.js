@@ -58,6 +58,10 @@ exports.testInsert = function() {
 exports.testSerializeClone = function() {
 	var d = setup();
 	d.pretty = false;
+	
+	var xsl = d.createProcessingInstruction('xml-stylesheet', 'href="test.xsl"');
+	d.appendChild(xsl);
+	
 	var node1 = d.createElement("a");
 	var node2 = d.createElement("b");
 	d.appendChild(node1);
@@ -75,7 +79,8 @@ exports.testSerializeClone = function() {
 	var ser = new DOM.XMLSerializer();
 	var str = ser.serializeToString(d);
 	
-	var ref = '<xml version="1.0" encoding="utf-8">';
+	var ref = '<?xml version="1.0" encoding="utf-8">';
+	ref += '<?xml-stylesheet href="test.xsl"?>';
 	ref += '<a x="y">';
 	ref += '<b z="&amp;"><![CDATA[world]]></b><!--hello--></a>';
 	

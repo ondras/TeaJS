@@ -117,7 +117,7 @@ private:
 			this->request->status_line = line;
 			this->request->status = atoi(value);
 		} else {
-			apr_table_set(this->request->headers_out, name, value);
+			apr_table_addn(this->request->headers_out, name, value);
 		}
 	}
 };

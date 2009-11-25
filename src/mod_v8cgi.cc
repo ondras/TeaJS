@@ -12,6 +12,10 @@
 #include "util_script.h"
 #include "apr_pools.h"
 
+#include "apr_base64.h"
+#include "apr_strings.h"
+
+
 #include "js_app.h"
 #include "js_path.h"
 #include "js_macros.h"
@@ -132,6 +136,36 @@ static int mod_v8cgi_handler(request_rec *r) {
 	ap_setup_client_block(r, REQUEST_CHUNKED_DECHUNK);
 	ap_add_common_vars(r);
 	ap_add_cgi_vars(r);
+	
+
+    if (r->headers_in) {
+		const char *auth;
+		auth = apr_table_get(r->headers_in, "Authorization");
+		if (auth && auth[0] != 0 && strncmp(auth, "Basic ", 6) == 0) {
+			
+		    char *user = NULL;
+		    char *pass = NULL;
+		    int length;
+		    
+	    	user = (char *)apr_palloc(r->pool, apr_base64_decode_len(auth+6) + 1);
+	    	length = apr_base64_decode(user, auth + 6);
+		
+	    	/* Null-terminate the string. */
+	    	user[length] = '\0';		    
+	    	
+		    if (user) {
+				pass = strchr(user, ':');
+				if (pass) {
+				    *pass++ = '\0';
+
+				    apr_table_setn(r->subprocess_env, "AUTH_USER", user);
+				    apr_table_setn(r->subprocess_env, "AUTH_PW", pass);
+				}
+		    }
+		} 
+    }
+	
+	
 
 	/* extract the CGI environment  */
 	arr = apr_table_elts(r->subprocess_env);

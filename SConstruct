@@ -206,7 +206,7 @@ if env["pgsql"] == 1:
 	)
 	if env["os"] == "darwin":
 		e.SharedLibrary(
-			target = "lib/pgsql",
+			target = "lib/pgsql.so",
 			source = ["src/js_gc.cc", "src/lib/pgsql/js_pgsql.cc"],
 			SHLIBPREFIX=""
 		)
@@ -223,11 +223,18 @@ if env["sqlite"] == 1:
 	e.Append(
 		LIBS = ["sqlite3"]
 	)
-	e.SharedLibrary(
-		target = "lib/sqlite", 
-		source = ["src/js_gc.cc", "src/lib/sqlite/js_sqlite.cc"],
-		SHLIBPREFIX=""
-	)
+	if env["os"] == "darwin":
+		e.SharedLibrary(
+			target = "lib/sqlite.so", 
+			source = ["src/js_gc.cc", "src/lib/sqlite/js_sqlite.cc"],
+			SHLIBPREFIX=""
+		)
+	else:
+		e.SharedLibrary(
+			target = "lib/sqlite", 
+			source = ["src/js_gc.cc", "src/lib/sqlite/js_sqlite.cc"],
+			SHLIBPREFIX=""
+		)
 # if
 
 if env["gd"] == 1:
@@ -252,20 +259,34 @@ if env["gd"] == 1:
 
 if env["socket"] == 1:
 	e = env.Clone()
-	e.SharedLibrary(
-		target = "lib/socket", 
-		source = ["src/lib/socket/js_socket.cc"],
-		SHLIBPREFIX=""
-	)
+	if env["os"] == "darwin":
+		e.SharedLibrary(
+			target = "lib/socket.so", 
+			source = ["src/lib/socket/js_socket.cc"],
+			SHLIBPREFIX=""
+		)
+	else:
+		e.SharedLibrary(
+			target = "lib/socket", 
+			source = ["src/lib/socket/js_socket.cc"],
+			SHLIBPREFIX=""
+		)
 # if
 
 if env["process"] == 1:
 	e = env.Clone()
-	e.SharedLibrary(
-		target = "lib/process", 
-		source = ["src/lib/process/js_process.cc"],
-		SHLIBPREFIX=""
-	)
+	if env["os"] == "darwin":
+		e.SharedLibrary(
+			target = "lib/process.so", 
+			source = ["src/lib/process/js_process.cc"],
+			SHLIBPREFIX=""
+		)
+	else:
+		e.SharedLibrary(
+			target = "lib/process", 
+			source = ["src/lib/process/js_process.cc"],
+			SHLIBPREFIX=""
+		)
 # if
 
 if env["xdom"] == 1:
@@ -276,14 +297,14 @@ if env["xdom"] == 1:
 	)
 	if env["os"] == "darwin":
 		e.SharedLibrary(
-			target = "lib/xdom",
-			source = ["src/js_gc.cc", "src/lib/dom/js_xdom.cc"],
+			target = "lib/xdom.so",
+			source = ["src/js_gc.cc", "src/lib/xdom/js_xdom.cc"],
 			SHLIBPREFIX=""
 		)
 	else:
 		e.SharedLibrary(
 			target = "lib/xdom",
-			source = ["src/js_gc.cc", "src/lib/dom/js_xdom.cc"],
+			source = ["src/js_gc.cc", "src/lib/xdom/js_xdom.cc"],
 			SHLIBPREFIX=""
 		)
 # if

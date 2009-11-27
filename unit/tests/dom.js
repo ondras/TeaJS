@@ -5,8 +5,40 @@
 var assert = require("assert");
 var DOM = require("dom");
 
+var XMLSTR = '<!DOCTYPE a PUBLIC "b" "c">\n';
+XMLSTR += '<?xml version="1.0" encoding="utf-8"?>\n';
+XMLSTR += '<?xml-stylesheet href="test.xsl"?>\n';
+XMLSTR += '<a x="y">';
+XMLSTR += '<b z="&amp;"><![CDATA[world]]></b><!--hello--></a>\n';
+
 function setup() {
 	var d = new DOM.Document();
+	return d;
+}
+
+function setupFull() {
+	var d = setup();
+	
+	var xsl = d.createProcessingInstruction('xml-stylesheet', 'href="test.xsl"');
+	d.appendChild(xsl);
+	
+	var dt = d.createDocumentType("a", "b", "c");
+	d.doctype = dt;
+	
+	var node1 = d.createElement("a");
+	var node2 = d.createElement("b");
+	d.appendChild(node1);
+	d.documentElement.appendChild(node2);
+	
+	node1.setAttribute("x", "y");
+	node2.setAttribute("z", "&");
+	
+	var c = d.createComment("hello");
+	node1.appendChild(c);
+	
+	var cd = d.createCDATASection("world");
+	node2.appendChild(cd);
+	
 	return d;
 }
 
@@ -55,38 +87,30 @@ exports.testInsert = function() {
 	
 }
 
-exports.testSerializeClone = function() {
-	var d = setup();
-	d.pretty = false;
-	
-	var xsl = d.createProcessingInstruction('xml-stylesheet', 'href="test.xsl"');
-	d.appendChild(xsl);
-	
-	var node1 = d.createElement("a");
-	var node2 = d.createElement("b");
-	d.appendChild(node1);
-	d.documentElement.appendChild(node2);
-	
-	node1.setAttribute("x", "y");
-	node2.setAttribute("z", "&");
-	
-	var c = d.createComment("hello");
-	node1.appendChild(c);
-	
-	var cd = d.createCDATASection("world");
-	node2.appendChild(cd);
-	
+exports.testSerialize = function() {
+	var d = setupFull();
 	var ser = new DOM.XMLSerializer();
+
 	var str = ser.serializeToString(d);
-	
-	var ref = '<?xml version="1.0" encoding="utf-8">';
-	ref += '<?xml-stylesheet href="test.xsl"?>';
-	ref += '<a x="y">';
-	ref += '<b z="&amp;"><![CDATA[world]]></b><!--hello--></a>';
-	
-	assert.assertEquals("Kitchen sink serialization", ref, str);
-	var clone = d.cloneNode(true);
-	str = ser.serializeToString(clone);
-	assert.assertEquals("Document deep clone", ref, str);
+	assert.assertEquals("Kitchen sink serialization", XMLSTR, str);
 }
 
+exports.testClone = function() {
+	var d = setupFull();
+	var ser = new DOM.XMLSerializer();
+	
+	var clone = d.cloneNode(true);
+	str = ser.serializeToString(clone);
+	assert.assertEquals("Document deep clone", XMLSTR, str);
+}
+
+exports.testParse = function() {
+	var d = setupFull();
+	var ser = new DOM.XMLSerializer();
+	var par = new DOM.DOMParser();
+	
+	var doc = par.parseFromString(XMLSTR);
+	var str = ser.serializeToString(doc);
+	
+	assert.assertEquals("XML parsing", XMLSTR, str);
+}

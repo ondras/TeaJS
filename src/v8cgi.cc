@@ -33,6 +33,7 @@ public:
 	int init(int argc, char ** argv) {
 		v8cgi_App::init();
 		
+		this->argv0 = std::string(argc > 0 ? path_normalize(argv[0]).c_str() : '\0');
 		if (argc == 1) {
 			/* no command-line arguments, try looking for CGI env vars */
 			if (!this->fromEnvVars()) { return 0; }
@@ -80,8 +81,18 @@ public:
 		}
 		return 1;
 	}
+	
 private:
+	std::string argv0;
 
+	const char * instanceType() { 
+		return "cli";
+	}
+	
+	const char * executableName() {
+		return this->argv0.c_str();
+	}
+	
 	/**
 	 * Process command line arguments.
 	 */

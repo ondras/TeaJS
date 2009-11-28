@@ -1,6 +1,8 @@
 import sys
 import os
 
+version = open("VERSION", "r").read()
+
 # base source files
 sources = [
 	"js_common.cc",
@@ -100,6 +102,7 @@ env.Append(
 	LIBPATH = env["v8_path"],
 	CPPDEFINES = [
 		"CONFIG_PATH=" + env["config_file"],
+		"VERSION=" + version,
 		env["os"]
 	],
 	LINKFLAGS = []

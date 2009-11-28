@@ -37,18 +37,20 @@ public:
 	virtual size_t writer (const char * source, size_t size) = 0;
 	/* stderr */
 	virtual void error(const char * data, const char * file, int line) = 0;
-
+	
 protected:
 	/* config file */
 	std::string cfgfile;
 	/* main script file */
 	std::string mainfile; 
 	/* arguments after mainfile */
-	std::vector<std::string> mainfile_args; 
+	std::vector<std::string> mainfile_args;
 	/* create new v8 execution context */
 	void create_context();
 	/* delete existing context */
 	void delete_context();
+	/* setup the v8cgi free variable */
+	void setup_v8cgi(v8::Handle<v8::Object> target);
 
 private:
 	/* current active context */
@@ -69,6 +71,12 @@ private:
 	void autoload();
 	void clear_global();
 	
+	/* instance type info */
+	virtual const char * instanceType() = 0;
+
+	/* instance type info */
+	virtual const char * executableName() = 0;
+
 	std::string resolve_module(std::string name);
 	std::string find_extension(std::string path);
 	v8::Handle<v8::Value> load_js(std::string filename, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module);

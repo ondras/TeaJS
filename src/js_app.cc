@@ -110,6 +110,7 @@ void v8cgi_App::prepare(char ** envp) {
 	g->Set(JS_STR("global"), g);
 	g->Set(JS_STR("Config"), v8::Object::New());
 
+	setup_v8cgi(g);
 	setup_system(g, envp, this->mainfile, this->mainfile_args);
 	setup_io(g);
 
@@ -553,4 +554,15 @@ void v8cgi_App::clear_global() {
 v8::Handle<v8::Value> v8cgi_App::get_config(std::string name) {
 	v8::Handle<v8::Value> config = JS_GLOBAL->Get(JS_STR("Config"));
 	return config->ToObject()->Get(JS_STR(name.c_str()));
+}
+
+void v8cgi_App::setup_v8cgi(v8::Handle<v8::Object> target) {
+	v8::HandleScope handle_scope;
+	v8::Handle<v8::Object> v8cgi = v8::Object::New();
+	
+	v8cgi->Set(JS_STR("version"), JS_STR(STRING(VERSION)));
+	v8cgi->Set(JS_STR("instanceType"), JS_STR(this->instanceType()));
+	v8cgi->Set(JS_STR("executableName"), JS_STR(this->executableName()));
+	
+	target->Set(JS_STR("v8cgi"), v8cgi);
 }

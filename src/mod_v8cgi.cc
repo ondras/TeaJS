@@ -101,6 +101,14 @@ private:
 	request_rec * request;
 	bool output_started;
 
+	const char * instanceType() {
+		return "module";
+	}
+
+	const char * executableName() {
+		return "?";
+	}
+
 	/**
 	 * Set a HTTP response header
 	 * @param {char *} name

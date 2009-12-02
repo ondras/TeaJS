@@ -173,6 +173,7 @@ if env["mysql"] == 1:
 		e.Append(
 			LIBS = ["wsock32", "user32", "advapi32", "mysql"],
 		)
+	# if
 	if env["os"] == "darwin":
 		e.Append(
 			LIBPATH = ["/opt/local/lib/", "/opt/local/lib/mysql5/mysql"],
@@ -207,6 +208,11 @@ if env["pgsql"] == 1:
 		CPPPATH = env["pgsql_path"],
 		LIBS = "pq"
 	)
+	if env["os"] == "windows":
+		e.Append(
+			LIBS = ["pthreadGCE2"],
+		)
+	# if
 	if env["os"] == "darwin":
 		e.SharedLibrary(
 			target = "lib/pgsql.so",
@@ -343,7 +349,7 @@ if env["module"] == 1:
 		)
 	if env["os"] == "windows":
 		e.Append(
-			LIBS = ["libapr-1", "libhttpd"]
+			LIBS = ["apr-1", "httpd", "aprutil-1"]
 		)
 	# if
 	

@@ -21,6 +21,11 @@
 #include "js_macros.h"
 #include "js_gc.h"
 
+#ifndef HAVE_SLEEP
+#	include <windows.h>
+#	define sleep(num) { Sleep(num * 1000); }
+#endif
+
 namespace pgsql {
 
   // Establish lock to prevent violation of V8 threading

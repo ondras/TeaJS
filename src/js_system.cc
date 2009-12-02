@@ -101,14 +101,15 @@ JS_METHOD(_sleep) {
 }
 
 /**
- * FIXME: How to do this on win32?
+ * Sleep for a given number of microseconds
+ */
 JS_METHOD(_usleep) {
 	v8::HandleScope handle_scope;
 	int num = args[0]->Int32Value();
 	usleep(num);
 	return v8::Undefined();
 }
-*/
+
 
 }
 
@@ -134,7 +135,7 @@ void setup_system(v8::Handle<v8::Object> global, char ** envp, std::string mainf
 	system->Set(JS_STR("stderr"), v8::FunctionTemplate::New(_stderr)->GetFunction());
 	system->Set(JS_STR("getcwd"), v8::FunctionTemplate::New(_getcwd)->GetFunction());
 	system->Set(JS_STR("sleep"), v8::FunctionTemplate::New(_sleep)->GetFunction());
-/*	system->Set(JS_STR("usleep"), v8::FunctionTemplate::New(_usleep)->GetFunction()); */
+	system->Set(JS_STR("usleep"), v8::FunctionTemplate::New(_usleep)->GetFunction());
 	system->Set(JS_STR("env"), env);
 	
 	std::string name, value;

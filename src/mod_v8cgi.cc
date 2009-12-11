@@ -201,9 +201,9 @@ static int mod_v8cgi_handler(request_rec *r) {
 	app.execute(r, envp);
 	
 	for (int i=0;i<arr->nelts;i++) {
-		free(envp[i]);
+		delete[] envp[i];
 	}
-	free(envp);
+	delete[] envp;
 	
 //  Ok is safer, because HTTP_INTERNAL_SERVER_ERROR overwrites any content already generated
 //	if (result) {

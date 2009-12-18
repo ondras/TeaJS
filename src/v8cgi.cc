@@ -2,17 +2,17 @@
  * v8cgi - cgi binary
  */
 
-#ifdef FASTCGI
-#  include <fcgi_stdio.h>
-#  include <signal.h>
-#endif
-
 #include <v8.h>
 #include <v8-debug.h>
 #include <stdlib.h>
 #include <string.h>
 #include "js_app.h"
 #include "js_path.h"
+
+#ifdef FASTCGI
+#  include <fcgi_stdio.h>
+#  include <signal.h>
+#endif
 
 /**
  * Format for command line arguments

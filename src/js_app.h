@@ -15,7 +15,6 @@
 class v8cgi_App {
 public:
 	typedef std::vector<v8::Persistent<v8::Function> > funcvector;
-	typedef std::stack<std::string> pathstack;
 
 	virtual ~v8cgi_App() {};
 	/* once per app lifetime */
@@ -23,7 +22,7 @@ public:
 	/* once per request */
 	int execute(char ** envp); 
 	v8::Handle<v8::Object> include(std::string name);
-	v8::Handle<v8::Object> require(std::string name);
+	v8::Handle<v8::Object> require(std::string name, std::string moduleId);
 	
 	/* termination mark. if present, termination exception is not handled */
 	bool terminated;
@@ -59,8 +58,6 @@ private:
 	Cache cache;
 	/* GC notification engine */
 	GC gc;
-	/* stack of current paths */ 
-	pathstack paths;
 
 	std::string format_exception(v8::TryCatch* try_catch);
 	void prepare(char ** envp);
@@ -77,11 +74,14 @@ private:
 	/* instance type info */
 	virtual const char * executableName() = 0;
 
-	std::string resolve_module(std::string name);
+	std::string resolve_module(std::string name, std::string relativeRoot);
 	std::string find_extension(std::string path);
-	v8::Handle<v8::Value> load_js(std::string filename, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module);
-	v8::Handle<v8::Value> load_dso(std::string filename, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module);
+	v8::Handle<v8::Value> load_js(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module);
+	v8::Handle<v8::Value> load_dso(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module);
 	v8::Handle<v8::Value> get_config(std::string name);
+	v8::Handle<v8::Function> build_require(std::string path);
+	
+	v8::Persistent<v8::Array> paths; /* require.paths */
 };
 
 #endif

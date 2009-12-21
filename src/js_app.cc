@@ -48,8 +48,9 @@ JS_METHOD(_require) {
 	v8cgi_App * app = APP_PTR;
 	v8::String::Utf8Value file(args[0]);
 	v8::Handle<v8::Object> exports;
+	std::string root = *(v8::String::Utf8Value(args.Data()));
 	try {
-		exports = app->require(*file);
+		exports = app->require(*file, root);
 	} catch (std::string e) {
 		return JS_EXCEPTION(e.c_str());
 	}
@@ -103,12 +104,15 @@ void v8cgi_App::prepare(char ** envp) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::Object> g = JS_GLOBAL;
 
+	std::string root = path_getcwd();
 	g->Set(JS_STR("include"), v8::FunctionTemplate::New(_include)->GetFunction());
-	g->Set(JS_STR("require"), v8::FunctionTemplate::New(_require)->GetFunction());
+	g->Set(JS_STR("require"), v8::FunctionTemplate::New(_require, JS_STR(root.c_str()))->GetFunction());
 	g->Set(JS_STR("onexit"), v8::FunctionTemplate::New(_onexit)->GetFunction());
 	g->Set(JS_STR("exit"), v8::FunctionTemplate::New(_exit)->GetFunction());
 	g->Set(JS_STR("global"), g);
 	g->Set(JS_STR("Config"), v8::Object::New());
+	
+	this->paths = v8::Persistent<v8::Array>::New(v8::Array::New());
 
 	setup_v8cgi(g);
 	setup_system(g, envp, this->mainfile, this->mainfile_args);
@@ -182,7 +186,7 @@ int v8cgi_App::execute(char ** envp) {
 
 	try {
 		/* require the mainfile */
-		this->require(this->mainfile); 
+		this->require(this->mainfile, path_getcwd()); 
 	} catch (std::string e) {
 		/* error when executing main file */
 		v8::Handle<v8::Value> show = this->get_config("showErrors");
@@ -217,9 +221,6 @@ void v8cgi_App::finish() {
 	/* export cache */
 	this->cache.clearExports();
 	
-	/* paths */
-	while (!this->paths.empty()) { this->paths.pop(); }
-	
 #ifndef REUSE_CONTEXT
 	/**
 	 * Delete current context
@@ -235,7 +236,7 @@ void v8cgi_App::finish() {
 v8::Handle<v8::Object> v8cgi_App::include(std::string name) {
 	v8::HandleScope handle_scope;
 
-	v8::Handle<v8::Object> exports = this->require(name);
+	v8::Handle<v8::Object> exports = this->require(name, path_getcwd());
 	v8::Handle<v8::Array> names = exports->GetPropertyNames();
 	for (unsigned i=0;i<names->Length();i++) {
 		v8::Handle<v8::Value> name = names->Get(JS_INT(i));
@@ -248,13 +249,14 @@ v8::Handle<v8::Object> v8cgi_App::include(std::string name) {
 /**
  * Require a module
  * @param {std::string} name
+ * @param {std::string} relativeRoot module root for relative includes
  */
-v8::Handle<v8::Object> v8cgi_App::require(std::string name) {
+v8::Handle<v8::Object> v8cgi_App::require(std::string name, std::string relativeRoot) {
 	v8::HandleScope handle_scope;
 #ifdef VERBOSE
 	printf("[require] looking for '%s'\n", name.c_str()); 
 #endif	
-	std::string filename = this->resolve_module(name);
+	std::string filename = this->resolve_module(name, relativeRoot);
 #ifdef VERBOSE
 	printf("[require] resolved as '%s'\n", filename.c_str()); 
 #endif	
@@ -266,9 +268,14 @@ v8::Handle<v8::Object> v8cgi_App::require(std::string name) {
 		throw s;
 	}
 	
+	
+	
 	v8::Handle<v8::Object> exports = this->cache.getExports(filename);
 	/* check if exports are cached */
 	if (!exports.IsEmpty()) { return exports; }
+	
+	/* create module-specific require */
+	v8::Handle<v8::Function> require = this->build_require(filename);
 
 	/* add new blank exports to cache */
 	exports = v8::Object::New();
@@ -278,9 +285,6 @@ v8::Handle<v8::Object> v8cgi_App::require(std::string name) {
 	v8::Handle<v8::Object> module = v8::Object::New();
 	module->Set(JS_STR("id"), JS_STR(filename.c_str()));
 
-	/* prepare path to stack */
-	this->paths.push(path_dirname(filename)); 
-	
 	/* result */
 	v8::Handle<v8::Value> data; 
 
@@ -288,27 +292,24 @@ v8::Handle<v8::Object> v8cgi_App::require(std::string name) {
 		size_t index = filename.find_last_of(".");
 		std::string ext = filename.substr(index+1);
 		if (ext == STRING(DSO_EXT)) {
-			data = this->load_dso(filename, exports, module);
+			data = this->load_dso(filename, require, exports, module);
 		} else {
-			data = this->load_js(filename, exports, module);
+			data = this->load_js(filename, require, exports, module);
 		}
 	} catch (std::string e) {
-		this->paths.pop(); 
 		/* remove from export cache */
 		this->cache.removeExports(filename);
 		/* rethrow */
 		throw e; 
 	}
 
-	/* execution ended, remove top path */
-	this->paths.pop(); 
 	return handle_scope.Close(exports);
 }
 
 /**
  * Include a js module
  */
-v8::Handle<v8::Value> v8cgi_App::load_js(std::string filename, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module) {
+v8::Handle<v8::Value> v8cgi_App::load_js(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module) {
 	v8::HandleScope handle_scope;
 	v8::TryCatch tc;
 
@@ -323,8 +324,8 @@ v8::Handle<v8::Value> v8cgi_App::load_js(std::string filename, v8::Handle<v8::Ob
 		v8::Handle<v8::Value> result = script->Run();
 
 		v8::Handle<v8::Function> fun = v8::Handle<v8::Function>::Cast(result);
-		v8::Handle<v8::Value> params[2] = {exports, module}; 
-		result = fun->Call(exports, 2, params);
+		v8::Handle<v8::Value> params[3] = {require, exports, module}; 
+		result = fun->Call(exports, 3, params);
 
 		/* runtime error in inner code */
 		if (tc.HasCaught() && !this->terminated) { throw this->format_exception(&tc); }
@@ -335,11 +336,11 @@ v8::Handle<v8::Value> v8cgi_App::load_js(std::string filename, v8::Handle<v8::Ob
 /**
  * Include a dso module
  */
-v8::Handle<v8::Value> v8cgi_App::load_dso(std::string filename, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module) {
+v8::Handle<v8::Value> v8cgi_App::load_dso(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module) {
 	v8::HandleScope handle_scope;
 	void * handle = this->cache.getHandle(filename);
 
-	typedef void (*init_t)(v8::Handle<v8::Object>, v8::Handle<v8::Object>);
+	typedef void (*init_t)(v8::Handle<v8::Function>, v8::Handle<v8::Object>, v8::Handle<v8::Object>);
 
 	init_t func = (init_t) dlsym(handle, "init");	
 	
@@ -350,7 +351,7 @@ v8::Handle<v8::Value> v8cgi_App::load_dso(std::string filename, v8::Handle<v8::O
 		throw error;
 	}
 	
-	func(exports, module);
+	func(require, exports, module);
 	return handle_scope.Close(exports);	
 }
 
@@ -385,7 +386,7 @@ void v8cgi_App::js_error(std::string message) {
 /**
  * Fully expand/resolve module name
  */
-std::string v8cgi_App::resolve_module(std::string name) {
+std::string v8cgi_App::resolve_module(std::string name, std::string relativeRoot) {
 	if (!name.length()) { return std::string(""); }
 
 	if (path_isabsolute(name)) {
@@ -396,7 +397,7 @@ std::string v8cgi_App::resolve_module(std::string name) {
 		return this->find_extension(name);
 	} else if (name.at(0) == '.') {
 		/* local module, relative to current path */
-		std::string path = this->paths.empty() ? path_getcwd() : this->paths.top();
+		std::string path = relativeRoot;
 		path += "/";
 		path += name;
 #ifdef VERBOSE
@@ -404,20 +405,8 @@ std::string v8cgi_App::resolve_module(std::string name) {
 #endif	
 		return this->find_extension(path);
 	} else {
-		/* global module, relative to some of the given searchpaths */
-		v8::Handle<v8::Object> req = JS_GLOBAL->Get(JS_STR("require"))->ToObject();
-		v8::Handle<v8::Value> paths = req->Get(JS_STR("paths"));
-		if (paths->IsUndefined()) { paths = this->get_config("libraryPath"); } /* backwards compatibility */
-		
 		/* convert to array of search paths */
-		v8::Handle<v8::Array> arr;
-		if (paths->IsArray()) {
-			arr = v8::Handle<v8::Array>::Cast(paths);
-		} else {
-			arr = v8::Array::New(1);
-			arr->Set(JS_INT(0), paths);
-		}
-		
+		v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(this->paths);
 		int length = arr->Length();
 		v8::Handle<v8::Value> prefix;
 		
@@ -554,6 +543,17 @@ void v8cgi_App::clear_global() {
 v8::Handle<v8::Value> v8cgi_App::get_config(std::string name) {
 	v8::Handle<v8::Value> config = JS_GLOBAL->Get(JS_STR("Config"));
 	return config->ToObject()->Get(JS_STR(name.c_str()));
+}
+
+/**
+ * Build module-specific require
+ */
+v8::Handle<v8::Function> v8cgi_App::build_require(std::string path) {
+	std::string root = path_dirname(path);
+	v8::Handle<v8::FunctionTemplate> requiretemplate = v8::FunctionTemplate::New(_require, JS_STR(root.c_str()));
+	v8::Handle<v8::Function> require = requiretemplate->GetFunction();
+	require->Set(JS_STR("paths"), this->paths);
+	return require;
 }
 
 void v8cgi_App::setup_v8cgi(v8::Handle<v8::Object> target) {

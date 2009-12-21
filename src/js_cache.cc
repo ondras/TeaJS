@@ -214,7 +214,7 @@ void Cache::clearExports() {
  */
 std::string Cache::wrapExports(std::string code) {
 	std::string result = "";
-	result += "(function(exports, module){";
+	result += "(function(require,exports,module){";
 	result += code;
 	result += "})";
 	return result;

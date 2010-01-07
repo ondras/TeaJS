@@ -136,7 +136,6 @@ if env["os"] == "posix":
 
 if env["os"] == "darwin":
 	env.Append(
-		SHLINKFLAGS = "-undefined dynamic_lookup",
 		CPPDEFINES = ["DSO_EXT=so"]
 	)
 # if

@@ -119,7 +119,7 @@ void v8cgi_App::prepare(char ** envp) {
 	setup_io(g);
 
 	/* config file */
-	this->include(this->cfgfile); 
+	this->include(path_normalize(this->cfgfile)); 
 	
 	/* default libraries */
 	this->autoload();

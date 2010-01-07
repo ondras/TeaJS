@@ -13,16 +13,19 @@
 class GC {
 public:
 	typedef std::list<std::pair<v8::Persistent<v8::Value>, const char *> > objlist;
-	
-	/* this method is called by V8 when persisten handle gets weak */
+
+	/* this method is called by V8 when persistent handle gets weak */
 	static void handler(v8::Persistent<v8::Value> object, void * ptr);
+
 	/* objects subscribe by calling this method */
-    virtual void add(v8::Handle<v8::Value> object, const char * method);
-    /* executes a callback for a given iterator */
-    virtual void go(objlist::iterator it);
-    /* app lifetime ends, time to collect everything that remains */
+	virtual void add(v8::Handle<v8::Value> object, const char * method);
+
+	/* executes a callback for a given iterator */
+	virtual void go(objlist::iterator it);
+
+	/* app lifetime ends, time to collect everything that remains */
 	virtual void finish();
-	
+
 	/* list of callbacks */
 	objlist data;
 };

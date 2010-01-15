@@ -12,12 +12,12 @@
 #  include <fcgi_stdio.h>
 #endif
 
-#include "js_app.h"
-#include "js_system.h"
-#include "js_io.h"
-#include "js_macros.h"
-#include "js_cache.h"
-#include "js_path.h"
+#include "app.h"
+#include "system.h"
+#include "io.h"
+#include "macros.h"
+#include "cache.h"
+#include "path.h"
 
 #ifndef windows
 #   include <dlfcn.h>

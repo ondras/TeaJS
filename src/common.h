@@ -17,7 +17,6 @@ inline v8::Handle<v8::Array> JS_CHARARRAY(char * data, int count) {
 void * mmap_read(char * name, size_t * size);
 void mmap_free(char * data, size_t size);
 int mmap_write(char * name, void * data, size_t size);
-std::string wrapExports(std::string what);
 
 #endif
 

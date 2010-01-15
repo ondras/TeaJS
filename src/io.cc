@@ -9,9 +9,9 @@
 
 #include <string>
 #include <stdlib.h>
-#include "js_macros.h"
-#include "js_common.h"
-#include "js_path.h"
+#include "macros.h"
+#include "common.h"
+#include "path.h"
 
 #include <unistd.h>
 #include <dirent.h>

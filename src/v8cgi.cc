@@ -6,8 +6,8 @@
 #include <v8-debug.h>
 #include <stdlib.h>
 #include <string.h>
-#include "js_app.h"
-#include "js_path.h"
+#include "app.h"
+#include "path.h"
 
 #ifdef FASTCGI
 #  include <fcgi_stdio.h>

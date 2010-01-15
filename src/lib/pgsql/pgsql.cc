@@ -18,8 +18,8 @@
 #include <sstream>
 
 #include <v8.h>
-#include "js_macros.h"
-#include "js_gc.h"
+#include "macros.h"
+#include "gc.h"
 
 #ifndef HAVE_SLEEP
 #	include <windows.h>

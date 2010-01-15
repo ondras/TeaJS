@@ -8,7 +8,7 @@
 
 #include <list>
 #include "v8.h"
-#include "js_macros.h"
+#include "macros.h"
 
 class GC {
 public:

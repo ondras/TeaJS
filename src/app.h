@@ -6,8 +6,8 @@
 #include <vector>
 #include <list>
 #include <v8.h>
-#include "js_cache.h"
-#include "js_gc.h"
+#include "cache.h"
+#include "gc.h"
 
 /**
  * This class defines a basic v8-based application.

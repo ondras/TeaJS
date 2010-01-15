@@ -12,8 +12,8 @@
 
 #include <v8.h>
 #include <v8-debug.h>
-#include "js_macros.h"
-#include "js_gc.h"
+#include "macros.h"
+#include "gc.h"
 
 #include <xercesc/util/PlatformUtils.hpp>
 #include <xercesc/dom/DOM.hpp>

@@ -5,11 +5,11 @@
 #  include <fcgi_stdio.h>
 #endif
 
-#include "js_macros.h"
-#include "js_common.h"
-#include "js_app.h"
-#include "js_system.h"
-#include "js_path.h"
+#include "macros.h"
+#include "common.h"
+#include "app.h"
+#include "system.h"
+#include "path.h"
 
 #ifndef HAVE_SLEEP
 #	include <windows.h>

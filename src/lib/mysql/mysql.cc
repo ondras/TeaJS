@@ -1,6 +1,6 @@
 #include <v8.h>
-#include "js_macros.h"
-#include "js_gc.h"
+#include "macros.h"
+#include "gc.h"
 
 #ifdef windows
 #	include <my_global.h>

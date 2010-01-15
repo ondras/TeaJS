@@ -11,9 +11,9 @@
 #   define dlclose(x) FreeLibrary((HMODULE)x)
 #endif
 
-#include "js_macros.h"
-#include "js_cache.h"
-#include "js_common.h"
+#include "macros.h"
+#include "cache.h"
+#include "common.h"
 
 /**
  * Is this file already cached?

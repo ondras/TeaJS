@@ -2,7 +2,7 @@
  * Path manipulation utilities
  */
 
-#include <js_path.h>
+#include "path.h"
 #include <string>
 #include <sys/stat.h>
 #include <sys/types.h>

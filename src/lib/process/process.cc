@@ -4,8 +4,8 @@
 
 #include <v8.h>
 #include <string>
-#include "js_macros.h"
-#include "js_common.h"
+#include "macros.h"
+#include "common.h"
 #include <stdlib.h>
 
 namespace {

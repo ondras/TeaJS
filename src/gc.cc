@@ -3,7 +3,7 @@
  * when its JS representation gets GC'ed.
  */
 
-#include "js_gc.h"
+#include "gc.h"
 
 /**
  * GC handler: executed when given object dies

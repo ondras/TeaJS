@@ -16,9 +16,9 @@
 #include "apr_strings.h"
 
 
-#include "js_app.h"
-#include "js_path.h"
-#include "js_macros.h"
+#include "app.h"
+#include "path.h"
+#include "macros.h"
 
 typedef struct {
 	const char * config;

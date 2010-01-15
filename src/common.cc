@@ -7,7 +7,7 @@
 #  include <stdio.h>
 #endif
 
-#include "js_common.h"
+#include "common.h"
 
 void * mmap_read(char * name, size_t * size) {
 #ifdef HAVE_MMAN_H

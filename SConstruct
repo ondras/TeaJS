@@ -5,13 +5,13 @@ version = open("VERSION", "r").read()
 
 # base source files
 sources = [
-	"js_common.cc",
-	"js_system.cc",
-	"js_io.cc",
-	"js_cache.cc",
-	"js_gc.cc",
-	"js_app.cc",
-	"js_path.cc"
+	"common.cc",
+	"system.cc",
+	"io.cc",
+	"cache.cc",
+	"gc.cc",
+	"app.cc",
+	"path.cc"
 ]
 sources = [ "src/%s" % s for s in sources ]
 
@@ -190,13 +190,13 @@ if env["mysql"] == 1:
 	if env["os"] == "darwin":
 		e.SharedLibrary(
 			target = "lib/mysql.so",
-			source = ["src/js_gc.cc", "src/lib/mysql/js_mysql.cc"],
+			source = ["src/gc.cc", "src/lib/mysql/mysql.cc"],
 			SHLIBPREFIX=""
 		)
 	else:
 		e.SharedLibrary(
 			target = "lib/mysql",
-			source = ["src/js_gc.cc", "src/lib/mysql/js_mysql.cc"],
+			source = ["src/gc.cc", "src/lib/mysql/mysql.cc"],
 			SHLIBPREFIX=""
 		)
 # if
@@ -215,13 +215,13 @@ if env["pgsql"] == 1:
 	if env["os"] == "darwin":
 		e.SharedLibrary(
 			target = "lib/pgsql.so",
-			source = ["src/js_gc.cc", "src/lib/pgsql/js_pgsql.cc"],
+			source = ["src/gc.cc", "src/lib/pgsql/pgsql.cc"],
 			SHLIBPREFIX=""
 		)
 	else:
 		e.SharedLibrary(
 			target = "lib/pgsql",
-			source = ["src/js_gc.cc", "src/lib/pgsql/js_pgsql.cc"],
+			source = ["src/gc.cc", "src/lib/pgsql/pgsql.cc"],
 			SHLIBPREFIX=""
 		)
 # if
@@ -234,13 +234,13 @@ if env["sqlite"] == 1:
 	if env["os"] == "darwin":
 		e.SharedLibrary(
 			target = "lib/sqlite.so", 
-			source = ["src/js_gc.cc", "src/lib/sqlite/js_sqlite.cc"],
+			source = ["src/gc.cc", "src/lib/sqlite/sqlite.cc"],
 			SHLIBPREFIX=""
 		)
 	else:
 		e.SharedLibrary(
 			target = "lib/sqlite", 
-			source = ["src/js_gc.cc", "src/lib/sqlite/js_sqlite.cc"],
+			source = ["src/gc.cc", "src/lib/sqlite/sqlite.cc"],
 			SHLIBPREFIX=""
 		)
 # if
@@ -254,13 +254,13 @@ if env["gd"] == 1:
 	if env["os"] == "darwin":
 		e.SharedLibrary(
 			target = "lib/gd.so", 
-			source = ["src/js_common.cc", "src/lib/gd/js_gd.cc"],
+			source = ["src/common.cc", "src/lib/gd/gd.cc"],
 			SHLIBPREFIX=""
 		)
 	else:
 		e.SharedLibrary(
 			target = "lib/gd", 
-			source = ["src/js_common.cc", "src/lib/gd/js_gd.cc"],
+			source = ["src/common.cc", "src/lib/gd/gd.cc"],
 			SHLIBPREFIX=""
 		)
 # if
@@ -270,13 +270,13 @@ if env["socket"] == 1:
 	if env["os"] == "darwin":
 		e.SharedLibrary(
 			target = "lib/socket.so", 
-			source = ["src/lib/socket/js_socket.cc"],
+			source = ["src/lib/socket/socket.cc"],
 			SHLIBPREFIX=""
 		)
 	else:
 		e.SharedLibrary(
 			target = "lib/socket", 
-			source = ["src/lib/socket/js_socket.cc"],
+			source = ["src/lib/socket/socket.cc"],
 			SHLIBPREFIX=""
 		)
 # if
@@ -286,13 +286,13 @@ if env["process"] == 1:
 	if env["os"] == "darwin":
 		e.SharedLibrary(
 			target = "lib/process.so", 
-			source = ["src/lib/process/js_process.cc"],
+			source = ["src/lib/process/process.cc"],
 			SHLIBPREFIX=""
 		)
 	else:
 		e.SharedLibrary(
 			target = "lib/process", 
-			source = ["src/lib/process/js_process.cc"],
+			source = ["src/lib/process/process.cc"],
 			SHLIBPREFIX=""
 		)
 # if
@@ -306,13 +306,13 @@ if env["xdom"] == 1:
 	if env["os"] == "darwin":
 		e.SharedLibrary(
 			target = "lib/xdom.so",
-			source = ["src/js_gc.cc", "src/lib/xdom/js_xdom.cc"],
+			source = ["src/gc.cc", "src/lib/xdom/xdom.cc"],
 			SHLIBPREFIX=""
 		)
 	else:
 		e.SharedLibrary(
 			target = "lib/xdom",
-			source = ["src/js_gc.cc", "src/lib/xdom/js_xdom.cc"],
+			source = ["src/gc.cc", "src/lib/xdom/xdom.cc"],
 			SHLIBPREFIX=""
 		)
 # if
@@ -325,13 +325,13 @@ if env["gl"] == 1:
 	if env["os"] == "darwin":
 		e.SharedLibrary(
 			target = "lib/GL.so",
-			source = ["src/js_gc.cc", "src/lib/GL/js_GL.cc", "src/lib/GL/glbindings/glbind.cpp", "src/lib/GL/glesbindings/glesbind.cpp", "src/lib/GL/glubindings/glubind.cpp", "src/lib/GL/glutbindings/glutbind.cpp"],
+			source = ["src/gc.cc", "src/lib/GL/GL.cc", "src/lib/GL/glbindings/glbind.cpp", "src/lib/GL/glesbindings/glesbind.cpp", "src/lib/GL/glubindings/glubind.cpp", "src/lib/GL/glutbindings/glutbind.cpp"],
 			SHLIBPREFIX=""
 		)
 	else:
 		e.SharedLibrary(
 			target = "lib/GL",
-			source = ["src/js_gc.cc", "src/lib/GL/js_GL.cc", "src/lib/GL/glbindings/glbind.cpp", "src/lib/GL/glesbindings/glesbind.cpp", "src/lib/GL/glubindings/glubind.cpp", "src/lib/GL/glutbindings/glutbind.cpp"],
+			source = ["src/gc.cc", "src/lib/GL/GL.cc", "src/lib/GL/glbindings/glbind.cpp", "src/lib/GL/glesbindings/glesbind.cpp", "src/lib/GL/glubindings/glubind.cpp", "src/lib/GL/glutbindings/glutbind.cpp"],
 			SHLIBPREFIX=""
 		)
 # if

@@ -15,9 +15,9 @@
 #include <sstream>
 
 #include <v8.h>
-#include "js_macros.h"
-#include "js_gc.h"
-#include "js_GL.hpp"
+#include "macros.h"
+#include "gc.h"
+#include "GL.hpp"
 
 namespace GLv8 {
 

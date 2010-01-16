@@ -256,49 +256,51 @@ v8::Handle<v8::Object> v8cgi_App::require(std::string name, std::string relative
 #ifdef VERBOSE
 	printf("[require] looking for '%s'\n", name.c_str()); 
 #endif	
-	std::string filename = this->resolve_module(name, relativeRoot);
-#ifdef VERBOSE
-	printf("[require] resolved as '%s'\n", filename.c_str()); 
-#endif	
+	modulefiles files = this->resolve_module(name, relativeRoot);
 	
-	if (filename == "") {
-		std::string s = "Cannot find '";
+	if (!files.size()) {
+		std::string s = "Cannot find module '";
 		s += name;
 		s += "'";
 		throw s;
 	}
+
+#ifdef VERBOSE
+	printf("[require] resolved as '%s' (%d files)\n", files[0].c_str(), files.size()); 
+#endif	
+
+	/* module name is the first component => hybrid modules are indexed by their native part */
+	std::string modulename = files[0];
+	modulename = modulename.substr(0,  modulename.find_last_of('.'));
 	
-	
-	
-	v8::Handle<v8::Object> exports = this->cache.getExports(filename);
+	v8::Handle<v8::Object> exports = this->cache.getExports(modulename);
 	/* check if exports are cached */
 	if (!exports.IsEmpty()) { return exports; }
 	
 	/* create module-specific require */
-	v8::Handle<v8::Function> require = this->build_require(filename);
+	v8::Handle<v8::Function> require = this->build_require(modulename);
 
 	/* add new blank exports to cache */
 	exports = v8::Object::New();
-	this->cache.addExports(filename, exports);
+	this->cache.addExports(modulename, exports);
 
 	/* create the "module" variable" */
 	v8::Handle<v8::Object> module = v8::Object::New();
-	module->Set(JS_STR("id"), JS_STR(filename.c_str()));
-
-	/* result */
-	v8::Handle<v8::Value> data; 
+	module->Set(JS_STR("id"), JS_STR(modulename.c_str()));
 
 	try {
-		size_t index = filename.find_last_of(".");
-		std::string ext = filename.substr(index+1);
-		if (ext == STRING(DSO_EXT)) {
-			data = this->load_dso(filename, require, exports, module);
-		} else {
-			data = this->load_js(filename, require, exports, module);
+		for (unsigned int i=0; i<files.size(); i++) {
+			std::string file = files[i];
+			std::string ext = file.substr(file.find_last_of('.')+1, std::string::npos);
+			if (ext == STRING(DSO_EXT)) {
+				this->load_dso(file, require, exports, module);
+			} else {
+				this->load_js(file, require, exports, module);
+			}
 		}
 	} catch (std::string e) {
 		/* remove from export cache */
-		this->cache.removeExports(filename);
+		this->cache.removeExports(modulename);
 		/* rethrow */
 		throw e; 
 	}
@@ -309,7 +311,7 @@ v8::Handle<v8::Object> v8cgi_App::require(std::string name, std::string relative
 /**
  * Include a js module
  */
-v8::Handle<v8::Value> v8cgi_App::load_js(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module) {
+void v8cgi_App::load_js(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module) {
 	v8::HandleScope handle_scope;
 	v8::TryCatch tc;
 
@@ -329,14 +331,13 @@ v8::Handle<v8::Value> v8cgi_App::load_js(std::string filename, v8::Handle<v8::Fu
 
 		/* runtime error in inner code */
 		if (tc.HasCaught() && !this->terminated) { throw this->format_exception(&tc); }
-		return exports;
 	}
 }
 
 /**
- * Include a dso module
+ * Include a DSO module
  */
-v8::Handle<v8::Value> v8cgi_App::load_dso(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module) {
+void v8cgi_App::load_dso(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module) {
 	v8::HandleScope handle_scope;
 	void * handle = this->cache.getHandle(filename);
 
@@ -352,7 +353,6 @@ v8::Handle<v8::Value> v8cgi_App::load_dso(std::string filename, v8::Handle<v8::F
 	}
 	
 	func(require, exports, module);
-	return handle_scope.Close(exports);	
 }
 
 /**
@@ -386,15 +386,15 @@ void v8cgi_App::js_error(std::string message) {
 /**
  * Fully expand/resolve module name
  */
-std::string v8cgi_App::resolve_module(std::string name, std::string relativeRoot) {
-	if (!name.length()) { return std::string(""); }
+v8cgi_App::modulefiles v8cgi_App::resolve_module(std::string name, std::string relativeRoot) {
+	if (!name.length()) { return modulefiles(); }
 
 	if (path_isabsolute(name)) {
 		/* v8cgi non-standard extension - absolute path */
 #ifdef VERBOSE
 		printf("[resolve_module] expanded to '%s'\n", name.c_str()); 
 #endif	
-		return this->find_extension(name);
+		return this->resolve_extension(name);
 	} else if (name.at(0) == '.') {
 		/* local module, relative to current path */
 		std::string path = relativeRoot;
@@ -403,12 +403,13 @@ std::string v8cgi_App::resolve_module(std::string name, std::string relativeRoot
 #ifdef VERBOSE
 		printf("[resolve_module] expanded to '%s'\n", path.c_str()); 
 #endif	
-		return this->find_extension(path);
+		return this->resolve_extension(path);
 	} else {
 		/* convert to array of search paths */
 		v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(this->paths);
 		int length = arr->Length();
 		v8::Handle<v8::Value> prefix;
+		modulefiles result;
 		
 		for (int i=0;i<length;i++) {
 			prefix = arr->Get(JS_INT(i));
@@ -419,35 +420,36 @@ std::string v8cgi_App::resolve_module(std::string name, std::string relativeRoot
 #ifdef VERBOSE
 		printf("[resolve_module] expanded to '%s'\n", path.c_str()); 
 #endif	
-			path = this->find_extension(path);
-			if (path != "") { return path; }
+			result = this->resolve_extension(path);
+			if (result.size()) { return result; }
 		}
 		
-		return std::string("");
+		return modulefiles();
 	}
 }
 
 /**
  * Try to adjust file's extension in order to locate an existing file
  */
-std::string v8cgi_App::find_extension(std::string path) {
+v8cgi_App::modulefiles v8cgi_App::resolve_extension(std::string path) {
 	/* remove /./, /../ etc */
 	std::string fullPath = path_normalize(path); 
+	modulefiles result;
 	
 	/* first, try suffixes */
-	const char * suffixes[] = {"js", STRING(DSO_EXT)};
+	const char * suffixes[] = {STRING(DSO_EXT), "js"};
 	std::string path2; 
 	for (int j=0;j<2;j++) {
 		path2 = fullPath;
 		path2 += ".";
 		path2 += suffixes[j];
-		if (path_file_exists(path2)) { return path2; }
+		if (path_file_exists(path2)) { result.push_back(path2); }
 	}
 
 	/* if the path already exists (extension to commonjs modules 1.1), use it */
-	if (path_file_exists(fullPath)) { return fullPath; }
+	if (!result.size() && path_file_exists(fullPath)) { result.push_back(fullPath); }
 	
-	return std::string("");
+	return result;
 }
 
 /**

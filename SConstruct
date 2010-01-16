@@ -187,18 +187,11 @@ if env["mysql"] == 1:
 	e.Append(
 		CPPPATH = env["mysql_path"],
 	)
-	if env["os"] == "darwin":
-		e.SharedLibrary(
-			target = "lib/mysql.so",
-			source = ["src/gc.cc", "src/lib/mysql/mysql.cc"],
-			SHLIBPREFIX=""
-		)
-	else:
-		e.SharedLibrary(
-			target = "lib/mysql",
-			source = ["src/gc.cc", "src/lib/mysql/mysql.cc"],
-			SHLIBPREFIX=""
-		)
+	e.SharedLibrary(
+		target = "lib/mysql.so",
+		source = ["src/gc.cc", "src/lib/mysql/mysql.cc"],
+		SHLIBPREFIX=""
+	)
 # if
 
 if env["pgsql"] == 1:
@@ -212,18 +205,11 @@ if env["pgsql"] == 1:
 			LIBS = ["pthreadGCE2"],
 		)
 	# if
-	if env["os"] == "darwin":
-		e.SharedLibrary(
-			target = "lib/pgsql.so",
-			source = ["src/gc.cc", "src/lib/pgsql/pgsql.cc"],
-			SHLIBPREFIX=""
-		)
-	else:
-		e.SharedLibrary(
-			target = "lib/pgsql",
-			source = ["src/gc.cc", "src/lib/pgsql/pgsql.cc"],
-			SHLIBPREFIX=""
-		)
+	e.SharedLibrary(
+		target = "lib/pgsql.so",
+		source = ["src/gc.cc", "src/lib/pgsql/pgsql.cc"],
+		SHLIBPREFIX=""
+	)
 # if
 
 if env["sqlite"] == 1:
@@ -231,18 +217,11 @@ if env["sqlite"] == 1:
 	e.Append(
 		LIBS = ["sqlite3"]
 	)
-	if env["os"] == "darwin":
-		e.SharedLibrary(
-			target = "lib/sqlite.so", 
-			source = ["src/gc.cc", "src/lib/sqlite/sqlite.cc"],
-			SHLIBPREFIX=""
-		)
-	else:
-		e.SharedLibrary(
-			target = "lib/sqlite", 
-			source = ["src/gc.cc", "src/lib/sqlite/sqlite.cc"],
-			SHLIBPREFIX=""
-		)
+	e.SharedLibrary(
+		target = "lib/sqlite.so", 
+		source = ["src/gc.cc", "src/lib/sqlite/sqlite.cc"],
+		SHLIBPREFIX=""
+	)
 # if
 
 if env["gd"] == 1:
@@ -251,50 +230,38 @@ if env["gd"] == 1:
 	e.Append(
 		LIBS = [libname]
 	)
-	if env["os"] == "darwin":
-		e.SharedLibrary(
-			target = "lib/gd.so", 
-			source = ["src/common.cc", "src/lib/gd/gd.cc"],
-			SHLIBPREFIX=""
-		)
-	else:
-		e.SharedLibrary(
-			target = "lib/gd", 
-			source = ["src/common.cc", "src/lib/gd/gd.cc"],
-			SHLIBPREFIX=""
-		)
+	e.SharedLibrary(
+		target = "lib/gd.so", 
+		source = ["src/common.cc", "src/lib/gd/gd.cc"],
+		SHLIBPREFIX=""
+	)
 # if
 
 if env["socket"] == 1:
 	e = env.Clone()
-	if env["os"] == "darwin":
-		e.SharedLibrary(
-			target = "lib/socket.so", 
-			source = ["src/lib/socket/socket.cc"],
-			SHLIBPREFIX=""
-		)
-	else:
-		e.SharedLibrary(
-			target = "lib/socket", 
-			source = ["src/lib/socket/socket.cc"],
-			SHLIBPREFIX=""
-		)
+	e.SharedLibrary(
+		target = "lib/socket.so", 
+		source = ["src/lib/socket/socket.cc"],
+		SHLIBPREFIX=""
+	)
 # if
 
 if env["process"] == 1:
 	e = env.Clone()
-	if env["os"] == "darwin":
-		e.SharedLibrary(
-			target = "lib/process.so", 
-			source = ["src/lib/process/process.cc"],
-			SHLIBPREFIX=""
-		)
-	else:
-		e.SharedLibrary(
-			target = "lib/process", 
-			source = ["src/lib/process/process.cc"],
-			SHLIBPREFIX=""
-		)
+	e.SharedLibrary(
+		target = "lib/process.so", 
+		source = ["src/lib/process/process.cc"],
+		SHLIBPREFIX=""
+	)
+# if
+
+if 1 == 1:
+	e = env.Clone()
+	e.SharedLibrary(
+		target = "lib/binary.so", 
+		source = ["src/lib/binary/binary.cc", "src/lib/binary/bytestring.cc"],
+		SHLIBPREFIX=""
+	)
 # if
 
 if env["xdom"] == 1:
@@ -303,18 +270,11 @@ if env["xdom"] == 1:
 		CPPPATH = env["xercesc_path"],
 		LIBS = "xerces-c"
 	)
-	if env["os"] == "darwin":
-		e.SharedLibrary(
-			target = "lib/xdom.so",
-			source = ["src/gc.cc", "src/lib/xdom/xdom.cc"],
-			SHLIBPREFIX=""
-		)
-	else:
-		e.SharedLibrary(
-			target = "lib/xdom",
-			source = ["src/gc.cc", "src/lib/xdom/xdom.cc"],
-			SHLIBPREFIX=""
-		)
+	e.SharedLibrary(
+		target = "lib/xdom.so",
+		source = ["src/gc.cc", "src/lib/xdom/xdom.cc"],
+		SHLIBPREFIX=""
+	)
 # if
 
 if env["gl"] == 1:
@@ -322,18 +282,11 @@ if env["gl"] == 1:
 	e.Append(
 		LIBS = ["glut", "GLU", "GL", "GLEW"]
 	)
-	if env["os"] == "darwin":
-		e.SharedLibrary(
-			target = "lib/GL.so",
-			source = ["src/gc.cc", "src/lib/GL/GL.cc", "src/lib/GL/glbindings/glbind.cpp", "src/lib/GL/glesbindings/glesbind.cpp", "src/lib/GL/glubindings/glubind.cpp", "src/lib/GL/glutbindings/glutbind.cpp"],
-			SHLIBPREFIX=""
-		)
-	else:
-		e.SharedLibrary(
-			target = "lib/GL",
-			source = ["src/gc.cc", "src/lib/GL/GL.cc", "src/lib/GL/glbindings/glbind.cpp", "src/lib/GL/glesbindings/glesbind.cpp", "src/lib/GL/glubindings/glubind.cpp", "src/lib/GL/glutbindings/glutbind.cpp"],
-			SHLIBPREFIX=""
-		)
+	e.SharedLibrary(
+		target = "lib/GL.so",
+		source = ["src/gc.cc", "src/lib/GL/GL.cc", "src/lib/GL/glbindings/glbind.cpp", "src/lib/GL/glesbindings/glesbind.cpp", "src/lib/GL/glubindings/glubind.cpp", "src/lib/GL/glutbindings/glutbind.cpp"],
+		SHLIBPREFIX=""
+	)
 # if
 
 if env["module"] == 1:

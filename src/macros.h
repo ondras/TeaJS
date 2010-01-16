@@ -17,9 +17,11 @@
 #define JS_FLOAT(val) v8::Number::New(val)
 #define JS_BOOL(val) v8::Boolean::New(val)
 #define JS_NULL v8::Null()
+#define JS_UNDEFINED v8::Undefined()
 #define JS_METHOD(name) v8::Handle<v8::Value> name(const v8::Arguments& args)
 #define JS_EXCEPTION(reason) v8::ThrowException(JS_STR(reason))
 #define JS_RETHROW(tc) v8::Local<v8::Value>::New(tc.Exception());
+#define INSTANCEOF(obj, func) (!obj->FindInstanceInPrototypeChain(func).IsEmpty())
 
 #define JS_GLOBAL v8::Context::GetCurrent()->Global()
 #define GLOBAL_PROTO v8::Handle<v8::Object>::Cast(JS_GLOBAL->GetPrototype())
@@ -27,6 +29,7 @@
 #define GC_PTR reinterpret_cast<GC *>(v8::Handle<v8::External>::Cast(GLOBAL_PROTO->GetInternalField(1))->Value());
 
 #define ASSERT_CONSTRUCTOR if (!args.IsConstructCall()) { return JS_EXCEPTION("Invalid call format. Please use the 'new' operator."); }
+#define ASSERT_NOT_CONSTRUCTOR if (args.IsConstructCall()) { return JS_EXCEPTION("Invalid call format. Please do not use the 'new' operator."); }
 
 #ifdef _WIN32
 #   define SHARED_INIT() extern "C" __declspec(dllexport) void init(v8::Handle<v8::Function> require, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module)

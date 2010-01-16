@@ -27,10 +27,10 @@ void GC::handler(v8::Persistent<v8::Value> object, void * ptr) {
  * @param {v8::Value} object Object to monitor
  * @param {char *} method Method name
  */
-void GC::add(v8::Handle<v8::Value> object, const char * method) {
+void GC::add(v8::Handle<v8::Value> object, GC::dtor_t dtor) {
 	v8::Persistent<v8::Value> p = v8::Persistent<v8::Value>::New(object);
 	p.MakeWeak((void *) this, &handler);
-	this->data.push_back(std::pair<v8::Persistent<v8::Value>, const char *>(p, method));
+	this->data.push_back(std::pair<v8::Persistent<v8::Value>, GC::dtor_t>(p, dtor));
 }
 
 /**
@@ -39,8 +39,8 @@ void GC::add(v8::Handle<v8::Value> object, const char * method) {
 void GC::go(objlist::iterator it) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::Object> obj = it->first->ToObject();
-	v8::Local<v8::Function> fun = v8::Local<v8::Function>::Cast(obj->Get(JS_STR(it->second)));
-	fun->Call(obj, 0, NULL);
+	dtor_t dtor = it->second;
+	dtor(obj);
 	this->data.erase(it);
 }
 

@@ -63,6 +63,18 @@ namespace pgsql {
 	//
   #define PGSQL_FLUSH(conn) if (pq::PQisnonblocking(conn)) { int stat = pq::PQflush(conn);      while (stat > 0) {	int sock = pq::PQsocket(conn);	if (sock < 0)	  return JS_EXCEPTION("SOCKET ERROR");	fd_set input_mask;	FD_ZERO(&input_mask);	FD_SET(sock, &input_mask);	if ( select(sock + 1, &input_mask, NULL, NULL, NULL) ) {	}	stat = pq::PQflush(conn);      }    }
 
+
+
+void destroy_result(v8::Handle<v8::Object> obj) {
+	v8::Handle<v8::Function> fun = v8::Handle<v8::Function>::Cast(obj->Get(JS_STR("clear")));
+	fun->Call(obj, 0, NULL);
+}
+
+void destroy_pgsql(v8::Handle<v8::Object> obj) {
+	v8::Handle<v8::Function> fun = v8::Handle<v8::Function>::Cast(obj->Get(JS_STR("close")));
+	fun->Call(obj, 0, NULL);
+}
+
   /**
    *	"rslt" corresponds to database query result objects
    */
@@ -80,7 +92,7 @@ namespace pgsql {
     PGSQL_RES_SAVE(args[0]);
     PGSQL_RES_SETPOS(0);
     GC * gc = GC_PTR;
-    gc->add(args.This(), "clear");
+    gc->add(args.This(), destroy_result);
     return args.This();
   }
 
@@ -107,7 +119,7 @@ namespace pgsql {
     ASSERT_CONSTRUCTOR;
     SAVE_PTR(0, NULL);
     GC * gc = GC_PTR;
-    gc->add(args.This(), "close");
+    gc->add(args.This(), destroy_pgsql);
     uint32_t len = args.Length();
     if (len > 0) {
       v8::Handle<v8::Value> * fargs = new v8::Handle<v8::Value>[len];

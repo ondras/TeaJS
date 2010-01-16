@@ -2,7 +2,7 @@
 #define _JS_APP_H
 
 #include <map>
-#include <stack>
+#include <utility>
 #include <vector>
 #include <list>
 #include <v8.h>
@@ -15,6 +15,9 @@
 class v8cgi_App {
 public:
 	typedef std::vector<v8::Persistent<v8::Function> > funcvector;
+	
+	/* resolved native module, resolved js module */
+	typedef std::vector<std::string> modulefiles;
 
 	virtual ~v8cgi_App() {};
 	/* once per app lifetime */
@@ -74,10 +77,10 @@ private:
 	/* instance type info */
 	virtual const char * executableName() = 0;
 
-	std::string resolve_module(std::string name, std::string relativeRoot);
-	std::string find_extension(std::string path);
-	v8::Handle<v8::Value> load_js(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module);
-	v8::Handle<v8::Value> load_dso(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module);
+	modulefiles resolve_module(std::string name, std::string relativeRoot);
+	modulefiles resolve_extension(std::string path);
+	void load_js(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module);
+	void load_dso(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module);
 	v8::Handle<v8::Value> get_config(std::string name);
 	v8::Handle<v8::Function> build_require(std::string path);
 	

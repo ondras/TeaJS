@@ -19,6 +19,11 @@ namespace {
 
 v8::Persistent<v8::FunctionTemplate> rest;
 
+void destroy(v8::Handle<v8::Object> obj) {
+	v8::Handle<v8::Function> fun = v8::Handle<v8::Function>::Cast(obj->Get(JS_STR("close")));
+	fun->Call(obj, 0, NULL);
+}
+
 /**
  * MySQL constructor does basically nothing. It just adds "this.close()" method to global GC
  */
@@ -26,7 +31,7 @@ JS_METHOD(_mysql) {
 	ASSERT_CONSTRUCTOR;
 	SAVE_PTR(0, NULL);
 	GC * gc = GC_PTR;
-	gc->add(args.This(), "close");
+	gc->add(args.This(), destroy);
 	return args.This();
 }
 

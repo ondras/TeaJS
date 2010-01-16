@@ -136,7 +136,7 @@ if env["os"] == "posix":
 
 if env["os"] == "darwin":
 	env.Append(
-		CPPDEFINES = ["DSO_EXT=so"]
+		CPPDEFINES = ["DSO_EXT=dylib"]
 	)
 # if
 
@@ -188,7 +188,7 @@ if env["mysql"] == 1:
 		CPPPATH = env["mysql_path"],
 	)
 	e.SharedLibrary(
-		target = "lib/mysql.so",
+		target = "lib/mysql",
 		source = ["src/gc.cc", "src/lib/mysql/mysql.cc"],
 		SHLIBPREFIX=""
 	)
@@ -206,7 +206,7 @@ if env["pgsql"] == 1:
 		)
 	# if
 	e.SharedLibrary(
-		target = "lib/pgsql.so",
+		target = "lib/pgsql",
 		source = ["src/gc.cc", "src/lib/pgsql/pgsql.cc"],
 		SHLIBPREFIX=""
 	)
@@ -218,7 +218,7 @@ if env["sqlite"] == 1:
 		LIBS = ["sqlite3"]
 	)
 	e.SharedLibrary(
-		target = "lib/sqlite.so", 
+		target = "lib/sqlite", 
 		source = ["src/gc.cc", "src/lib/sqlite/sqlite.cc"],
 		SHLIBPREFIX=""
 	)
@@ -231,7 +231,7 @@ if env["gd"] == 1:
 		LIBS = [libname]
 	)
 	e.SharedLibrary(
-		target = "lib/gd.so", 
+		target = "lib/gd", 
 		source = ["src/common.cc", "src/lib/gd/gd.cc"],
 		SHLIBPREFIX=""
 	)
@@ -240,7 +240,7 @@ if env["gd"] == 1:
 if env["socket"] == 1:
 	e = env.Clone()
 	e.SharedLibrary(
-		target = "lib/socket.so", 
+		target = "lib/socket", 
 		source = ["src/lib/socket/socket.cc"],
 		SHLIBPREFIX=""
 	)
@@ -249,20 +249,17 @@ if env["socket"] == 1:
 if env["process"] == 1:
 	e = env.Clone()
 	e.SharedLibrary(
-		target = "lib/process.so", 
+		target = "lib/process", 
 		source = ["src/lib/process/process.cc"],
 		SHLIBPREFIX=""
 	)
 # if
 
-if 1 == 1:
-	e = env.Clone()
-	e.SharedLibrary(
-		target = "lib/binary.so", 
-		source = ["src/lib/binary/binary.cc", "src/lib/binary/bytestring.cc"],
-		SHLIBPREFIX=""
-	)
-# if
+e.SharedLibrary(
+	target = "lib/binary", 
+	source = ["src/lib/binary/binary.cc", "src/lib/binary/bytestring.cc"],
+	SHLIBPREFIX=""
+)
 
 if env["xdom"] == 1:
 	e = env.Clone()
@@ -271,7 +268,7 @@ if env["xdom"] == 1:
 		LIBS = "xerces-c"
 	)
 	e.SharedLibrary(
-		target = "lib/xdom.so",
+		target = "lib/xdom",
 		source = ["src/gc.cc", "src/lib/xdom/xdom.cc"],
 		SHLIBPREFIX=""
 	)
@@ -283,7 +280,7 @@ if env["gl"] == 1:
 		LIBS = ["glut", "GLU", "GL", "GLEW"]
 	)
 	e.SharedLibrary(
-		target = "lib/GL.so",
+		target = "lib/GL",
 		source = ["src/gc.cc", "src/lib/GL/GL.cc", "src/lib/GL/glbindings/glbind.cpp", "src/lib/GL/glesbindings/glesbind.cpp", "src/lib/GL/glubindings/glubind.cpp", "src/lib/GL/glutbindings/glutbind.cpp"],
 		SHLIBPREFIX=""
 	)
@@ -308,18 +305,11 @@ if env["module"] == 1:
 	s = []
 	s[:] = sources[:]
 	s.append("src/mod_v8cgi.cc")
-	if env["os"] == "darwin":
-		e.LoadableModule(
-			target = "mod_v8cgi.so", 
-			source = s,
-			SHLIBPREFIX=""
-		)
-	else:
-		e.SharedLibrary(
-			target = "mod_v8cgi", 
-			source = s,
-			SHLIBPREFIX=""
-		)
+	e.SharedLibrary(
+		target = "mod_v8cgi", 
+		source = s,
+		SHLIBPREFIX=""
+	)
 # if
 
 if env["cgi"] == 1:

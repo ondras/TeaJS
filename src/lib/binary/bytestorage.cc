@@ -27,6 +27,12 @@ ByteStorage::ByteStorage(ByteStorage * bs) {
 	memcpy(this->data, bs->getData(), this->length);
 }
 
+ByteStorage::ByteStorage(ByteStorage * bs, size_t index) {
+	this->length = 1;
+	this->data = new unsigned char[1];
+	this->data[0] = bs->getByte(index);
+}
+
 ByteStorage::~ByteStorage() {
 	delete[] this->data;
 }
@@ -42,4 +48,19 @@ unsigned char ByteStorage::getByte(size_t index) {
 
 unsigned char * ByteStorage::getData() {
 	return this->data;
+}
+
+int ByteStorage::indexOf(unsigned char value, size_t start, size_t end, int direction) {
+	size_t from = MIN(start, end);
+	size_t to = MAX(start, end);
+	if (from >= this->length) { return -1; }
+	if (to >= this->length) { to = this->length-1; }
+	
+	size_t index = (direction == 1 ? from : to);
+	do {
+		if (this->data[index] == value) { return index; }
+		index += direction;
+	} while (index >= from && index <= to);
+
+	return -1;
 }

@@ -8,6 +8,9 @@
 #define _STRING(x) #x
 #define STRING(x) _STRING(x)
 
+#define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
+#define MAX(X,Y) ((X) > (Y) ? (X) : (Y))
+
 #define SAVE_PTR(index, ptr) args.This()->SetInternalField(index, v8::External::New((void *)(ptr))); 
 #define LOAD_PTR(index, type) reinterpret_cast<type>(v8::Handle<v8::External>::Cast(args.This()->GetInternalField(index))->Value());
 #define SAVE_VALUE(index, val) args.This()->SetInternalField(index, val)
@@ -21,7 +24,7 @@
 #define JS_METHOD(name) v8::Handle<v8::Value> name(const v8::Arguments& args)
 #define JS_EXCEPTION(reason) v8::ThrowException(JS_STR(reason))
 #define JS_RETHROW(tc) v8::Local<v8::Value>::New(tc.Exception());
-#define INSTANCEOF(obj, func) (!obj->FindInstanceInPrototypeChain(func).IsEmpty())
+#define INSTANCEOF(obj, func) func->HasInstance(obj)
 
 #define JS_GLOBAL v8::Context::GetCurrent()->Global()
 #define GLOBAL_PROTO v8::Handle<v8::Object>::Cast(JS_GLOBAL->GetPrototype())

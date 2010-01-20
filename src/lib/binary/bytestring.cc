@@ -74,10 +74,8 @@ void ByteString_init(v8::Handle<v8::FunctionTemplate> binaryTemplate) {
 	byteStringTemplate->Inherit(binaryTemplate);
 	
 	v8::Handle<v8::ObjectTemplate> byteStringObject = byteStringTemplate->InstanceTemplate();
-	byteStringObject->SetInternalFieldCount(1);
-	
-	byteStringObject->SetAccessor(JS_STR("length"), length);
-
+	byteStringObject->SetInternalFieldCount(1);	
+	byteStringObject->SetAccessor(JS_STR("length"), length, 0, v8::Handle<v8::Value>(), v8::DEFAULT, static_cast<v8::PropertyAttribute>(v8::ReadOnly | v8::DontDelete));
 	
 	byteString = v8::Persistent<v8::Function>::New(byteStringTemplate->GetFunction());
 }

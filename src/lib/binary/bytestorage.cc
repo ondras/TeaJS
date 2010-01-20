@@ -39,3 +39,7 @@ unsigned char ByteStorage::getByte(size_t index) {
 	if (index >= this->length) { return NULL; }
 	return this->data[index];
 }
+
+unsigned char * ByteStorage::getData() {
+	return this->data;
+}

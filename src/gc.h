@@ -12,6 +12,8 @@
 
 class GC {
 public:
+	virtual ~GC() {};
+
 	typedef void (*dtor_t) (v8::Handle<v8::Object>);
 
 	typedef std::list<std::pair<v8::Persistent<v8::Value>, dtor_t> > objlist;

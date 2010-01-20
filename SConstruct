@@ -257,7 +257,7 @@ if env["process"] == 1:
 
 e.SharedLibrary(
 	target = "lib/binary", 
-	source = ["src/lib/binary/binary.cc", "src/lib/binary/bytestring.cc"],
+	source = ["src/lib/binary/binary.cc", "src/lib/binary/bytestring.cc", "src/lib/binary/bytestorage.cc"],
 	SHLIBPREFIX=""
 )
 

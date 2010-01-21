@@ -59,7 +59,7 @@ JS_METHOD(_ByteArray) {
 		break;
 		
 	}
-
+	
 	GC * gc = GC_PTR;
 	gc->add(args.This(), Binary_destroy);
 

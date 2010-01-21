@@ -76,6 +76,10 @@ JS_METHOD(Binary_toByteArray) {
 	return Binary_convertTo(args, ByteArray_function());
 }
 
+JS_METHOD(Binary_concat) {
+	
+}
+
 void Binary_destroy(v8::Handle<v8::Object> instance) {
 	ByteStorage * bs = BS_OTHER(instance);
 	delete bs;
@@ -100,6 +104,7 @@ SHARED_INIT() {
 	binaryPrototype->Set(JS_STR("toByteString"), v8::FunctionTemplate::New(Binary_toByteString));
 	binaryPrototype->Set(JS_STR("toByteArray"), v8::FunctionTemplate::New(Binary_toByteArray));
 	binaryPrototype->Set(JS_STR("decodeToString"), v8::FunctionTemplate::New(Binary_decodeToString));
+	binaryPrototype->Set(JS_STR("concat"), v8::FunctionTemplate::New(Binary_concat));
 	exports->Set(JS_STR("Binary"), binaryTemplate->GetFunction());
 
 	ByteString_init(binaryTemplate);

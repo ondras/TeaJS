@@ -1,7 +1,11 @@
 #include <v8.h>
 #include <string.h>
+#include <stdlib.h>
+#include <string>
 #include "bytestorage.h"
 #include "macros.h"
+
+#define CHECK_ALLOC(ptr) if (!ptr) { throw std::string("Cannot allocate enough memory"); }
 
 ByteStorage::ByteStorage() {
 	this->length = 0;
@@ -12,8 +16,10 @@ ByteStorage::ByteStorage() {
  * Create blank with a given length
  */
 ByteStorage::ByteStorage(size_t len) {
+	this->data = (unsigned char *) malloc(len);
+	CHECK_ALLOC(this->data);
+
 	this->length = len;
-	this->data = new unsigned char[this->length];
 	memset(this->data, 0, this->length);
 }
 
@@ -23,10 +29,15 @@ ByteStorage::ByteStorage(size_t len) {
 ByteStorage::ByteStorage(v8::Handle<v8::Array> arr) {
 	v8::Handle<v8::Object> arrobj = v8::Handle<v8::Object>::Cast(arr);
 	
+	this->data = NULL;
 	size_t len = arr->Length();
 	
+	if (len) {
+		this->data = (unsigned char *) malloc(len);
+		CHECK_ALLOC(this->data);
+	}
+	
 	this->length = len;
-	this->data = (len ? new unsigned char[len] : NULL);
 	for (size_t i = 0; i<len;i++) {
 		int num = arrobj->Get(JS_INT(i))->IntegerValue();
 		this->data[i] = (unsigned char) num;
@@ -37,8 +48,15 @@ ByteStorage::ByteStorage(v8::Handle<v8::Array> arr) {
  * Copy constructor
  */
 ByteStorage::ByteStorage(ByteStorage * bs) {
-	this->length = bs->getLength();
-	this->data = new unsigned char[this->length];
+	size_t len = bs->getLength();
+	this->data = NULL;
+	
+	if (len) {
+		this->data = (unsigned char *) malloc(len);
+		CHECK_ALLOC(this->data);
+	}
+	
+	this->length = len;
 	memcpy(this->data, bs->getData(), this->length);
 }
 
@@ -46,12 +64,14 @@ ByteStorage::ByteStorage(ByteStorage * bs) {
  * Use a given buffer + length
  */
 ByteStorage::ByteStorage(unsigned char * data, size_t len) {
-	this->length = len;
 	this->data = NULL;
 	if (len > 0) {
-		this->data = new unsigned char[len];
-		memcpy(this->data, data, len);
+		this->data = (unsigned char *) malloc(len);
+		CHECK_ALLOC(this->data);
 	}
+
+	this->length = len;
+	memcpy(this->data, data, len);
 }
 
 /**
@@ -64,16 +84,19 @@ ByteStorage::ByteStorage(ByteStorage * bs, size_t index1, size_t index2) {
 	if (index2 <= index1 || index1 >= bs->getLength()) {
 		this->length = 0;
 		this->data = NULL;
-		return;
+	} else {
+		size_t len = MIN(index2, bs->getLength()) - index1;
+		this->data = (unsigned char *) malloc(len);
+		CHECK_ALLOC(this->data);
+		
+		this->length = len;
+		memcpy(this->data, bs->getData()+index1, len);
 	}
-
-	this->length = MIN(index2, bs->getLength()) - index1;
-	this->data = new unsigned char[this->length];
-	memcpy(this->data, bs->getData()+index1, this->length);
 }
 
 ByteStorage::~ByteStorage() {
-	delete[] this->data;
+	this->length = 0;
+	free(this->data);
 }
 
 size_t ByteStorage::getLength() {
@@ -114,4 +137,14 @@ ByteStorage * ByteStorage::transcode(const char * from, const char * to) {
 
 v8::Handle<v8::String> ByteStorage::toString() {
 	return JS_STR((const char *)this->data, this->length);
+}
+
+void ByteStorage::concat(ByteStorage * bs) {
+	size_t len = bs->getLength();
+	if (!len) { return; }
+	
+	this->data = (unsigned char *) realloc(this->data, this->length + len);
+	CHECK_ALLOC(this->data);
+	this->length += len;
+	memcpy(this->data, bs->getData(), len);
 }

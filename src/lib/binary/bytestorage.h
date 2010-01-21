@@ -27,6 +27,7 @@ public:
 	int indexOf(unsigned char value, size_t start, size_t end, int direction);
 	ByteStorage * transcode(const char * from, const char * to);
 	v8::Handle<v8::String> toString();
+	void concat(ByteStorage * bs);
 
 protected:
 

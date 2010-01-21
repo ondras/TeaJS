@@ -11,8 +11,8 @@
 #define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
 #define MAX(X,Y) ((X) > (Y) ? (X) : (Y))
 
-#define SAVE_PTR(index, ptr) args.This()->SetInternalField(index, v8::External::New((void *)(ptr))); 
-#define LOAD_PTR(index, type) reinterpret_cast<type>(v8::Handle<v8::External>::Cast(args.This()->GetInternalField(index))->Value());
+#define SAVE_PTR(index, ptr) args.This()->SetPointerInInternalField(index, (void *)(ptr))
+#define LOAD_PTR(index, type) reinterpret_cast<type>(args.This()->GetPointerFromInternalField(index))
 #define SAVE_VALUE(index, val) args.This()->SetInternalField(index, val)
 #define LOAD_VALUE(index) args.This()->GetInternalField(index)
 #define JS_STR(...) v8::String::New(__VA_ARGS__)

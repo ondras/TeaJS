@@ -9,7 +9,7 @@
 #define GD_PNG 3
 #define GD_GIF 4
 #define GD_PTR gdImagePtr ptr = LOAD_PTR(0, gdImagePtr)
-#define GD_COLOR(offset) int color = args[offset]->Int32Value();
+#define GD_COLOR(offset) int color = args[offset]->Int32Value()
 #define GD_RGB \
 	int r = args[0]->Int32Value(); \
 	int g = args[1]->Int32Value(); \

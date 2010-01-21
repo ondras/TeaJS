@@ -14,7 +14,7 @@ ByteStorage::ByteStorage() {
 ByteStorage::ByteStorage(size_t len) {
 	this->length = len;
 	this->data = new unsigned char[this->length];
-	memset(this->data, '\0', this->length);
+	memset(this->data, 0, this->length);
 }
 
 /**
@@ -40,6 +40,18 @@ ByteStorage::ByteStorage(ByteStorage * bs) {
 	this->length = bs->getLength();
 	this->data = new unsigned char[this->length];
 	memcpy(this->data, bs->getData(), this->length);
+}
+
+/**
+ * Use a given buffer + length
+ */
+ByteStorage::ByteStorage(unsigned char * data, size_t len) {
+	this->length = len;
+	this->data = NULL;
+	if (len > 0) {
+		this->data = new unsigned char[len];
+		memcpy(this->data, data, len);
+	}
 }
 
 /**
@@ -92,4 +104,14 @@ int ByteStorage::indexOf(unsigned char value, size_t index1, size_t index2, int 
 	} while (index >= from && index <= to);
 
 	return -1;
+}
+
+ByteStorage * ByteStorage::transcode(const char * from, const char * to) {
+	/* FIXME! */
+	printf("transcodor.");
+	return new ByteStorage(this->data, this->length);
+}
+
+v8::Handle<v8::String> ByteStorage::toString() {
+	return JS_STR((const char *)this->data, this->length);
 }

@@ -7,12 +7,12 @@
 #include "bytearray.h"
 #include "bytestorage.h"
 
-#define WRONG_CTOR JS_EXCEPTION("ByteString called with wrong arguments.")
+#define WRONG_CTOR JS_EXCEPTION("ByteArray called with wrong arguments.")
 
 namespace {
 
-v8::Persistent<v8::FunctionTemplate> byteStringTemplate;
-v8::Persistent<v8::Function> byteString;
+v8::Persistent<v8::FunctionTemplate> byteArrayTemplate;
+v8::Persistent<v8::Function> byteArray;
 
 void destroy(v8::Handle<v8::Object> instance) {
 	ByteStorage * bs = BS_OTHER(instance);
@@ -20,9 +20,9 @@ void destroy(v8::Handle<v8::Object> instance) {
 }
 
 /**
- * ByteString constructor
+ * ByteArray constructor
  */
-JS_METHOD(_ByteString) {
+JS_METHOD(_ByteArray) {
 	if (!args.IsConstructCall()) {
 		/* FIXME */
 		return JS_UNDEFINED;
@@ -34,7 +34,9 @@ JS_METHOD(_ByteString) {
 			SAVE_PTR(0, new ByteStorage());
 		break;
 		case 1: {
-			if (args[0]->IsExternal()) { /* from a bytestorage */
+			if (args[0]->IsNumber()) { /* blank with a given length */
+				SAVE_PTR(0, new ByteStorage(args[0]->IntegerValue()));
+			} else if (args[0]->IsExternal()) { /* from a bytestorage */
 				SAVE_VALUE(0, args[0]);
 			} else if (args[0]->IsArray()) { /* array of numbers */
 				v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(args[0]);
@@ -77,7 +79,7 @@ JS_METHOD(_codeAt) {
 JS_METHOD(_toString) {
 	ByteStorage * bs = BS_THIS;
 	if (args.Length() == 0) {
-		std::string str = "[ByteString ";
+		std::string str = "[ByteArrray ";
 		str += bs->getLength();
 		str += "]";
 		return JS_STR(str.c_str());
@@ -132,7 +134,7 @@ JS_METHOD(_slice) {
 	
 	ByteStorage * bs2 = new ByteStorage(bs, start, end);
 	v8::Handle<v8::Value> newargs[] = { v8::External::New((void*)bs2) };
-	return byteString->NewInstance(1, newargs);
+	return byteArray->NewInstance(1, newargs);
 }
 
 v8::Handle<v8::Value> _length(v8::Local<v8::String> property, const v8::AccessorInfo &info) {
@@ -148,7 +150,7 @@ v8::Handle<v8::Value> _get(size_t index, const v8::AccessorInfo &info) {
 	ByteStorage * bs2 = new ByteStorage(bs, index, index+1);
 	v8::Handle<v8::Value> newargs[] = { v8::External::New((void*)bs2) };
 	
-	return byteString->NewInstance(1, newargs);
+	return ByteString_function()->NewInstance(1, newargs);
 }
 
 
@@ -157,32 +159,32 @@ v8::Handle<v8::Value> _get(size_t index, const v8::AccessorInfo &info) {
 
 } /* end namespace */
 
-void ByteString_init(v8::Handle<v8::FunctionTemplate> binaryTemplate) {
-	byteStringTemplate = v8::Persistent<v8::FunctionTemplate>::New(v8::FunctionTemplate::New(_ByteString));
-	byteStringTemplate->Inherit(binaryTemplate);
-	byteStringTemplate->SetClassName(JS_STR("ByteString"));
+void ByteArray_init(v8::Handle<v8::FunctionTemplate> binaryTemplate) {
+	byteArrayTemplate = v8::Persistent<v8::FunctionTemplate>::New(v8::FunctionTemplate::New(_ByteArray));
+	byteArrayTemplate->Inherit(binaryTemplate);
+	byteArrayTemplate->SetClassName(JS_STR("ByteArray"));
 	
-	v8::Handle<v8::ObjectTemplate> byteStringObject = byteStringTemplate->InstanceTemplate();
-	byteStringObject->SetInternalFieldCount(1);	
-	byteStringObject->SetAccessor(JS_STR("length"), _length, 0, v8::Handle<v8::Value>(), v8::DEFAULT, static_cast<v8::PropertyAttribute>(v8::ReadOnly | v8::DontDelete));
-	byteStringObject->SetIndexedPropertyHandler(_get);
+	v8::Handle<v8::ObjectTemplate> byteArrayObject = byteArrayTemplate->InstanceTemplate();
+	byteArrayObject->SetInternalFieldCount(1);	
+	byteArrayObject->SetAccessor(JS_STR("length"), _length, 0, v8::Handle<v8::Value>(), v8::DEFAULT, static_cast<v8::PropertyAttribute>(v8::ReadOnly | v8::DontDelete));
+	byteArrayObject->SetIndexedPropertyHandler(_get);
 
-	v8::Handle<v8::ObjectTemplate> byteStringPrototype = byteStringTemplate->PrototypeTemplate();
-	byteStringPrototype->Set(JS_STR("codeAt"), v8::FunctionTemplate::New(_codeAt));
-	byteStringPrototype->Set(JS_STR("toString"), v8::FunctionTemplate::New(_toString));
-	byteStringPrototype->Set(JS_STR("toByteString"), v8::FunctionTemplate::New(_toByteString));
-	byteStringPrototype->Set(JS_STR("toByteArray"), v8::FunctionTemplate::New(_toByteArray));
-	byteStringPrototype->Set(JS_STR("indexOf"), v8::FunctionTemplate::New(_indexOf));
-	byteStringPrototype->Set(JS_STR("lastIndexOf"), v8::FunctionTemplate::New(_lastIndexOf));
-	byteStringPrototype->Set(JS_STR("slice"), v8::FunctionTemplate::New(_slice));
+	v8::Handle<v8::ObjectTemplate> byteArrayPrototype = byteArrayTemplate->PrototypeTemplate();
+	byteArrayPrototype->Set(JS_STR("codeAt"), v8::FunctionTemplate::New(_codeAt));
+	byteArrayPrototype->Set(JS_STR("toString"), v8::FunctionTemplate::New(_toString));
+	byteArrayPrototype->Set(JS_STR("toByteString"), v8::FunctionTemplate::New(_toByteString));
+	byteArrayPrototype->Set(JS_STR("toByteArray"), v8::FunctionTemplate::New(_toByteArray));
+	byteArrayPrototype->Set(JS_STR("indexOf"), v8::FunctionTemplate::New(_indexOf));
+	byteArrayPrototype->Set(JS_STR("lastIndexOf"), v8::FunctionTemplate::New(_lastIndexOf));
+	byteArrayPrototype->Set(JS_STR("slice"), v8::FunctionTemplate::New(_slice));
 
-	byteString = v8::Persistent<v8::Function>::New(byteStringTemplate->GetFunction());
+	byteArray = v8::Persistent<v8::Function>::New(byteArrayTemplate->GetFunction());
 }
 
-v8::Handle<v8::Function> ByteString_function() {
-	return byteString;
+v8::Handle<v8::Function> ByteArray_function() {
+	return byteArray;
 }
 
-v8::Handle<v8::FunctionTemplate> ByteString_template() {
-	return byteStringTemplate;
+v8::Handle<v8::FunctionTemplate> ByteArray_template() {
+	return byteArrayTemplate;
 }

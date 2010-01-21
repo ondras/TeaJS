@@ -2,6 +2,7 @@
 #include "macros.h"
 #include "gc.h"
 #include "bytestring.h"
+#include "bytearray.h"
 
 namespace {
 	JS_METHOD(_Binary) {
@@ -19,4 +20,7 @@ SHARED_INIT() {
 	
 	ByteString_init(binaryTemplate);
 	exports->Set(JS_STR("ByteString"), ByteString_function());
+
+	ByteArray_init(binaryTemplate);
+	exports->Set(JS_STR("ByteArray"), ByteArray_function());
 }

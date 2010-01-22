@@ -1,5 +1,5 @@
 /**
- * v8cgi app file. This class represents generic V8 embedding; cgi binary and apache module inherits from it.
+ * v8cgi app file. This class represents generic V8 embedding; cgi binary and apache module inherit from it.
  */
 
 #include <sstream>

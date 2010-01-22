@@ -1,11 +1,14 @@
 #include <v8.h>
+#include <cerrno>
 #include <string.h>
-#include <stdlib.h>
 #include <string>
+#include <iconv.h>
+#include <stdlib.h>
 #include "bytestorage.h"
 #include "macros.h"
 
-#define CHECK_ALLOC(ptr) if (!ptr) { throw std::string("Cannot allocate enough memory"); }
+#define ALLOC_ERROR throw std::string("Cannot allocate enough memory")
+#define CHECK_ALLOC(ptr) if (!ptr) { ALLOC_ERROR; }
 
 ByteStorage::ByteStorage() {
 	this->length = 0;
@@ -129,12 +132,6 @@ int ByteStorage::indexOf(unsigned char value, size_t index1, size_t index2, int 
 	return -1;
 }
 
-ByteStorage * ByteStorage::transcode(const char * from, const char * to) {
-	/* FIXME! */
-	printf("transcodor.");
-	return new ByteStorage(this->data, this->length);
-}
-
 v8::Handle<v8::String> ByteStorage::toString() {
 	return JS_STR((const char *)this->data, this->length);
 }
@@ -147,4 +144,100 @@ void ByteStorage::concat(ByteStorage * bs) {
 	CHECK_ALLOC(this->data);
 	this->length += len;
 	memcpy(this->data, bs->getData(), len);
+}
+
+ByteStorage * ByteStorage::transcode(const char * from, const char * to) {
+	/* no data */
+	if (!this->length) { return new ByteStorage(); }
+
+	/* source and target are the same -> copy */
+	if ((from == to) || (from && to && (strcasecmp(from, to) == 0))) {
+		return new ByteStorage(this);
+	}
+
+	iconv_t cd = iconv_open(to, from);
+	if (cd == (iconv_t)(-1)) { 
+		std::string error = "Cannot transcode from ";
+		error += from;
+		error += " to ";
+		error += to;
+		throw error;
+	}
+	
+	size_t allocated = this->length + (this->length/8) + 32; /* WAG */
+	char * output = (char *) malloc(allocated);
+	if (!output) {
+		iconv_close(cd);
+		ALLOC_ERROR;
+	}
+	
+	size_t inBytesLeft = this->length;
+	size_t outBytesLeft = allocated;
+	char * inBuf = (char *) this->data;
+	char * outBuf = output;
+
+	size_t result = 0;
+	do {
+		result = iconv(cd, &inBuf, &inBytesLeft, &outBuf, &outBytesLeft);
+		if (result == (size_t)(-1)) {
+			switch (errno) {
+				case E2BIG: {
+					/* estimate a new buffer size */
+					size_t newAllocated = allocated + inBytesLeft + (inBytesLeft/4) + 32; /* WAG -- +32 implies output charset cannot exceed 32 bytes per character */
+
+					char * newOutput = (char *) realloc(output, newAllocated);
+					if (!newOutput) {
+						free(output);
+						iconv_close(cd);
+						ALLOC_ERROR;
+					}
+
+					/* so far, outBuf-output bytes were used; move outBuf to this position in newOutput */
+					outBuf = newOutput + (outBuf - output);
+
+					/* adjust target pointer */
+					output = newOutput;
+
+					/* we allocated this much new bytes */
+					outBytesLeft += newAllocated - allocated;
+					allocated = newAllocated;
+				} break;
+
+				default: {
+					free(output);
+					iconv_close(cd);
+					std::string error = "Transcoding error at source byte ";
+					
+					size_t tmpSize = 100;
+					char * tmp = (char *) malloc(tmpSize);
+					if (tmp) {
+						size_t result = snprintf(tmp, tmpSize, "%d", inBuf-(char *)this->data);
+						if (result < tmpSize) { error += tmp; }
+						free(tmp);
+					}
+					error += " - ";
+					switch (errno) {
+						case EILSEQ: 
+							error += "an invalid multibyte sequence has been encountered in the input";
+						break;
+						case EINVAL:
+							error += "an incomplete multibyte sequence has been encountered in the input";
+						default:
+							error += "unknown error";
+						break;
+					}
+					throw error;
+				} break;
+			}
+		}
+	} while (result == (size_t)(-1));
+
+	iconv_close(cd);
+
+	/* this is the resulting length */
+	size_t len = outBuf - output;
+	ByteStorage * bs = new ByteStorage((unsigned char *) output, len);
+
+	free(output);
+	return bs;
 }

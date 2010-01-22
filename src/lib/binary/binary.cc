@@ -1,4 +1,5 @@
 #include <v8.h>
+#include <string>
 #include "macros.h"
 #include "gc.h"
 #include "bytestring.h"
@@ -36,10 +37,13 @@ v8::Handle<v8::Value> Binary_convertTo(const v8::Arguments &args, v8::Handle<v8:
 		ByteStorage * bs = BS_THIS;
 		v8::String::Utf8Value from(args[0]);
 		v8::String::Utf8Value to(args[1]);
-		
-		ByteStorage * bs2 = bs->transcode(*from, *to);
-		v8::Handle<v8::Value> newargs[]= { v8::External::New((void*) bs2) };
-		return ctor->NewInstance(1, newargs);
+		try {		
+			ByteStorage * bs2 = bs->transcode(*from, *to);
+			v8::Handle<v8::Value> newargs[]= { v8::External::New((void*) bs2) };
+			return ctor->NewInstance(1, newargs);
+		} catch (std::string e) {
+			return JS_EXCEPTION(e.c_str());
+		}
 	}
 	
 }
@@ -64,8 +68,12 @@ JS_METHOD(Binary_codeAt) {
 JS_METHOD(Binary_decodeToString) {
 	ByteStorage * bs = BS_THIS;
 	v8::String::Utf8Value charset(args[0]);
-	ByteStorage bs_tmp(bs->transcode(*charset, "utf-8"));
-	return bs_tmp.toString();
+	try {
+		ByteStorage bs_tmp(bs->transcode(*charset, "utf-8"));
+		return bs_tmp.toString();
+	} catch (std::string e) {
+		return JS_EXCEPTION(e.c_str());
+	}
 }
 
 JS_METHOD(Binary_toByteString) {
@@ -77,7 +85,7 @@ JS_METHOD(Binary_toByteArray) {
 }
 
 JS_METHOD(Binary_concat) {
-	
+	return args.This();	
 }
 
 void Binary_destroy(v8::Handle<v8::Object> instance) {

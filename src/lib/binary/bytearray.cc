@@ -22,42 +22,45 @@ JS_METHOD(_ByteArray) {
 		return JS_UNDEFINED;
 	}
 	
-	int arglen = args.Length();
-	switch (arglen) {
-		case 0: /* empty */
-			SAVE_PTR(0, new ByteStorage());
-		break;
-		case 1: {
-			if (args[0]->IsNumber()) { /* blank with a given length */
-				SAVE_PTR(0, new ByteStorage(args[0]->IntegerValue()));
-			} else if (args[0]->IsExternal()) { /* from a bytestorage */
-				SAVE_VALUE(0, args[0]);
-			} else if (args[0]->IsArray()) { /* array of numbers */
-				v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(args[0]);
-				SAVE_PTR(0, new ByteStorage(arr));
-			} else if (args[0]->IsObject()) { /* copy constructor */
-				v8::Handle<v8::Object> obj = v8::Handle<v8::Object>::Cast(args[0]);
-				if (IS_BINARY(obj)) {
-					SAVE_PTR(0, new ByteStorage(BS_OTHER(obj)));
+	try {
+		int arglen = args.Length();
+		switch (arglen) {
+			case 0: /* empty */
+				SAVE_PTR(0, new ByteStorage());
+			break;
+			case 1: {
+				if (args[0]->IsNumber()) { /* blank with a given length */
+					SAVE_PTR(0, new ByteStorage(args[0]->IntegerValue()));
+				} else if (args[0]->IsExternal()) { /* from a bytestorage */
+					SAVE_VALUE(0, args[0]);
+				} else if (args[0]->IsArray()) { /* array of numbers */
+					v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(args[0]);
+					SAVE_PTR(0, new ByteStorage(arr));
+				} else if (args[0]->IsObject()) { /* copy constructor */
+					v8::Handle<v8::Object> obj = v8::Handle<v8::Object>::Cast(args[0]);
+					if (IS_BINARY(obj)) {
+						SAVE_PTR(0, new ByteStorage(BS_OTHER(obj)));
+					} else {
+						return WRONG_CTOR;
+					}
 				} else {
 					return WRONG_CTOR;
 				}
-			} else {
+			} break;
+			case 2: {
+				/* string, charset */
+				v8::String::Utf8Value str(args[0]);
+				v8::String::Utf8Value charset(args[1]);
+				ByteStorage bs_tmp((unsigned char *) (*str), str.length());
+				ByteStorage * bs = bs_tmp.transcode("utf-8", *charset);
+				SAVE_PTR(0, bs);
+			} break;
+			default:
 				return WRONG_CTOR;
-			}
-		} break;
-		case 2: {
-			/* string, charset */
-			v8::String::Utf8Value str(args[0]);
-			v8::String::Utf8Value charset(args[1]);
-			ByteStorage bs_tmp((unsigned char *) (*str), str.length());
-			ByteStorage * bs = bs_tmp.transcode("utf-8", *charset);
-			SAVE_PTR(0, bs);
-		} break;
-		default:
-			return WRONG_CTOR;
-		break;
-		
+			break;
+		}
+	} catch (std::string e) {
+		return JS_EXCEPTION(e.c_str());
 	}
 	
 	GC * gc = GC_PTR;

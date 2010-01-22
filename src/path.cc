@@ -120,7 +120,10 @@ bool path_dir_exists(std::string path) {
  * Get current working directory
  */
 std::string path_getcwd() {
-	return getcwd(NULL, 0);
+	char * buf = getcwd(NULL, 0);
+	std::string result(buf);
+	free(buf);
+	return result;
 }
 
 /**

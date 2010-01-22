@@ -1,3 +1,3 @@
 #!../v8cgi
 
-system.stdout(JSON.stringify(system.env));
+system.stdout(JSON.stringify(system.env) + "\n");

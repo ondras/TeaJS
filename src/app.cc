@@ -110,8 +110,7 @@ void v8cgi_App::prepare(char ** envp) {
 	g->Set(JS_STR("onexit"), v8::FunctionTemplate::New(_onexit)->GetFunction());
 	g->Set(JS_STR("exit"), v8::FunctionTemplate::New(_exit)->GetFunction());
 	g->Set(JS_STR("global"), g);
-	g->Set(JS_STR("Config"), v8::Object::New());
-	
+
 	this->paths = v8::Persistent<v8::Array>::New(v8::Array::New());
 
 	setup_v8cgi(g);
@@ -133,8 +132,7 @@ void v8cgi_App::autoload() {
 	v8::Handle<v8::Value> config = JS_GLOBAL->Get(JS_STR("Config"));
 	v8::Handle<v8::Array> list = v8::Handle<v8::Array>::Cast(this->get_config("libraryAutoload"));
 	int cnt = list->Length();
-	v8::Handle<v8::Value> dummy;
-	
+
 	for (int i=0;i<cnt;i++) {
 		v8::Handle<v8::Value> item = list->Get(JS_INT(i));
 		v8::String::Utf8Value name(item);
@@ -163,6 +161,7 @@ int v8cgi_App::execute(char ** envp) {
 #endif
 
 	this->terminated = false;
+	this->mainModule = v8::Object::New();
 
 	try {
 		/* prepare JS environment: config, default libraries */
@@ -284,8 +283,8 @@ v8::Handle<v8::Object> v8cgi_App::require(std::string name, std::string relative
 	exports = v8::Object::New();
 	this->cache.addExports(modulename, exports);
 
-	/* create the "module" variable" */
-	v8::Handle<v8::Object> module = v8::Object::New();
+	/* create/use the "module" variable" */
+	v8::Handle<v8::Object> module = (name == this->mainfile ? this->mainModule : v8::Object::New());
 	module->Set(JS_STR("id"), JS_STR(modulename.c_str()));
 
 	try {
@@ -342,9 +341,8 @@ void v8cgi_App::load_dso(std::string filename, v8::Handle<v8::Function> require,
 	void * handle = this->cache.getHandle(filename);
 
 	typedef void (*init_t)(v8::Handle<v8::Function>, v8::Handle<v8::Object>, v8::Handle<v8::Object>);
+	init_t func = (init_t) dlsym(handle, "init");
 
-	init_t func = (init_t) dlsym(handle, "init");	
-	
 	if (!func) {
 		std::string error = "Cannot initialize shared library '";
 		error += filename;
@@ -555,6 +553,7 @@ v8::Handle<v8::Function> v8cgi_App::build_require(std::string path) {
 	v8::Handle<v8::FunctionTemplate> requiretemplate = v8::FunctionTemplate::New(_require, JS_STR(root.c_str()));
 	v8::Handle<v8::Function> require = requiretemplate->GetFunction();
 	require->Set(JS_STR("paths"), this->paths);
+	require->Set(JS_STR("main"), this->mainModule);
 	return require;
 }
 

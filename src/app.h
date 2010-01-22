@@ -85,6 +85,7 @@ private:
 	v8::Handle<v8::Function> build_require(std::string path);
 	
 	v8::Persistent<v8::Array> paths; /* require.paths */
+	v8::Local<v8::Object> mainModule;
 };
 
 #endif

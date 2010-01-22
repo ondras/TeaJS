@@ -24,12 +24,12 @@ scons library=shared
 sudo cp libv8.so /usr/lib/libv8.so
 cd ../v8cgi
 scons module=1 gd=1 mysql=1 pgsql=1 sqlite=1 dom=1
-sudo cp v8cgi.config.posix /etc/v8cgi.config
+sudo cp v8cgi.conf.posix /etc/v8cgi.conf
 
 
 - configure /etc/v8cgi.config
-sudo vi /etc/v8cgi.config
-Config["libraryPath"] = '~/src/v8cgi/lib';
+sudo vi /etc/v8cgi.conf
+require.paths.push('~/src/v8cgi/lib');
 
 
 - configure the apache module:

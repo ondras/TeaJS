@@ -24,10 +24,20 @@ public:
 	unsigned char * getData();
 	size_t getLength();
 	unsigned char getByte(size_t index);
+
+	void setByte(size_t index, unsigned char byte);
 	int indexOf(unsigned char value, size_t start, size_t end, int direction);
 	ByteStorage * transcode(const char * from, const char * to);
 	v8::Handle<v8::String> toString();
-	void concat(ByteStorage * bs);
+	void resize(size_t newLength, bool zeroFill);
+	void reverse();
+	
+	void push(unsigned char byte);
+	void push(ByteStorage * bs);
+	unsigned char pop();
+	void unshift(unsigned char byte);
+	void unshift(ByteStorage * bs);
+	unsigned char shift();
 
 protected:
 

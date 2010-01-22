@@ -82,6 +82,13 @@ JS_METHOD(_slice) {
 	return byteString->NewInstance(1, newargs);
 }
 
+JS_METHOD(_concat) {
+	v8::Handle<v8::Value> newargs[]= { args.This() };
+	v8::Handle<v8::Object> result = ByteString_function()->NewInstance(1, newargs);
+	Binary_concat(result, args, true);
+	return result;
+}
+
 v8::Handle<v8::Value> _get(size_t index, const v8::AccessorInfo &info) {
 	ByteStorage * bs = BS_OTHER(info.This());
 	size_t len = bs->getLength();
@@ -108,6 +115,7 @@ void ByteString_init(v8::Handle<v8::FunctionTemplate> binaryTemplate) {
 
 	v8::Handle<v8::ObjectTemplate> byteStringPrototype = byteStringTemplate->PrototypeTemplate();
 	byteStringPrototype->Set(JS_STR("slice"), v8::FunctionTemplate::New(_slice));
+	byteStringPrototype->Set(JS_STR("concat"), v8::FunctionTemplate::New(_concat));
 
 	byteString = v8::Persistent<v8::Function>::New(byteStringTemplate->GetFunction());
 }

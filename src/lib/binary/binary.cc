@@ -2,6 +2,7 @@
 #include <string>
 #include "macros.h"
 #include "gc.h"
+#include "binary.h"
 #include "bytestring.h"
 #include "bytearray.h"
 #include "bytestorage.h"
@@ -91,6 +92,29 @@ JS_METHOD(Binary_concat) {
 void Binary_destroy(v8::Handle<v8::Object> instance) {
 	ByteStorage * bs = BS_OTHER(instance);
 	delete bs;
+}
+
+v8::Handle<v8::Value> Binary_concat(v8::Handle<v8::Object> obj, const v8::Arguments& args, bool right) {
+	ByteStorage * bs = BS_OTHER(obj);
+	
+	v8::Handle<v8::Value> arg;
+	for (int i=0;i<args.Length();i++) {
+		arg = args[i];
+		
+		if (arg->IsObject() && IS_BINARY(arg->ToObject())) {
+			ByteStorage * bs2 = BS_OTHER(arg->ToObject());
+			(right ? bs->push(bs2) : bs->unshift(bs2));
+		} else if (arg->IsArray()) {
+			v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(arg);
+			ByteStorage bs_tmp(arr);
+			(right ? bs->push(&bs_tmp) : bs->unshift(&bs_tmp));
+		} else {
+			unsigned char byte = (unsigned char) arg->IntegerValue();
+			(right ? bs->push(byte) : bs->unshift(byte));
+		}
+	}
+	
+	return JS_INT(bs->getLength());
 }
 
 JS_METHOD(_Binary) {

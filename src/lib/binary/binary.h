@@ -15,6 +15,8 @@ JS_METHOD(Binary_codeAt);
 JS_METHOD(Binary_toByteString);
 JS_METHOD(Binary_toByteArray);
 JS_METHOD(Binary_decodeToString);
+
+v8::Handle<v8::Value> Binary_concat(v8::Handle<v8::Object> obj, const v8::Arguments& args, bool right);
 void Binary_destroy(v8::Handle<v8::Object> instance);
 
 #endif

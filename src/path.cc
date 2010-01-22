@@ -21,7 +21,7 @@ std::string path_normalize(std::string path) {
 	char * p = new char[PATH_MAX];
 	realpath(path.c_str(), p);
 	std::string result(p);
-	delete p;
+	delete[] p;
 	return result;
 /*
 	std::string result = path;

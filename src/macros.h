@@ -33,6 +33,10 @@
 
 #define ASSERT_CONSTRUCTOR if (!args.IsConstructCall()) { return JS_EXCEPTION("Invalid call format. Please use the 'new' operator."); }
 #define ASSERT_NOT_CONSTRUCTOR if (args.IsConstructCall()) { return JS_EXCEPTION("Invalid call format. Please do not use the 'new' operator."); }
+#define RETURN_CONSTRUCT_CALL \
+	std::vector< v8::Handle<v8::Value> > params(args.Length()); \
+	for (size_t i=0; i<params.size(); i++) { params[i] = args[i]; } \
+	return args.Callee()->NewInstance(args.Length(), &params[0]);
 
 #ifdef _WIN32
 #   define SHARED_INIT() extern "C" __declspec(dllexport) void init(v8::Handle<v8::Function> require, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module)

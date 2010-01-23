@@ -1,5 +1,6 @@
 #include <v8.h>
 #include <string>
+#include <vector>
 #include "macros.h"
 #include "gc.h"
 #include "binary.h"
@@ -18,10 +19,7 @@ v8::Persistent<v8::Function> byteArray;
  * ByteArray constructor
  */
 JS_METHOD(_ByteArray) {
-	if (!args.IsConstructCall()) {
-		/* FIXME */
-		return JS_UNDEFINED;
-	}
+	if (!args.IsConstructCall()) { RETURN_CONSTRUCT_CALL; }
 	
 	try {
 		int arglen = args.Length();

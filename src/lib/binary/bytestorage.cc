@@ -189,6 +189,31 @@ void ByteStorage::reverse() {
 	}
 }
 
+void ByteStorage::splice(size_t start, size_t howMany, const v8::Arguments &args) {
+	if (start >= this->length) { return; }
+	size_t end = start+howMany;
+	if (end > this->length) { end = this->length; }
+
+	/* cut existing data */
+	if (howMany && end < this->length) {
+		memmove(this->data + start, this->data + end, this->length-end);
+	}
+	this->resize(this->length - howMany, false);
+	
+	/* resize to accomodate new elements */
+	int added = args.Length()-2;
+	if (added <= 0) { return; }
+	this->resize(this->length + added, false);
+	memmove(this->data + start + added, this->data + start, added);
+	
+	unsigned char byte;
+	for (int i=2; i<args.Length(); i++) {
+		byte = (unsigned char) args[i]->IntegerValue();
+		this->data[start+i-2] = byte;
+	}
+	
+}
+
 ByteStorage * ByteStorage::transcode(const char * from, const char * to) {
 	/* no data */
 	if (!this->length) { return new ByteStorage(); }

@@ -82,6 +82,32 @@ JS_METHOD(_slice) {
 	return byteArray->NewInstance(1, newargs);
 }
 
+JS_METHOD(_splice) {
+	ByteStorage * bs = BS_THIS;
+	size_t len = args.Length();
+	size_t start = (len > 0 ? args[0]->IntegerValue() : 0);
+	size_t howMany = (len > 1 ? args[1]->IntegerValue() : bs->getLength()-start);
+	
+	/* create new storage with spliced out elements */
+	ByteStorage * bs2 = new ByteStorage(bs, start, start+howMany);
+	
+	bs->splice(start, howMany, args);
+	
+	v8::Handle<v8::Value> newargs[] = { v8::External::New((void*)bs2) };
+	return byteArray->NewInstance(1, newargs);
+}
+
+JS_METHOD(_displace) {
+	ByteStorage * bs = BS_THIS;
+	size_t len = args.Length();
+	size_t start = (len > 0 ? args[0]->IntegerValue() : 0);
+	size_t howMany = (len > 1 ? args[1]->IntegerValue() : bs->getLength()-start);
+	
+	bs->splice(start, howMany, args);
+
+	return JS_INT(bs->getLength());
+}
+
 JS_METHOD(_pop) {
 	ByteStorage * bs = BS_THIS;
 	if (!bs->getLength()) { return v8::Undefined(); }
@@ -158,6 +184,8 @@ void ByteArray_init(v8::Handle<v8::FunctionTemplate> binaryTemplate) {
 
 	v8::Handle<v8::ObjectTemplate> byteArrayPrototype = byteArrayTemplate->PrototypeTemplate();
 	byteArrayPrototype->Set(JS_STR("slice"), v8::FunctionTemplate::New(_slice));
+	byteArrayPrototype->Set(JS_STR("splice"), v8::FunctionTemplate::New(_splice));
+	byteArrayPrototype->Set(JS_STR("displace"), v8::FunctionTemplate::New(_displace));
 	byteArrayPrototype->Set(JS_STR("pop"), v8::FunctionTemplate::New(_pop));
 	byteArrayPrototype->Set(JS_STR("shift"), v8::FunctionTemplate::New(_shift));
 	byteArrayPrototype->Set(JS_STR("push"), v8::FunctionTemplate::New(_push));

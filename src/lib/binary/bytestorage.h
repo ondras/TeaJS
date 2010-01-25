@@ -31,6 +31,7 @@ public:
 	v8::Handle<v8::String> toString();
 	void resize(size_t newLength, bool zeroFill);
 	void reverse();
+	void splice(size_t start, size_t howMany, const v8::Arguments &args);
 	
 	void push(unsigned char byte);
 	void push(ByteStorage * bs);

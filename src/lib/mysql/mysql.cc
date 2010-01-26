@@ -24,6 +24,21 @@ void destroy(v8::Handle<v8::Object> obj) {
 	fun->Call(obj, 0, NULL);
 }
 
+v8::Handle<v8::Value> createResult(MYSQL * conn) {
+	MYSQL_RES * res = mysql_store_result(conn);
+	
+	if (res) {
+		v8::Handle<v8::Value> resargs[] = { v8::External::New((void *) res) };
+		return rest->GetFunction()->NewInstance(1, resargs);
+	} else {
+		if (mysql_field_count(conn)) {
+			return JS_EXCEPTION(MYSQL_ERROR);
+		} else {
+			return JS_BOOL(true);
+		}
+	}
+}
+
 /**
  * MySQL constructor does basically nothing. It just adds "this.close()" method to global GC
  */
@@ -63,8 +78,7 @@ JS_METHOD(_connect) {
 	v8::String::Utf8Value db(args[3]);
 
 	conn = mysql_init(NULL);
-
-	if (!mysql_real_connect(conn, *host, *user, *pass, *db, 0, NULL, 0)) {
+	if (!mysql_real_connect(conn, *host, *user, *pass, *db, 0, NULL, CLIENT_MULTI_STATEMENTS)) {
 		return JS_EXCEPTION(MYSQL_ERROR);
 	} else {
 		mysql_query(conn, "SET NAMES 'utf8'");
@@ -84,25 +98,27 @@ JS_METHOD(_query) {
 	}
 	v8::String::Utf8Value q(args[0]);
 	
-	MYSQL_RES *res;
 	int code = mysql_real_query(conn, *q, q.length());
 	if (code != 0) { return JS_EXCEPTION(MYSQL_ERROR); }
 	
 	int qc = args.This()->Get(JS_STR("queryCount"))->ToInteger()->Int32Value();
 	args.This()->Set(JS_STR("queryCount"), JS_INT(qc+1));
 	
-	res = mysql_store_result(conn);
+	return createResult(conn);
+}
+
+/**
+ * Fetch next result from a multi-result set
+ */
+JS_METHOD(_nextresult) {
+	MYSQL_PTR;
+	ASSERT_CONNECTED;
 	
-	if (res) {
-		v8::Handle<v8::Value> resargs[] = { v8::External::New((void *) res) };
-		return rest->GetFunction()->NewInstance(1, resargs);
-	} else {
-		if (mysql_field_count(conn)) {
-			return JS_EXCEPTION(MYSQL_ERROR);
-		} else {
-			return args.This();
-		}
-	}
+	int status = mysql_next_result(conn);
+	
+	if (status == -1) { return JS_NULL; }
+	if (status > 0) { return JS_EXCEPTION(MYSQL_ERROR); }
+	return createResult(conn);
 }
 
 JS_METHOD(_affectedrows) {
@@ -261,6 +277,7 @@ SHARED_INIT() {
 	pt->Set(JS_STR("connect"), v8::FunctionTemplate::New(_connect));
 	pt->Set(JS_STR("close"), v8::FunctionTemplate::New(_close));
 	pt->Set(JS_STR("query"), v8::FunctionTemplate::New(_query));
+	pt->Set(JS_STR("nextResult"), v8::FunctionTemplate::New(_nextresult));
 	pt->Set(JS_STR("affectedRows"), v8::FunctionTemplate::New(_affectedrows));
 	pt->Set(JS_STR("escape"), v8::FunctionTemplate::New(_escape));
 	pt->Set(JS_STR("qualify"), v8::FunctionTemplate::New(_qualify));

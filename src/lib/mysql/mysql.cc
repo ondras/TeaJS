@@ -254,6 +254,17 @@ JS_METHOD(_fetchobjects) {
 	return result;
 }
 
+JS_METHOD(_result_close) {
+	MYSQL_RES * res = LOAD_PTR(0, MYSQL_RES *);
+	if (res) {
+		mysql_free_result(res);
+		SAVE_PTR(0, NULL);
+		return JS_BOOL(true);
+	} else {
+		return JS_BOOL(false);
+	}
+}
+
 } /* end namespace */
 
 SHARED_INIT() {
@@ -299,6 +310,7 @@ SHARED_INIT() {
 	resproto->Set(JS_STR("fetchNames"), v8::FunctionTemplate::New(_fetchnames));
 	resproto->Set(JS_STR("fetchArrays"), v8::FunctionTemplate::New(_fetcharrays));
 	resproto->Set(JS_STR("fetchObjects"), v8::FunctionTemplate::New(_fetchobjects));
+	resproto->Set(JS_STR("close"), v8::FunctionTemplate::New(_result_close));
 
 	exports->Set(JS_STR("MySQL"), ft->GetFunction());
 }

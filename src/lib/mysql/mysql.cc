@@ -12,6 +12,7 @@
 
 #define MYSQL_ERROR mysql_error(conn)
 #define ASSERT_CONNECTED if (!conn) { return JS_EXCEPTION("No connection established yet."); }
+#define ASSERT_RESULT if (!res) { return JS_EXCEPTION("Result set already closed."); }
 #define MYSQL_PTR MYSQL * conn = LOAD_PTR(0, MYSQL *)
 
 
@@ -19,7 +20,12 @@ namespace {
 
 v8::Persistent<v8::FunctionTemplate> rest;
 
-void destroy(v8::Handle<v8::Object> obj) {
+void finalize(v8::Handle<v8::Object> obj) {
+	v8::Handle<v8::Function> fun = v8::Handle<v8::Function>::Cast(obj->Get(JS_STR("close")));
+	fun->Call(obj, 0, NULL);
+}
+
+void result_finalize(v8::Handle<v8::Object> obj) {
 	v8::Handle<v8::Function> fun = v8::Handle<v8::Function>::Cast(obj->Get(JS_STR("close")));
 	fun->Call(obj, 0, NULL);
 }
@@ -46,7 +52,7 @@ JS_METHOD(_mysql) {
 	ASSERT_CONSTRUCTOR;
 	SAVE_PTR(0, NULL);
 	GC * gc = GC_PTR;
-	gc->add(args.This(), destroy);
+	gc->add(args.This(), finalize);
 	return args.This();
 }
 
@@ -168,23 +174,30 @@ JS_METHOD(_qualify) {
 
 JS_METHOD(_result) {
 	SAVE_VALUE(0, args[0]);
+
+	GC * gc = GC_PTR;
+	gc->add(args.This(), result_finalize);
+
 	return args.This();
 }
 
 JS_METHOD(_numrows) {
 	MYSQL_RES * res = LOAD_PTR(0, MYSQL_RES *);
+	ASSERT_RESULT;
 
 	return JS_INT(mysql_num_rows(res));
 }
 
 JS_METHOD(_numfields) {
 	MYSQL_RES * res = LOAD_PTR(0, MYSQL_RES *);
+	ASSERT_RESULT;
 
 	return JS_INT(mysql_num_fields(res));
 }
 
 JS_METHOD(_fetchnames) {
 	MYSQL_RES * res = LOAD_PTR(0, MYSQL_RES *);
+	ASSERT_RESULT;
 
 	int cnt = mysql_num_fields(res);
 	MYSQL_FIELD * fields = mysql_fetch_fields(res);
@@ -202,6 +215,7 @@ JS_METHOD(_fetchnames) {
  */ 
 JS_METHOD(_fetcharrays) {
 	MYSQL_RES * res = LOAD_PTR(0, MYSQL_RES *);
+	ASSERT_RESULT;
 	mysql_data_seek(res, 0);
 
 	int x = mysql_num_fields(res);
@@ -230,6 +244,7 @@ JS_METHOD(_fetcharrays) {
  */ 
 JS_METHOD(_fetchobjects) {
 	MYSQL_RES * res = LOAD_PTR(0, MYSQL_RES *);
+	ASSERT_RESULT;
 	mysql_data_seek(res, 0);
 
 	int x = mysql_num_fields(res);

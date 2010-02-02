@@ -87,7 +87,7 @@ JS_METHOD(_concat) {
 	return result;
 }
 
-v8::Handle<v8::Value> _get(size_t index, const v8::AccessorInfo &info) {
+v8::Handle<v8::Value> _get(uint32_t index, const v8::AccessorInfo &info) {
 	ByteStorage * bs = BS_OTHER(info.This());
 	size_t len = bs->getLength();
 	if (index < 0 || index >= len) { return v8::Undefined(); }

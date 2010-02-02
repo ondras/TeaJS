@@ -139,7 +139,7 @@ JS_METHOD(_concat) {
 	return args.This();
 }
 
-v8::Handle<v8::Value> _get(size_t index, const v8::AccessorInfo &info) {
+v8::Handle<v8::Value> _get(uint32_t index, const v8::AccessorInfo &info) {
 	ByteStorage * bs = BS_OTHER(info.This());
 	size_t len = bs->getLength();
 	if (index < 0 || index >= len) { return v8::Undefined(); }
@@ -147,7 +147,7 @@ v8::Handle<v8::Value> _get(size_t index, const v8::AccessorInfo &info) {
 	return JS_INT(bs->getByte(index));
 }
 
-v8::Handle<v8::Value> _set(size_t index, v8::Local<v8::Value> value, const v8::AccessorInfo &info) {
+v8::Handle<v8::Value> _set(uint32_t index, v8::Local<v8::Value> value, const v8::AccessorInfo &info) {
 	ByteStorage * bs = BS_OTHER(info.This());
 	size_t len = bs->getLength();
 	if (index < 0 || index >= len) { return v8::Undefined(); }

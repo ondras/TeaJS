@@ -255,6 +255,10 @@ if env["process"] == 1:
 	)
 # if
 
+e = env.Clone()
+e.Append(
+	LIBS = ["iconv"]
+)
 e.SharedLibrary(
 	target = "lib/binary", 
 	source = ["src/lib/binary/binary.cc", "src/lib/binary/bytestring.cc", "src/lib/binary/bytearray.cc", "src/lib/binary/bytestorage.cc"],

@@ -9,6 +9,12 @@
 
 #define ALLOC_ERROR throw std::string("Cannot allocate enough memory")
 
+#ifdef windows
+#	define ICONV_INPUT_T const char * 
+#else
+#	define ICONV_INPUT_T char *
+#endif
+
 ByteStorage::ByteStorage() {
 	this->length = 0;
 	this->data = NULL;
@@ -241,7 +247,7 @@ ByteStorage * ByteStorage::transcode(const char * from, const char * to) {
 	
 	size_t inBytesLeft = this->length;
 	size_t outBytesLeft = allocated;
-	char * inBuf = (char *) this->data;
+	ICONV_INPUT_T inBuf = (ICONV_INPUT_T) this->data;
 	char * outBuf = output;
 
 	size_t result = 0;

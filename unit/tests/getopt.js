@@ -19,54 +19,54 @@ function setup() {
 
 exports.testGetoptInitial = function() {
 	var go = setup();
-	assert.assertEquals("default value #1", false, go.get("a"));
-	assert.assertEquals("default value #2", 17, go.get("e"));
-	assert.assertThrows("undefined default value", function() { go.get("x"); });
+	assert.equal(go.get("a"), false, "default value #1");
+	assert.equal(go.get("e"), 17, "default value #2");
+	assert.throws(function() { go.get("x"); }, null, "undefined default value");
 }
 
 exports.testGetoptErrors = function() {
 	var go = setup();
-	assert.assertThrows("unknown short option", function() { go.parse(["-x"]); });
+	assert.throws(function() { go.parse(["-x"]); }, null, "unknown short option");
 	
 	var go = setup();
-	assert.assertThrows("unknown long option", function() { go.parse(["--yz"]); });
+	assert.throws(function() { go.parse(["--yz"]); }, null, "unknown long option");
 
 	var go = setup();
-	assert.assertThrows("required argument without value", function() { go.parse(["-e"]); });
+	assert.throws(function() { go.parse(["-e"]); }, null, "required argument without value");
 
 	var go = setup();
-	assert.assertThrows("required argument without value in shortmix", function() { go.parse(["-ea", "value"]); });
+	assert.throws(function() { go.parse(["-ea", "value"]); }, null, "required argument without value in shortmix");
 }
 
 exports.testGetoptOk = function() {
 	var go = setup();
 	go.parse(["-a", "-b", "4", "-c", "xxx", "-d", "1", "-d", "2", "--"]);
-	assert.assertEquals("value #1", true, go.get("a"));
-	assert.assertEquals("value #2", 4, go.get("b"));
-	assert.assertEquals("value #3", "xxx", go.get("c"));
-	assert.assertEquals("value #4", "1,2", go.get("d").join(","));
+	assert.equal(go.get("a"), true, "value #1");
+	assert.equal(go.get("b"), 4, "value #2");
+	assert.equal(go.get("c"), "xxx", "value #3");
+	assert.equal(go.get("d").join(","), "1,2", "value #4");
 	
 	var go = setup();
 	go.parse(["--blong", "-bc", "yyy", "--long=zzz", "-bb"]);
-	assert.assertEquals("value #5", false, go.get("a"));
-	assert.assertEquals("value #6", 4, go.get("b"));
-	assert.assertEquals("value #7", "yyy", go.get("c"));
-	assert.assertEquals("value #8", "zzz", go.get("e"));
+	assert.equal(go.get("a"), false, "value #5");
+	assert.equal(go.get("b"), 4, "value #6");
+	assert.equal(go.get("c"), "yyy", "value #7");
+	assert.equal(go.get("e"), "zzz", "value #8");
 }
 
 exports.testGetoptMain = function() {
 	var go = setup();
 	go.parse(["a", "b", "c"]);
-	assert.assertEquals("simple main values", "abc", go.get("").join(""));
+	assert.equal(go.get("").join(""), "abc", "simple main values");
 
 	var go = setup();
 	go.parse(["--along", "b"]);
-	assert.assertEquals("simple main value", "b", go.get("").join(""));
+	assert.equal(go.get("").join(""), "b", "simple main value");
 
 	var go = setup();
 	go.parse(["-d", "--", "xx", "-a"]);
-	assert.assertEquals("optional value before --", true, go.get("d")[0]);
-	assert.assertEquals("main value after --", "xx-a", go.get("").join(""));
+	assert.equal(go.get("d")[0], true, "optional value before --");
+	assert.equal(go.get("").join(""), "xx-a", "main value after --");
 }
 
 exports.testIssue17 = function() {

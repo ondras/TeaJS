@@ -256,9 +256,11 @@ if env["process"] == 1:
 # if
 
 e = env.Clone()
-e.Append(
-	LIBS = ["iconv"]
-)
+if env["os"] == "windows" or env["os"] == "darwin":
+	e.Append(
+		LIBS = ["iconv"]
+	)
+# if
 e.SharedLibrary(
 	target = "lib/binary", 
 	source = ["src/lib/binary/binary.cc", "src/lib/binary/bytestring.cc", "src/lib/binary/bytearray.cc", "src/lib/binary/bytestorage.cc"],

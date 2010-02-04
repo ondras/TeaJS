@@ -12,21 +12,21 @@ exports.testSQLite = function() {
 	db.query("create table test(one varchar(10), two integer primary key)");
 	db.query("insert into test (one, two) values ('a', 1)");
 	db.query("insert into test (one) values ('b')");
-	assert.assertEquals("rows affected by insert", 1, db.changes());
-	assert.assertEquals("last insert id", 2, db.insertId());
+	assert.equal(db.changes(), 1, "rows affected by insert");
+	assert.equal(db.insertId(), 2, "last insert id");
 	
 	var r = db.query("select two from test");
-	assert.assertEquals("result rows", 2, r.numRows());
-	assert.assertEquals("result fields", 1, r.numFields());
+	assert.equal(r.numRows(), 2, "result rows");
+	assert.equal(r.numFields(), 1, "result fields");
 	
 	var names = r.fetchNames();
-	assert.assertEquals("fetch names", "two", names.join(","));
+	assert.equal(names.join(","), "two", "fetch names");
 
 	var arr = r.fetchArrays();
-	assert.assertEquals("fetch arrays", "2", arr[1][0]);
+	assert.equal(arr[1][0], "2", "fetch arrays");
 	
 	var obj = r.fetchObjects();
-	assert.assertEquals("fetch objects", "2", obj[1]["two"]);
+	assert.equal(obj[1]["two"], "2", "fetch objects");
 
 	db.close();
 }

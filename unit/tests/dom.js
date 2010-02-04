@@ -46,16 +46,16 @@ exports.testAppend = function() {
 	var d = setup();
 	
 	var elm = d.createElement("test");
-	assert.assertEquals("New node without parent", null, elm.parentNode);
+	assert.equal(elm.parentNode, null, "New node without parent");
 	
 	d.appendChild(elm);
-	assert.assertEquals("Appended node with parent", d, elm.parentNode);
+	assert.equal(elm.parentNode, d, "Appended node with parent");
 	
 	var elm2 = d.createElement("test2");
 	elm2.appendChild(elm);
-	assert.assertEquals("Node removed from document", 0, d.childNodes.length);
-	assert.assertEquals("Node removed from document", null, d.firstChild);
-	assert.assertEquals("Node appended to other node", elm2, elm.parentNode);
+	assert.equal(d.childNodes.length, 0, "Node removed from document");
+	assert.equal(d.firstChild, null, "Node removed from document");
+	assert.equal(elm.parentNode, elm2, "Node appended to other node");
 }
 
 exports.testInsert = function() {
@@ -69,9 +69,9 @@ exports.testInsert = function() {
 	d.appendChild(elm3);
 	d.insertBefore(elm2, elm3);
 	
-	assert.assertEquals("Node inserted before node", elm2, d.childNodes[1]);
-	assert.assertEquals("Sibling relation #1", elm2, elm3.previousSibling);
-	assert.assertEquals("Sibling relation #2", elm2, elm1.nextSibling);
+	assert.equal(d.childNodes[1], elm2, "Node inserted before node");
+	assert.equal(elm3.previousSibling, elm2, "Sibling relation #1");
+	assert.equal(elm1.nextSibling, elm2, "Sibling relation #2");
 	
 	var d = setup();
 	var elm1 = d.createElement("test");
@@ -81,9 +81,9 @@ exports.testInsert = function() {
 	d.appendChild(elm2);
 	d.insertBefore(elm3, null);
 	
-	assert.assertEquals("Null insert = append", elm3, d.childNodes[2]);
-	assert.assertEquals("Sibling relation #1", elm2, elm3.previousSibling);
-	assert.assertEquals("Sibling relation #2", elm3, elm2.nextSibling);
+	assert.equal(d.childNodes[2], elm3, "Null insert = append");
+	assert.equal(elm3.previousSibling, elm2, "Sibling relation #1");
+	assert.equal(elm2.nextSibling, elm3, "Sibling relation #2");
 	
 }
 
@@ -92,7 +92,7 @@ exports.testSerialize = function() {
 	var ser = new DOM.XMLSerializer();
 
 	var str = ser.serializeToString(d);
-	assert.assertEquals("Kitchen sink serialization", XMLSTR, str);
+	assert.equal(str, XMLSTR, "Kitchen sink serialization");
 }
 
 exports.testClone = function() {
@@ -101,7 +101,7 @@ exports.testClone = function() {
 	
 	var clone = d.cloneNode(true);
 	str = ser.serializeToString(clone);
-	assert.assertEquals("Document deep clone", XMLSTR, str);
+	assert.equal(str, XMLSTR, "Document deep clone");
 }
 
 exports.testParse = function() {
@@ -112,5 +112,5 @@ exports.testParse = function() {
 	var doc = par.parseFromString(XMLSTR);
 	var str = ser.serializeToString(doc);
 	
-	assert.assertEquals("XML parsing", XMLSTR, str);
+	assert.equal(str, XMLSTR, "XML parsing");
 }

@@ -9,5 +9,5 @@ exports.testRelative = function() {
 	var b1 = require("./require/b");
 	var b2 = a.foo();
 	
-	assert.assertEquals("delayed relative require", b1, b2);
+	assert.equal(b1, b2, "delayed relative require");
 }

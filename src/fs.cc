@@ -340,7 +340,7 @@ JS_METHOD(_isfile) {
 
 }
 
-void setup_io(v8::Handle<v8::Object> target) {
+void setup_fs(v8::Handle<v8::Object> target) {
 	v8::HandleScope handle_scope;
 	
 	v8::Handle<v8::FunctionTemplate> ft = v8::FunctionTemplate::New(_file);

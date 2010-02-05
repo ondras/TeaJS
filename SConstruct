@@ -7,7 +7,7 @@ version = open("VERSION", "r").read()
 sources = [
 	"common.cc",
 	"system.cc",
-	"io.cc",
+	"fs.cc",
 	"cache.cc",
 	"gc.cc",
 	"app.cc",

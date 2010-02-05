@@ -14,7 +14,7 @@
 
 #include "app.h"
 #include "system.h"
-#include "io.h"
+#include "fs.h"
 #include "macros.h"
 #include "cache.h"
 #include "path.h"
@@ -115,7 +115,7 @@ void v8cgi_App::prepare(char ** envp) {
 
 	setup_v8cgi(g);
 	setup_system(g, envp, this->mainfile, this->mainfile_args);
-	setup_io(g);
+	setup_fs(g);
 
 	/* config file */
 	this->include(path_normalize(this->cfgfile)); 

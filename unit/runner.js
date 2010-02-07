@@ -4,7 +4,7 @@ var TestRunner = {
 	verbosity:0,
 
 	file: function(name, obj) {
-		var moduleName = (name[0] == "/" || name[1] == ":" ? name : "./"+name);
+		var moduleName = (name[0] == "/" || name[1] == ":" ? name : system.getcwd() + "/"+name);
 		obj["test_" + name] = require(moduleName);
 	},
 	

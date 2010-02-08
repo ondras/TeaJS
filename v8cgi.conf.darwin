@@ -29,7 +29,7 @@ Config["smtpPort"] = 25;
 // default From: header
 Config["smtpFrom"] = "";
 
-// explicit HTTP request handler
+// explicit HTTP request handler. Will get obsoleted in future versions.
 Config["httpHandler"] = null;
 
 // Uncaught exceptions go to stdout (true) or stderr (false)

@@ -211,6 +211,48 @@ JS_METHOD(_fetchnames) {
 }
 
 /**
+ * Converts string representations of values in MySQL result sets (the format in
+ * which MySQL returns data) to JavaScript values.
+ *
+ * @param mysql_value  A string (or NULL) value fetched from MySQL.
+ * @param field        The column the value came from.  Its type is used to
+ *                     determine, e.g., whether to convert the value to a
+ *                     number.
+ */
+v8::Handle<v8::Value> _mysqltojs(const char* mysql_value, const MYSQL_FIELD& field) {
+	if (mysql_value == NULL) {
+		return v8::Null();
+	}
+
+        // For type list, see http://www.google.com/codesearch/p#RGCD84x9Jg0/trunk/xbmc/lib/libcmyth/Win32/include/mysql/mysql_com.h&q=enum_field_types
+	switch (field.type) {
+		case MYSQL_TYPE_DECIMAL:
+		case MYSQL_TYPE_TINY:
+		case MYSQL_TYPE_SHORT:
+		case MYSQL_TYPE_LONG:
+		case MYSQL_TYPE_LONGLONG:
+		case MYSQL_TYPE_INT24:
+		case MYSQL_TYPE_BIT:
+		case MYSQL_TYPE_NEWDECIMAL:
+		case MYSQL_TYPE_ENUM:
+		case MYSQL_TYPE_FLOAT:
+		case MYSQL_TYPE_DOUBLE:
+			return JS_STR(mysql_value)->ToNumber();
+
+		case MYSQL_TYPE_TIMESTAMP:
+		case MYSQL_TYPE_DATE:
+		case MYSQL_TYPE_TIME:
+		case MYSQL_TYPE_DATETIME:
+		case MYSQL_TYPE_YEAR:
+		case MYSQL_TYPE_NEWDATE:
+			return JS_STR(mysql_value);  // TODO: handle dates appropriately
+
+		default:
+			return JS_STR(mysql_value);
+        }
+}
+
+/**
  * Return result data as an array of JS arrays
  */ 
 JS_METHOD(_fetcharrays) {
@@ -220,6 +262,7 @@ JS_METHOD(_fetcharrays) {
 
 	int x = mysql_num_fields(res);
 	int y = mysql_num_rows(res);
+	MYSQL_FIELD * fields = mysql_fetch_fields(res);
 	MYSQL_ROW row;
 	v8::Handle<v8::Array> result = v8::Array::New(y);
 	
@@ -228,13 +271,9 @@ JS_METHOD(_fetcharrays) {
 		v8::Handle<v8::Array> item = v8::Array::New(x);
 		result->Set(JS_INT(i), item);
 		for (int j=0; j<x; j++) {
-			if (row[j] == NULL) {
-				item->Set(JS_INT(j), v8::Null());
-			} else {
-				item->Set(JS_INT(j), JS_STR(row[j]));
+			item->Set(JS_INT(j), _mysqltojs(row[j], fields[j]));
 			}
 		}
-	}
 	
 	return result;
 }
@@ -258,13 +297,9 @@ JS_METHOD(_fetchobjects) {
 		v8::Handle<v8::Object> item = v8::Object::New();
 		result->Set(JS_INT(i), item);
 		for (int j=0; j<x; j++) {
-			if (row[j] == NULL) {
-				item->Set(JS_STR(fields[j].name), v8::Null());
-			} else {
-				item->Set(JS_STR(fields[j].name), JS_STR(row[j]));
+			item->Set(JS_STR(fields[j].name), _mysqltojs(row[j], fields[j]));
 			}
 		}
-	}
 	
 	return result;
 }

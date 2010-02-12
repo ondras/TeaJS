@@ -120,7 +120,7 @@ if env["os"] == "posix":
 	)
 # if
 
-if ((env["os"] != "windows") and not (conf.CheckLib("v8"))):
+if (env["os"] != "windows") and not (conf.CheckLib("v8")):
 	print("Cannot find V8 library!")
 	sys.exit(1)
 # if

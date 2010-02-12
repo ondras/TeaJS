@@ -10,6 +10,7 @@
 #include "app.h"
 #include "system.h"
 #include "path.h"
+#include <sys/time.h>
 
 #ifndef HAVE_SLEEP
 #	include <windows.h>
@@ -111,6 +112,17 @@ JS_METHOD(_usleep) {
 	return v8::Undefined();
 }
 
+/**
+ * Return the number of microseconds that have elapsed since the epoch.
+ */
+JS_METHOD(_getTimeInMicroseconds) {
+	struct timeval tv;
+	gettimeofday(&tv, 0);
+	char buffer[24];
+	sprintf(buffer, "%lu%06lu", tv.tv_sec, tv.tv_usec);
+	return JS_STR(buffer)->ToNumber();
+}
+
 
 }
 
@@ -137,6 +149,7 @@ void setup_system(v8::Handle<v8::Object> global, char ** envp, std::string mainf
 	system->Set(JS_STR("getcwd"), v8::FunctionTemplate::New(_getcwd)->GetFunction());
 	system->Set(JS_STR("sleep"), v8::FunctionTemplate::New(_sleep)->GetFunction());
 	system->Set(JS_STR("usleep"), v8::FunctionTemplate::New(_usleep)->GetFunction());
+	system->Set(JS_STR("getTimeInMicroseconds"), v8::FunctionTemplate::New(_getTimeInMicroseconds)->GetFunction());
 	system->Set(JS_STR("env"), env);
 	
 	std::string name, value;

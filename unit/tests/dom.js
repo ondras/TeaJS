@@ -9,7 +9,7 @@ var XMLSTR = '<!DOCTYPE a PUBLIC "b" "c">\n';
 XMLSTR += '<?xml version="1.0" encoding="utf-8"?>\n';
 XMLSTR += '<?xml-stylesheet href="test.xsl"?>\n';
 XMLSTR += '<a x="y">';
-XMLSTR += '<b z="&amp;"><![CDATA[world]]></b><!--hello--></a>\n';
+XMLSTR += '<b z="&amp;hi"><![CDATA[world]]></b><!--hello--></a>\n';
 
 function setup() {
 	var d = new DOM.Document();
@@ -31,7 +31,7 @@ function setupFull() {
 	d.documentElement.appendChild(node2);
 	
 	node1.setAttribute("x", "y");
-	node2.setAttribute("z", "&");
+	node2.setAttribute("z", "&hi");
 	
 	var c = d.createComment("hello");
 	node1.appendChild(c);
@@ -113,4 +113,18 @@ exports.testParse = function() {
 	var str = ser.serializeToString(doc);
 	
 	assert.equal(str, XMLSTR, "XML parsing");
+}
+
+exports.testBadEntities = function() {
+	var str1 = "<root a='&test;'/>";
+	var str2 = "<root a='&amp'/>";
+	var par = new DOM.DOMParser();
+	
+	assert.throws(function() {
+		par.parseFromString(str1);
+	}, null, "Non-existent entity");
+	
+	assert.throws(function() {
+		par.parseFromString(str2);
+	}, null, "Unfinished entity");
 }

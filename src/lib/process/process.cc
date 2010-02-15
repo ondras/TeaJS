@@ -7,6 +7,7 @@
 #include "macros.h"
 #include "common.h"
 #include <stdlib.h>
+#include <sys/wait.h>
 #include <paths.h>  // for _PATH_BSHELL
 
 namespace {

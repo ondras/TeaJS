@@ -36,7 +36,7 @@ public:
 	}
 
 	size_t writer(const char * data, size_t amount) {
-		if (this->output_started) { 
+		if (this->output_started) {
 			/* response data */
 			return (size_t) ap_rwrite(data, amount, this->request);
 		} else { 

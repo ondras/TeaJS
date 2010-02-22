@@ -1,5 +1,5 @@
 /**
- * v8cgi - cgi binary
+ * v8cgi - (fast)cgi binary
  */
 
 #include <v8.h>
@@ -23,7 +23,7 @@
  * any arguments after the v8_args but before the program_file are
  * used by v8cgi.
  */
-static const char * v8cgi_usage = "v8cgi [v8_args --] [-c path] [-d port] program_file [argument ...]";
+static const char * v8cgi_usage = "v8cgi [v8_args --] [-v] [-h] [-c path] [-d port] program_file [argument ...]";
 
 class v8cgi_CGI : public v8cgi_App {
 public:
@@ -33,16 +33,16 @@ public:
 	int init(int argc, char ** argv) {
 		v8cgi_App::init();
 		
-		this->argv0 = std::string(argc > 0 ? path_normalize(argv[0]).c_str() : '\0');
+		this->argv0 = (argc > 0 ? path_normalize(argv[0]) : std::string(""));
+
 		if (argc == 1) {
 			/* no command-line arguments, try looking for CGI env vars */
-			if (!this->fromEnvVars()) { return 0; }
+			this->fromEnvVars();
 		}
 		
 		try {
 			this->process_args(argc, argv);
 		} catch (std::string e) {
-			/* initialization error -> goes to stderr */
 			this->error(e.c_str(), __FILE__, __LINE__); 
 			return 1;
 		}
@@ -62,6 +62,7 @@ public:
 	 */
 	size_t writer(const char * data, size_t amount) {
 		return fwrite((void *) data, sizeof(char), amount, stdout);
+		fwrite((void *) "\n", sizeof(char), 1, stdout);
 	}
 
 	/**
@@ -72,14 +73,10 @@ public:
 		fwrite((void *) "\n", sizeof(char), 1, stderr);
 	}
 
-	int fromEnvVars() {
+	void fromEnvVars() {
 		char * env = getenv("PATH_TRANSLATED");
 		if (!env) { env = getenv("SCRIPT_FILENAME"); }
-		if (env) {
-			this->mainfile = std::string(env);
-			return 0;
-		}
-		return 1;
+		if (env) { this->mainfile = std::string(env); }
 	}
 	
 private:
@@ -100,9 +97,6 @@ private:
 		std::string err = "Invalid command line usage.\n";
 		err += "Correct usage: ";
 		err += v8cgi_usage; /* see the v8cgi_usage definition for the format */
-		
-		/* we must have at least one arg */
-		if (argc == 1) { throw err; }
 		
 		int index = 0;
 		
@@ -126,33 +120,42 @@ private:
 		}
 		
 		/* if there were no v8 args, then reset index to the first argument */
-		if (!have_v8args) index = 1;
-		
+		if (!have_v8args) { index = 1; }
 		
 		/* scan for v8cgi-specific arguments now */
-		while (1) {
-			/* we haven't found a mainfile yet, so there MUST be more arguments */
-			if (index >= argc) { throw err; }
+		while (index < argc) {
 			std::string optname(argv[index]);
 			if (optname[0] != '-') { break; } /* not starting with "-" => mainfile */
 			if (optname.length() != 2) { throw err; } /* one-character options only */
 			index++; /* skip the option name */
 			
-			if (index >= argc) { throw err; } /* missing option value */
-			
 			switch (optname[1]) {
 				case 'c':
+					if (index >= argc) { throw err; } /* missing option value */
 					this->cfgfile = argv[index];		
-	#ifdef VERBOSE
+#ifdef VERBOSE
 					printf("cfgfile: %s\n", argv[index]);
-	#endif
+#endif
+					index++; /* skip the option value */
 				break;
 				
 				case 'd':
+					if (index >= argc) { throw err; } /* missing option value */
 					v8::Debug::EnableAgent("v8cgi", atoi(argv[index]));
-	#ifdef VERBOSE
+#ifdef VERBOSE
 					printf("port: %s\n", argv[index]);
-	#endif
+#endif
+					index++; /* skip the option value */
+				break;
+				
+				case 'h':
+					printf(v8cgi_usage);
+					printf("\n");
+				break;
+				
+				case 'v':
+					printf("v8cgi version %s", STRING(VERSION));
+					printf("\n");
 				break;
 				
 				default:
@@ -160,14 +163,10 @@ private:
 				break;
 			}
 			
-			index++; /* skip the option value */
 		} 
 		
-		/* argv[index] MUST be the program_file.  If it doesn't
-		 exist then we have an error. */
-		if (index >= argc) {
-			throw err;
-		} else {
+		if (index < argc) {
+			/* argv[index] is the program file */
 			this->mainfile = argv[index];
 			/* expand mainfile to absolute path */
 			if (!path_isabsolute(this->mainfile)) {
@@ -181,9 +180,9 @@ private:
 		
 		/* all the rest of the arguments are arguments to the program_file */
 		for (; index < argc; ++index) {
-	#ifdef VERBOSE
+#ifdef VERBOSE
 			printf("program_arg: %s\n", argv[index]);
-	#endif
+#endif
 			this->mainfile_args.push_back(std::string(argv[index]));
 		}
 	}
@@ -210,7 +209,7 @@ int main(int argc, char ** argv) {
 	int result = 0;
 	v8cgi_CGI cgi;
 	result = cgi.init(argc, argv);
-	if (result) { exit(result); }
+//	if (result) { exit(result); }
 
 #ifdef FASTCGI
 	signal(SIGTERM, handle_sigterm);

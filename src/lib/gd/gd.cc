@@ -19,7 +19,7 @@
 	int a = args[3]->Int32Value()
 #define GD_SECOND \
 	v8::Handle<v8::Object> __second = args[0]->ToObject(); \
-	gdImagePtr ptr2 = reinterpret_cast<gdImagePtr>(v8::Handle<v8::External>::Cast(__second->GetInternalField(0))->Value())
+	gdImagePtr ptr2 = reinterpret_cast<gdImagePtr>(__second->GetPointerFromInternalField(0))
 
 namespace {
 

@@ -77,8 +77,7 @@ JS_METHOD(_exit) {
 	v8::V8::TerminateExecution();
 	
 	/* do something at least a bit complex so the stack guard can throw the termination exception */
-	v8::Handle<v8::String> source = JS_STR("(function(){})()");
-	v8::Script::Compile(source)->Run();
+	v8::Script::Compile(JS_STR("(function(){})()"))->Run();
 
 	return v8::Undefined();
 }
@@ -113,12 +112,14 @@ void v8cgi_App::prepare(char ** envp) {
 
 	this->paths = v8::Persistent<v8::Array>::New(v8::Array::New());
 
+	/* config file */
+	this->include(path_normalize(this->cfgfile)); 
+	
+	if (!this->paths->Length()) { throw std::string("require.paths is empty, have you forgotten to push some data there?"); }
+
 	setup_v8cgi(g);
 	setup_system(g, envp, this->mainfile, this->mainfile_args);
 	setup_fs(g);
-
-	/* config file */
-	this->include(path_normalize(this->cfgfile)); 
 	
 	/* default libraries */
 	this->autoload();
@@ -181,6 +182,11 @@ int v8cgi_App::execute(char ** envp) {
 			v8::String::Utf8Value name(handler);
 			this->mainfile = *name;
 		}
+	}
+
+	if (this->mainfile == "") {
+		this->error("Nothing to do :)", __FILE__, __LINE__);
+		return 1;
 	}
 
 	try {

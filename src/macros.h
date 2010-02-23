@@ -22,9 +22,17 @@
 #define JS_NULL v8::Null()
 #define JS_UNDEFINED v8::Undefined()
 #define JS_METHOD(name) v8::Handle<v8::Value> name(const v8::Arguments& args)
-#define JS_EXCEPTION(reason) v8::ThrowException(JS_STR(reason))
-#define JS_RETHROW(tc) v8::Local<v8::Value>::New(tc.Exception());
 #define INSTANCEOF(obj, func) func->HasInstance(obj)
+
+#define JS_THROW(type, reason) v8::ThrowException(v8::Exception::type(JS_STR(reason)))
+#define JS_ERROR(reason) JS_THROW(Error, reason)
+#define JS_TYPE_ERROR(reason) JS_THROW(TypeError, reason)
+#define JS_RANGE_ERROR(reason) JS_THROW(RangeError, reason)
+#define JS_SYNTAX_ERROR(reason) JS_THROW(SyntaxError, reason)
+#define JS_REFERENCE_ERROR(reason) JS_THROW(ReferenceError, reason)
+
+#define JS_EXCEPTION(reason) JS_ERROR(reason)
+#define JS_RETHROW(tc) v8::Local<v8::Value>::New(tc.Exception());
 
 #define JS_GLOBAL v8::Context::GetCurrent()->Global()
 #define GLOBAL_PROTO v8::Handle<v8::Object>::Cast(JS_GLOBAL->GetPrototype())

@@ -266,6 +266,11 @@ e.SharedLibrary(
 	source = ["src/lib/binary/binary.cc", "src/lib/binary/bytestring.cc", "src/lib/binary/bytearray.cc", "src/lib/binary/bytestorage.cc"],
 	SHLIBPREFIX=""
 )
+e.SharedLibrary(
+	target = "lib/buffer", 
+	source = ["src/lib/buffer/buffer.cc", "src/lib/buffer/bytestorage.cc"],
+	SHLIBPREFIX=""
+)
 
 if env["xdom"] == 1:
 	e = env.Clone()

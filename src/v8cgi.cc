@@ -209,7 +209,7 @@ int main(int argc, char ** argv) {
 	int result = 0;
 	v8cgi_CGI cgi;
 	result = cgi.init(argc, argv);
-//	if (result) { exit(result); }
+	if (result) { exit(result); }
 
 #ifdef FASTCGI
 	signal(SIGTERM, handle_sigterm);

@@ -262,13 +262,13 @@ if env["os"] == "windows" or env["os"] == "darwin":
 	)
 # if
 e.SharedLibrary(
-	target = "lib/binary", 
-	source = ["src/lib/binary/binary.cc", "src/lib/binary/bytestring.cc", "src/lib/binary/bytearray.cc", "src/lib/binary/bytestorage.cc"],
+	target = "lib/binary-b", 
+	source = ["src/lib/binary-b/binary-b.cc", "src/lib/binary-b/bytestring.cc", "src/lib/binary-b/bytearray.cc", "src/lib/binary-b/bytestorage.cc"],
 	SHLIBPREFIX=""
 )
 e.SharedLibrary(
-	target = "lib/buffer", 
-	source = ["src/lib/buffer/buffer.cc", "src/lib/buffer/bytestorage.cc"],
+	target = "lib/binary-f", 
+	source = ["src/lib/binary-f/binary-f.cc", "src/lib/binary-f/bytestorage.cc"],
 	SHLIBPREFIX=""
 )
 

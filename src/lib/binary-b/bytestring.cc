@@ -3,7 +3,7 @@
 #include <vector>
 #include "macros.h"
 #include "gc.h"
-#include "binary.h"
+#include "binary-b.h"
 #include "bytestring.h"
 #include "bytestorage.h"
 

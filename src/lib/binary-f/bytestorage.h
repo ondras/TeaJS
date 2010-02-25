@@ -43,9 +43,9 @@ private:
  */
 class ByteStorage {
 public:
-	ByteStorage(size_t length);
-	ByteStorage(unsigned char * data, size_t length); /* new buffer with contents */
-	ByteStorage(ByteStorage * master, size_t index1, size_t index2); /* new view/copy */
+	ByteStorage(size_t length); /* empty */
+	ByteStorage(unsigned char * data, size_t length); /* with contents (copied) */
+	ByteStorage(ByteStorage * master, size_t index1, size_t index2); /* new view */
 	~ByteStorage();
 	
 	ByteStorageData * getStorage();

@@ -20,7 +20,7 @@ JS_METHOD(_process) {
 
 JS_METHOD(_system) {
 	if (args.Length() != 1) {
-		return JS_EXCEPTION("Wrong argument count. Use new Process().system(\"command\")");
+		return JS_TYPE_ERROR("Wrong argument count. Use new Process().system(\"command\")");
 	}
 	
 	v8::String::Utf8Value cmd(args[0]);
@@ -33,7 +33,7 @@ JS_METHOD(_system) {
  */
 JS_METHOD(_exec) {
 	if (args.Length() != 1) {
-		return JS_EXCEPTION("Wrong argument count. Use new Process().exec(\"command\")");
+		return JS_TYPE_ERROR("Wrong argument count. Use new Process().exec(\"command\")");
 	}
 	
 	std::string data;
@@ -74,7 +74,7 @@ JS_METHOD(_exec) {
 JS_METHOD(_exec2) {
 	int arg_count = args.Length();
 	if (arg_count < 1 || arg_count > 2) {
-		return JS_EXCEPTION("Wrong argument count. Use new Process().exec2(\"command\", [\"standard input\"])");
+		return JS_TYPE_ERROR("Wrong argument count. Use new Process().exec2(\"command\", [\"standard input\"])");
 }
 
 	const int MAX_BUFFER = 256;
@@ -95,7 +95,7 @@ JS_METHOD(_exec2) {
 	switch (pid) {
 
 	case -1:  // Error case.
-		return JS_EXCEPTION("Failed to fork process");
+		return JS_ERROR("Failed to fork process");
 
 	case 0:  // Child process.
 
@@ -182,7 +182,7 @@ JS_METHOD(_exec2) {
 JS_METHOD(_fork) {
 	int arg_count = args.Length();
 	if (arg_count < 1 || arg_count > 2) {
-		return JS_EXCEPTION("Wrong argument count. Use new Process().exec2(\"command\", [\"standard input\"])");
+		return JS_TYPE_ERROR("Wrong argument count. Use new Process().exec2(\"command\", [\"standard input\"])");
 	}
 
 	v8::String::Utf8Value command_arg(args[0]);
@@ -194,7 +194,7 @@ JS_METHOD(_fork) {
 	switch (pid) {
 
 	case -1:  // Error case.
-		return JS_EXCEPTION("Failed to fork process");
+		return JS_ERROR("Failed to fork process");
 
 	case 0:  // Child process.
 

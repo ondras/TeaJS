@@ -43,7 +43,7 @@ v8::Handle<v8::Value> Binary_convertTo(const v8::Arguments &args, v8::Handle<v8:
 			v8::Handle<v8::Value> newargs[]= { v8::External::New((void*) bs2) };
 			return ctor->NewInstance(1, newargs);
 		} catch (std::string e) {
-			return JS_EXCEPTION(e.c_str());
+			return JS_ERROR(e.c_str());
 		}
 	}
 	
@@ -73,7 +73,7 @@ JS_METHOD(Binary_decodeToString) {
 		ByteStorage bs_tmp(bs->transcode(*charset, "utf-8"));
 		return bs_tmp.toString();
 	} catch (std::string e) {
-		return JS_EXCEPTION(e.c_str());
+		return JS_ERROR(e.c_str());
 	}
 }
 
@@ -118,10 +118,8 @@ v8::Handle<v8::Value> Binary_concat(v8::Handle<v8::Object> obj, const v8::Argume
 }
 
 JS_METHOD(_Binary) {
-	return JS_EXCEPTION("Binary function should never be called.");
+	return JS_ERROR("Binary function should never be called.");
 }
-
-
 
 SHARED_INIT() {
 	v8::HandleScope handle_scope;

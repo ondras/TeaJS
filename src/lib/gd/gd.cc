@@ -61,7 +61,7 @@ JS_METHOD(_image) {
 	if (type == GD_JPEG || type == GD_PNG || type == GD_GIF) {
 		v8::String::Utf8Value name(args[1]);
 		data = mmap_read(*name, &size);
-		if (data == NULL) { return JS_EXCEPTION("Cannot open file"); }
+		if (data == NULL) { return JS_ERROR("Cannot open file"); }
 	}
 
 	switch (type) {
@@ -81,7 +81,7 @@ JS_METHOD(_image) {
 			ptr = gdImageCreateFromGifPtr(size, data);
 		break;
 		default:
-			return JS_EXCEPTION("Unknown image type");
+			return JS_TYPE_ERROR("Unknown image type");
 		break;
 	}
 	
@@ -98,7 +98,7 @@ JS_METHOD(_save) {
 	GD_PTR;
 
 	if (args.Length() < 1) {
-		return JS_EXCEPTION("Invalid call format. Use 'image.save(type, [file])'");
+		return JS_ERROR("Invalid call format. Use 'image.save(type, [file])'");
 	}
 	
 	int32_t type = args[0]->Int32Value();
@@ -122,7 +122,7 @@ JS_METHOD(_save) {
 		break;
 
 		default:
-			return JS_EXCEPTION("Unknown image type");
+			return JS_TYPE_ERROR("Unknown image type");
 		break;
 	}
 
@@ -130,7 +130,7 @@ JS_METHOD(_save) {
 		v8::String::Utf8Value name(args[1]);
 		int result = mmap_write(*name, (void *)data, size);
 		gdFree(data);
-		if (result == -1) { return JS_EXCEPTION("Cannot open file"); }
+		if (result == -1) { return JS_ERROR("Cannot open file"); }
 		return v8::Undefined();
 	} else {
 		v8::Handle<v8::Array> arr = JS_CHARARRAY((char *)data, size);
@@ -171,7 +171,7 @@ JS_METHOD(_colorallocate) {
 	
 	int result = gdImageColorAllocate(ptr, r, g, b);
 	if (result == -1) {
-		return JS_EXCEPTION("Cannot allocate color");
+		return JS_ERROR("Cannot allocate color");
 	} else {
 		return JS_INT(result);
 	}
@@ -183,7 +183,7 @@ JS_METHOD(_colorallocatealpha) {
 	
 	int result = gdImageColorAllocateAlpha(ptr, r, g, b, a);
 	if (result == -1) {
-		return JS_EXCEPTION("Cannot allocate color");
+		return JS_ERROR("Cannot allocate color");
 	} else {
 		return JS_INT(result);
 	}
@@ -195,7 +195,7 @@ JS_METHOD(_colorclosest) {
 	
 	int result = gdImageColorClosest(ptr, r, g, b);
 	if (result == -1) {
-		return JS_EXCEPTION("No collors allocated");
+		return JS_ERROR("No collors allocated");
 	} else {
 		return JS_INT(result);
 	}
@@ -207,7 +207,7 @@ JS_METHOD(_colorclosestalpha) {
 	
 	int result = gdImageColorClosestAlpha(ptr, r, g, b, a);
 	if (result == -1) {
-		return JS_EXCEPTION("No collors allocated");
+		return JS_ERROR("No collors allocated");
 	} else {
 		return JS_INT(result);
 	}
@@ -219,7 +219,7 @@ JS_METHOD(_colorclosesthwb) {
 	
 	int result = gdImageColorClosestHWB(ptr, r, g, b);
 	if (result == -1) {
-		return JS_EXCEPTION("No collors allocated");
+		return JS_ERROR("No collors allocated");
 	} else {
 		return JS_INT(result);
 	}
@@ -385,7 +385,7 @@ JS_METHOD(_polygon) {
 	GD_PTR;
 	GD_COLOR(1);
 
-	if (!args[0]->IsArray()) { return JS_EXCEPTION("Non-array argument passed to polygon()"); }
+	if (!args[0]->IsArray()) { return JS_TYPE_ERROR("Non-array argument passed to polygon()"); }
 	v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(args[0]);
 	gdPointPtr points = gdPoints(arr);
 	gdImagePolygon(ptr, points, arr->Length(), color);
@@ -397,7 +397,7 @@ JS_METHOD(_openpolygon) {
 	GD_PTR;
 	GD_COLOR(1);
 	
-	if (!args[0]->IsArray()) { return JS_EXCEPTION("Non-array argument passed to openPolygon()"); }
+	if (!args[0]->IsArray()) { return JS_TYPE_ERROR("Non-array argument passed to openPolygon()"); }
 	v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(args[0]);
 	gdPointPtr points = gdPoints(arr);
 	gdImageOpenPolygon(ptr, points, arr->Length(), color);
@@ -435,7 +435,7 @@ JS_METHOD(_filledpolygon) {
 	GD_PTR;
 	GD_COLOR(1);
 	
-	if (!args[0]->IsArray()) { return JS_EXCEPTION("Non-array argument passed to filledPolygon()"); }
+	if (!args[0]->IsArray()) { return JS_TYPE_ERROR("Non-array argument passed to filledPolygon()"); }
 	v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(args[0]);
 	gdPointPtr points = gdPoints(arr);
 	gdImageFilledPolygon(ptr, points, arr->Length(), color);
@@ -540,7 +540,7 @@ JS_METHOD(_settile) {
 
 JS_METHOD(_setstyle) {
 	GD_PTR;
-	if (!args[0]->IsArray()) { return JS_EXCEPTION("Non-array argument passed to setStyle()"); }
+	if (!args[0]->IsArray()) { return JS_TYPE_ERROR("Non-array argument passed to setStyle()"); }
 	v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(args[0]);
 	unsigned int len = arr->Length();
 	
@@ -627,7 +627,7 @@ JS_METHOD(_string) {
 		}
 		return arr;
 	} else {
-		return JS_EXCEPTION(result);
+		return JS_ERROR(result);
 	}
 }
 

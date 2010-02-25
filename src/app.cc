@@ -36,7 +36,7 @@ JS_METHOD(_include) {
 	try {
 		exports = app->include(*file);
 	} catch (std::string e) {
-		return JS_EXCEPTION(e.c_str());
+		return JS_ERROR(e.c_str());
 	}
 	return exports;
 }
@@ -52,7 +52,7 @@ JS_METHOD(_require) {
 	try {
 		exports = app->require(*file, root);
 	} catch (std::string e) {
-		return JS_EXCEPTION(e.c_str());
+		return JS_ERROR(e.c_str());
 	}
 	return exports;
 }
@@ -62,7 +62,7 @@ JS_METHOD(_require) {
  */
 JS_METHOD(_onexit) {
 	v8cgi_App * app = APP_PTR;
-	if (!args[0]->IsFunction()) { return JS_EXCEPTION("Non-function passed to onexit()"); }
+	if (!args[0]->IsFunction()) { return JS_TYPE_ERROR("Non-function passed to onexit()"); }
 	v8::Persistent<v8::Function> fun = v8::Persistent<v8::Function>::New(v8::Handle<v8::Function>::Cast(args[0]));
 	app->onexit.push_back(fun);
 	return v8::Undefined();

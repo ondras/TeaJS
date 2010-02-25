@@ -6,7 +6,7 @@
 
 #define SQLITE_PTR sqlite3 * db = LOAD_PTR(0, sqlite3 *)
 #define SQLITE_ERRMSG sqlite3_errmsg(db)
-#define ASSERT_CONNECTED if (!db) { return JS_EXCEPTION("No database opened yet."); }
+#define ASSERT_CONNECTED if (!db) { return JS_ERROR("No database opened yet."); }
 
 namespace {
 
@@ -38,7 +38,7 @@ JS_METHOD(_close) {
 	
 	if (db) {
 		int result = sqlite3_close(db);
-		if (result != SQLITE_OK) { return JS_EXCEPTION(SQLITE_ERRMSG); }
+		if (result != SQLITE_OK) { return JS_ERROR(SQLITE_ERRMSG); }
 		SAVE_PTR(0, NULL);
 	}
 	return args.This();
@@ -49,14 +49,14 @@ JS_METHOD(_close) {
  */ 
 JS_METHOD(_open) {
 	if (args.Length() < 1) {
-		return JS_EXCEPTION("Invalid call format. Use 'sqlite.open(filename)'");
+		return JS_TYPE_ERROR("Invalid call format. Use 'sqlite.open(filename)'");
 	}
 	v8::String::Utf8Value filename(args[0]);
 	SQLITE_PTR;
 
 	int result = sqlite3_open(*filename, &db);
 	
-	if (result != SQLITE_OK) { return JS_EXCEPTION(SQLITE_ERRMSG); }
+	if (result != SQLITE_OK) { return JS_ERROR(SQLITE_ERRMSG); }
 
 	SAVE_PTR(0, db);
 	return args.This();
@@ -69,7 +69,7 @@ JS_METHOD(_query) {
 	SQLITE_PTR;
 	ASSERT_CONNECTED;
 	if (args.Length() < 1) {
-		return JS_EXCEPTION("No query specified");
+		return JS_TYPE_ERROR("No query specified");
 	}
 	v8::String::Utf8Value q(args[0]);
 
@@ -79,7 +79,7 @@ JS_METHOD(_query) {
 	char * someerror;
 	
 	int result = sqlite3_get_table(db, *q, &results, &rows, &cols, &someerror);
-	if (result != SQLITE_OK) { return JS_EXCEPTION(SQLITE_ERRMSG); }
+	if (result != SQLITE_OK) { return JS_ERROR(SQLITE_ERRMSG); }
 	
 	int qc = args.This()->Get(JS_STR("queryCount"))->ToInteger()->Int32Value();
 	args.This()->Set(JS_STR("queryCount"), JS_INT(qc+1));

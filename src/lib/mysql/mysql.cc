@@ -11,8 +11,8 @@
 #include <string>
 
 #define MYSQL_ERROR mysql_error(conn)
-#define ASSERT_CONNECTED if (!conn) { return JS_EXCEPTION("No connection established yet."); }
-#define ASSERT_RESULT if (!res) { return JS_EXCEPTION("Result set already closed."); }
+#define ASSERT_CONNECTED if (!conn) { return JS_ERROR("No connection established yet."); }
+#define ASSERT_RESULT if (!res) { return JS_ERROR("Result set already closed."); }
 #define MYSQL_PTR MYSQL * conn = LOAD_PTR(0, MYSQL *)
 
 
@@ -38,7 +38,7 @@ v8::Handle<v8::Value> createResult(MYSQL * conn) {
 		return rest->GetFunction()->NewInstance(1, resargs);
 	} else {
 		if (mysql_field_count(conn)) {
-			return JS_EXCEPTION(MYSQL_ERROR);
+			return JS_ERROR(MYSQL_ERROR);
 		} else {
 			return JS_BOOL(true);
 		}
@@ -73,7 +73,7 @@ JS_METHOD(_close) {
  */ 
 JS_METHOD(_connect) {
 	if (args.Length() < 4) {
-		return JS_EXCEPTION("Invalid call format. Use 'mysql.connect(host, user, pass, db)'");
+		return JS_TYPE_ERROR("Invalid call format. Use 'mysql.connect(host, user, pass, db)'");
 	}
 	
 	MYSQL * conn;
@@ -85,7 +85,7 @@ JS_METHOD(_connect) {
 
 	conn = mysql_init(NULL);
 	if (!mysql_real_connect(conn, *host, *user, *pass, *db, 0, NULL, CLIENT_MULTI_STATEMENTS)) {
-		return JS_EXCEPTION(MYSQL_ERROR);
+		return JS_ERROR(MYSQL_ERROR);
 	} else {
 		mysql_query(conn, "SET NAMES 'utf8'");
 		SAVE_PTR(0, conn);
@@ -100,12 +100,12 @@ JS_METHOD(_query) {
 	MYSQL_PTR;
 	ASSERT_CONNECTED;
 	if (args.Length() < 1) {
-		return JS_EXCEPTION("No query specified");
+		return JS_ERROR("No query specified");
 	}
 	v8::String::Utf8Value q(args[0]);
 	
 	int code = mysql_real_query(conn, *q, q.length());
-	if (code != 0) { return JS_EXCEPTION(MYSQL_ERROR); }
+	if (code != 0) { return JS_ERROR(MYSQL_ERROR); }
 	
 	int qc = args.This()->Get(JS_STR("queryCount"))->ToInteger()->Int32Value();
 	args.This()->Set(JS_STR("queryCount"), JS_INT(qc+1));
@@ -123,7 +123,7 @@ JS_METHOD(_nextresult) {
 	int status = mysql_next_result(conn);
 	
 	if (status == -1) { return JS_NULL; }
-	if (status > 0) { return JS_EXCEPTION(MYSQL_ERROR); }
+	if (status > 0) { return JS_ERROR(MYSQL_ERROR); }
 	return createResult(conn);
 }
 
@@ -144,7 +144,7 @@ JS_METHOD(_escape) {
 	ASSERT_CONNECTED;
 	
 	if (args.Length() < 1) {
-		return JS_EXCEPTION("Nothing to escape");
+		return JS_TYPE_ERROR("Nothing to escape");
 	}
 	v8::String::Utf8Value str(args[0]);
 	
@@ -160,7 +160,7 @@ JS_METHOD(_escape) {
 
 JS_METHOD(_qualify) {
 	if (args.Length() < 1) {
-		return JS_EXCEPTION("Nothing to qualify");
+		return JS_TYPE_ERROR("Nothing to qualify");
 	}
 
 	v8::String::Utf8Value str(args[0]);

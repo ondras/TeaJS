@@ -20,7 +20,7 @@ size_t firstIndex(v8::Handle<v8::Value> index, size_t length) {
 	if (i < 0) { i += length; }
 	
 	if (i < 0) { i = 0; }
-	if (i > length) { i = length; }
+	if ((size_t) i > length) { i = length; }
 	return (size_t) i;
 }
 
@@ -30,7 +30,7 @@ size_t lastIndex(v8::Handle<v8::Value> index, size_t length) {
 	if (i < 0) { i += length; }
 	
 	if (i < 0) { i = 0; }
-	if (i > length) { i = length; }
+	if ((size_t) i > length) { i = length; }
 	return (size_t) i;
 }
 
@@ -64,6 +64,7 @@ void Buffer_fromString(const v8::Arguments& args) {
 	if (args.Length() < 2) { WRONG_CTOR; }
 	v8::String::Utf8Value str(args[0]);
 	v8::String::Utf8Value charset(args[1]);
+	
 	ByteStorage bs_tmp((unsigned char *) (*str), str.length());
 	ByteStorage * bs = bs_tmp.transcode("utf-8", *charset);
 	SAVE_PTR(0, bs);
@@ -110,7 +111,7 @@ JS_METHOD(_Buffer) {
 			WRONG_CTOR;
 		}
 	} catch (std::string e) {
-		return JS_EXCEPTION(e.c_str());
+		return JS_ERROR(e.c_str());
 	}
 	
 	GC * gc = GC_PTR;
@@ -135,9 +136,13 @@ JS_METHOD(Buffer_toString) {
 		return JS_STR(result.c_str());
 	}
 	
-	v8::String::Utf8Value charset(args[1]);
+	v8::String::Utf8Value charset(args[0]);
+	size_t index1 = firstIndex(args[1], bs->getLength());
+	size_t index2 = lastIndex(args[2], bs->getLength());
+	ByteStorage view(bs, index1, index2);
+	
 	try {
-		ByteStorage * bs2 = bs->transcode(*charset, "utf-8");
+		ByteStorage * bs2 = view.transcode(*charset, "utf-8");
 		v8::Handle<v8::Value> result = JS_STR((const char *) bs2->getData(), bs2->getLength());
 		delete bs2;
 		return result;
@@ -251,6 +256,10 @@ JS_METHOD(Buffer_copyFrom) {
 	return Buffer_copy_impl(args, false);
 }
 
+JS_METHOD(Buffer_copyFromString) {
+	return JS_ERROR("Buffer::copyFromString not yet implemented");
+}
+
 v8::Handle<v8::Value> Buffer_length(v8::Local<v8::String> property, const v8::AccessorInfo &info) {
 	ByteStorage * bs = BS_OTHER(info.This());
 	return JS_INT(bs->getLength());
@@ -290,6 +299,7 @@ SHARED_INIT() {
 	bufferPrototype->Set(JS_STR("fill"), v8::FunctionTemplate::New(Buffer_fill));
 	bufferPrototype->Set(JS_STR("copy"), v8::FunctionTemplate::New(Buffer_copy));
 	bufferPrototype->Set(JS_STR("copyFrom"), v8::FunctionTemplate::New(Buffer_copyFrom));
+	bufferPrototype->Set(JS_STR("copyFromString"), v8::FunctionTemplate::New(Buffer_copyFrom));
 
 	v8::Handle<v8::ObjectTemplate> bufferObject = bufferTemplate->InstanceTemplate();
 	bufferObject->SetInternalFieldCount(1);	

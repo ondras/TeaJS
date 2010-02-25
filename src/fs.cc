@@ -44,7 +44,7 @@ v8::Handle<v8::Value> list_items(char * name, int type) {
 	unsigned int cond = (type == TYPE_FILE ? 0 : S_IFDIR);
 	
 	dp = opendir(name);
-	if (dp == NULL) { return JS_EXCEPTION("Directory cannot be opened"); }
+	if (dp == NULL) { return JS_ERROR("Directory cannot be opened"); }
 	while ((ep = readdir(dp))) { 
 		path = name;
 		path += "/";
@@ -81,7 +81,7 @@ JS_METHOD(_create) {
 
 	int result = MKDIR(*name, mode);
 	if (result != 0) {
-		return JS_EXCEPTION("Cannot create directory");
+		return JS_ERROR("Cannot create directory");
 	}
 	
 	return args.This();
@@ -112,20 +112,20 @@ JS_METHOD(_file) {
 
 JS_METHOD(_open) {
 	if (args.Length() < 1) {
-		return JS_EXCEPTION("Bad argument count. Use 'file.open(mode)'");
+		return JS_TYPE_ERROR("Bad argument count. Use 'file.open(mode)'");
 	}
 	v8::String::Utf8Value mode(args[0]);
 	v8::String::Utf8Value name(LOAD_VALUE(0));
 	v8::Handle<v8::Value> file = LOAD_VALUE(1);
 	if (!file->IsFalse()) {
-		return JS_EXCEPTION("File already opened");
+		return JS_ERROR("File already opened");
 	}
 	
 	FILE * f;
 	f = fopen(*name, *mode);
 	
 	if (!f) {
-		return JS_EXCEPTION("Cannot open file");
+		return JS_ERROR("Cannot open file");
 	}
 	
 	SAVE_PTR(1, f);
@@ -136,7 +136,7 @@ JS_METHOD(_close) {
 	v8::Handle<v8::Value> file = LOAD_VALUE(1);
 	
 	if (file->IsFalse()) {
-		return JS_EXCEPTION("Cannot close non-opened file");
+		return JS_ERROR("Cannot close non-opened file");
 	}
 	
 	FILE * f = LOAD_PTR(1, FILE *);
@@ -150,7 +150,7 @@ JS_METHOD(_read) {
 	v8::Handle<v8::Value> file = LOAD_VALUE(1);
 	
 	if (file->IsFalse()) {
-		return JS_EXCEPTION("File must be opened before reading");
+		return JS_ERROR("File must be opened before reading");
 	}
 	FILE * f = LOAD_PTR(1, FILE *);
 	
@@ -187,7 +187,7 @@ JS_METHOD(_read) {
 JS_METHOD(_rewind) {
 	v8::Handle<v8::Value> file = LOAD_VALUE(1);
 	if (file->IsFalse()) {
-		return JS_EXCEPTION("File must be opened before rewinding");
+		return JS_ERROR("File must be opened before rewinding");
 	}
 	
 	FILE * f = LOAD_PTR(1, FILE *);
@@ -200,7 +200,7 @@ JS_METHOD(_write) {
 	v8::Handle<v8::Value> file = LOAD_VALUE(1);
 	
 	if (file->IsFalse()) {
-		return JS_EXCEPTION("File must be opened before writing");
+		return JS_ERROR("File must be opened before writing");
 	}
 	
 	FILE * f = LOAD_PTR(1, FILE *);
@@ -233,7 +233,7 @@ JS_METHOD(_removefile) {
 	v8::String::Utf8Value name(LOAD_VALUE(0));
 	
 	if (remove(*name) != 0) {
-		return JS_EXCEPTION("Cannot remove file");
+		return JS_ERROR("Cannot remove file");
 	}
 	
 	return args.This();
@@ -243,7 +243,7 @@ JS_METHOD(_removedirectory) {
 	v8::String::Utf8Value name(LOAD_VALUE(0));
 	
 	if (rmdir(*name) != 0) {
-		return JS_EXCEPTION("Cannot remove directory");
+		return JS_ERROR("Cannot remove directory");
 	}
 	
 	return args.This();
@@ -270,18 +270,18 @@ JS_METHOD(_stat) {
 v8::Handle<v8::Value> _copy(char * name1, char * name2) {
 	size_t size = 0;
 	void * data = mmap_read(name1, &size);
-	if (data == NULL) { return JS_EXCEPTION("Cannot open source file"); }
+	if (data == NULL) { return JS_ERROR("Cannot open source file"); }
 	
 	int result = mmap_write(name2, data, size);
 	mmap_free((char *)data, size);
 	
-	if (result == -1) { return JS_EXCEPTION("Cannot open target file"); }
+	if (result == -1) { return JS_ERROR("Cannot open target file"); }
 	return JS_BOOL(true);
 }
 
 JS_METHOD(_movefile) {
 	if (args.Length() < 1) {
-		return JS_EXCEPTION("Bad argument count. Use 'file.rename(newname)'");
+		return JS_TYPE_ERROR("Bad argument count. Use 'file.rename(newname)'");
 	}
 	
 	v8::String::Utf8Value name(LOAD_VALUE(0));
@@ -304,7 +304,7 @@ JS_METHOD(_movefile) {
 
 JS_METHOD(_copyfile) {
 	if (args.Length() < 1) {
-		return JS_EXCEPTION("Bad argument count. Use 'file.copy(newname)'");
+		return JS_TYPE_ERROR("Bad argument count. Use 'file.copy(newname)'");
 	}
 	
 	v8::String::Utf8Value name(LOAD_VALUE(0));

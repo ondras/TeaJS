@@ -30,8 +30,6 @@
 #define JS_RANGE_ERROR(reason) JS_THROW(RangeError, reason)
 #define JS_SYNTAX_ERROR(reason) JS_THROW(SyntaxError, reason)
 #define JS_REFERENCE_ERROR(reason) JS_THROW(ReferenceError, reason)
-
-#define JS_EXCEPTION(reason) JS_ERROR(reason)
 #define JS_RETHROW(tc) v8::Local<v8::Value>::New(tc.Exception());
 
 #define JS_GLOBAL v8::Context::GetCurrent()->Global()
@@ -39,8 +37,8 @@
 #define APP_PTR reinterpret_cast<v8cgi_App *>(v8::Handle<v8::External>::Cast(GLOBAL_PROTO->GetInternalField(0))->Value());
 #define GC_PTR reinterpret_cast<GC *>(v8::Handle<v8::External>::Cast(GLOBAL_PROTO->GetInternalField(1))->Value());
 
-#define ASSERT_CONSTRUCTOR if (!args.IsConstructCall()) { return JS_EXCEPTION("Invalid call format. Please use the 'new' operator."); }
-#define ASSERT_NOT_CONSTRUCTOR if (args.IsConstructCall()) { return JS_EXCEPTION("Invalid call format. Please do not use the 'new' operator."); }
+#define ASSERT_CONSTRUCTOR if (!args.IsConstructCall()) { return JS_ERROR("Invalid call format. Please use the 'new' operator."); }
+#define ASSERT_NOT_CONSTRUCTOR if (args.IsConstructCall()) { return JS_ERROR("Invalid call format. Please do not use the 'new' operator."); }
 #define RETURN_CONSTRUCT_CALL \
 	std::vector< v8::Handle<v8::Value> > params(args.Length()); \
 	for (size_t i=0; i<params.size(); i++) { params[i] = args[i]; } \

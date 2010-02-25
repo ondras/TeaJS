@@ -57,7 +57,7 @@ namespace xdom {
   JS_METHOD(_domexcpt) {
     TryCatch tc;
     if (args.Length()<1)
-      return JS_EXCEPTION("[_domexcpt()] ERROR: Missing input parameter");
+      return JS_ERROR("[_domexcpt()] ERROR: Missing input parameter");
     ASSERT_CONSTRUCTOR;
     SAVE_PTR(0, NULL);
     GC * gc = GC_PTR;
@@ -70,7 +70,7 @@ namespace xdom {
       domerr = RECAST(args[0]->ToObject()->GetInternalField(0),DOMException *);
     }
     if (domerr==NULL) {
-      return JS_EXCEPTION("[_domexcpt()] ERROR: \"domerr\" is a null pointer");
+      return JS_ERROR("[_domexcpt()] ERROR: \"domerr\" is a null pointer");
     }
     else {
       SAVE_PTR(0, domerr);
@@ -91,7 +91,7 @@ namespace xdom {
   JS_METHOD(_domlsexcpt) {
     TryCatch tc;
     if (args.Length()<1)
-      return JS_EXCEPTION("[_domlsexcpt()] ERROR: Missing input parameter");
+      return JS_ERROR("[_domlsexcpt()] ERROR: Missing input parameter");
     ASSERT_CONSTRUCTOR;
     SAVE_PTR(0, NULL);
     GC * gc = GC_PTR;
@@ -104,7 +104,7 @@ namespace xdom {
       domlserr = RECAST(args[0]->ToObject()->GetInternalField(0),DOMLSException *);
     }
     if (domlserr==NULL) {
-      return JS_EXCEPTION("[_domlsexcpt()] ERROR: \"domlserr\" is a null pointer");
+      return JS_ERROR("[_domlsexcpt()] ERROR: \"domlserr\" is a null pointer");
     }
     else {
       SAVE_PTR(0, domlserr);
@@ -125,7 +125,7 @@ namespace xdom {
   JS_METHOD(_domlist) {
     TryCatch tc;
     if (args.Length()<1)
-      return JS_EXCEPTION("[_domlist()] ERROR: Missing input parameter");
+      return JS_ERROR("[_domlist()] ERROR: Missing input parameter");
     ASSERT_CONSTRUCTOR;
     SAVE_PTR(0, NULL);
     GC * gc = GC_PTR;
@@ -138,7 +138,7 @@ namespace xdom {
       domlist = RECAST(args[0]->ToObject()->GetInternalField(0),DOMImplementationList *);
     }
     if (domlist==NULL) {
-      return JS_EXCEPTION("[_domlist()] ERROR: \"domlist\" is a null pointer");
+      return JS_ERROR("[_domlist()] ERROR: \"domlist\" is a null pointer");
     }
     else {
       SAVE_PTR(0, domlist);
@@ -148,14 +148,14 @@ namespace xdom {
 
   JS_METHOD(_domlistitem) {
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_domlistitem()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_domlistitem()] ERROR: Incorrect number of input parameters");
     }
     DOMLIST;
     DOMImplementation * dom = NULL;
     XMLSize_t index = (XMLSize_t)args[0]->ToInteger()->IntegerValue();
     XTRY( dom = domlist->item(index); );
     if (dom==NULL) {
-      return JS_EXCEPTION("[_domlistitem()] ERROR: \"dom\" is a null pointer");
+      return JS_ERROR("[_domlistitem()] ERROR: \"dom\" is a null pointer");
     }
     else {
       XMLSize_t fargc = 1;
@@ -168,7 +168,7 @@ namespace xdom {
 
   JS_METHOD(_domlistgetlength) {
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_domlistgetlength()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_domlistgetlength()] ERROR: Incorrect number of input parameters");
     }
     DOMLIST;
     XMLSize_t length = 0;
@@ -189,7 +189,7 @@ namespace xdom {
   JS_METHOD(_domlocator) {
     TryCatch tc;
     if (args.Length()<1)
-      return JS_EXCEPTION("[_domlocator()] ERROR: Missing input parameter");
+      return JS_ERROR("[_domlocator()] ERROR: Missing input parameter");
     ASSERT_CONSTRUCTOR;
     SAVE_PTR(0, NULL);
     GC * gc = GC_PTR;
@@ -202,7 +202,7 @@ namespace xdom {
       domlocator = RECAST(args[0]->ToObject()->GetInternalField(0),DOMLocator *);
     }
     if (domlocator==NULL) {
-      return JS_EXCEPTION("[_domlocator()] ERROR: \"domlocator\" is a null pointer");
+      return JS_ERROR("[_domlocator()] ERROR: \"domlocator\" is a null pointer");
     }
     else {
       SAVE_PTR(0, domlocator);
@@ -212,13 +212,13 @@ namespace xdom {
 
   JS_METHOD(_domlocatorgetrelatednode) {
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_domlocatorgetrelatednode()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_domlocatorgetrelatednode()] ERROR: Incorrect number of input parameters");
     }
     DOMLOCATOR;
     DOMNode * node = NULL;
     XTRY( node = domlocator->getRelatedNode(); );
     if (node==NULL) {
-      return JS_EXCEPTION("[_domlocatorgetrelatednode()] ERROR: \"node\" is a null pointer");
+      return JS_ERROR("[_domlocatorgetrelatednode()] ERROR: \"node\" is a null pointer");
     }
     else {
       XMLSize_t fargc = 1;
@@ -231,7 +231,7 @@ namespace xdom {
 
   JS_METHOD(_domlocatorgetlinenumber) {
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_domlocatorgetlength()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_domlocatorgetlength()] ERROR: Incorrect number of input parameters");
     }
     DOMLOCATOR;
     XMLFileLoc loc = 0;
@@ -241,7 +241,7 @@ namespace xdom {
 
   JS_METHOD(_domlocatorgetcolumnnumber) {
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_domlocatorgetlength()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_domlocatorgetlength()] ERROR: Incorrect number of input parameters");
     }
     DOMLOCATOR;
     XMLFileLoc loc = 0;
@@ -251,7 +251,7 @@ namespace xdom {
 
   JS_METHOD(_domlocatorgetbyteoffset) {
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_domlocatorgetlength()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_domlocatorgetlength()] ERROR: Incorrect number of input parameters");
     }
     DOMLOCATOR;
     XMLFilePos loc = 0;
@@ -261,7 +261,7 @@ namespace xdom {
 
   JS_METHOD(_domlocatorgetutf16offset) {
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_domlocatorgetlength()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_domlocatorgetlength()] ERROR: Incorrect number of input parameters");
     }
     DOMLOCATOR;
     XMLFilePos loc = 0;
@@ -271,7 +271,7 @@ namespace xdom {
 
   JS_METHOD(_domlocatorgeturi) {
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_domlocatorgeturi()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_domlocatorgeturi()] ERROR: Incorrect number of input parameters");
     }
     DOMLOCATOR;
     XS uri = NULL;
@@ -299,7 +299,7 @@ namespace xdom {
   JS_METHOD(_domsource) {
     TryCatch tc;
     if (args.Length()!=0 && args.Length()!=1)
-      return JS_EXCEPTION("[_domsource()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_domsource()] ERROR: Incorrect number of input parameters");
     ASSERT_CONSTRUCTOR;
     if (xdom::initialized!=true) {
       xercesc_3_0::XMLPlatformUtils::Initialize();
@@ -316,7 +316,7 @@ namespace xdom {
       domsource = RECAST(args[0]->ToObject()->GetInternalField(0),DOMImplementationSource *);
     }
     if (domsource==NULL) {
-      return JS_EXCEPTION("[_domsource()] ERROR: \"domsource\" is a null pointer");
+      return JS_ERROR("[_domsource()] ERROR: \"domsource\" is a null pointer");
     }
     else {
       SAVE_PTR(0, domsource);
@@ -326,7 +326,7 @@ namespace xdom {
 
   JS_METHOD(_domsourcegetdomimplementation) {
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_domsourcegetdomimplementation()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_domsourcegetdomimplementation()] ERROR: Incorrect number of input parameters");
     }
     if (xdom::initialized!=true) {
       xercesc_3_0::XMLPlatformUtils::Initialize();
@@ -336,7 +336,7 @@ namespace xdom {
     DOMImplementation * dom = NULL;
     XTRY( dom = domsource->getDOMImplementation(ARGSTR(0)); );
     if (dom==NULL) {
-      return JS_EXCEPTION("[_domsourcegetdomimplementation()] ERROR: \"dom\" is a null pointer");
+      return JS_ERROR("[_domsourcegetdomimplementation()] ERROR: \"dom\" is a null pointer");
     }
     else {
       XMLSize_t fargc = 1;
@@ -349,7 +349,7 @@ namespace xdom {
 
   JS_METHOD(_domsourcegetdomimplementationlist) {
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_domsourcegetdomimplementationlist()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_domsourcegetdomimplementationlist()] ERROR: Incorrect number of input parameters");
     }
     if (xdom::initialized!=true) {
       xercesc_3_0::XMLPlatformUtils::Initialize();
@@ -359,7 +359,7 @@ namespace xdom {
     DOMImplementationList * domlist = NULL;
     XTRY( domlist = domsource->getDOMImplementationList(ARGSTR(0)); );
     if (domlist==NULL) {
-      return JS_EXCEPTION("[_domsourcegetdomimplementationlist()] ERROR: \"domlist\" is a null pointer");
+      return JS_ERROR("[_domsourcegetdomimplementationlist()] ERROR: \"domlist\" is a null pointer");
     }
     else {
       XMLSize_t fargc = 1;
@@ -383,7 +383,7 @@ namespace xdom {
   JS_METHOD(_domreg) {
     TryCatch tc;
     if (args.Length()!=1 && args.Length()!=0)
-      return JS_EXCEPTION("[_domreg()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_domreg()] ERROR: Incorrect number of input parameters");
     ASSERT_CONSTRUCTOR;
     if (xdom::initialized!=true) {
       xercesc_3_0::XMLPlatformUtils::Initialize();
@@ -406,7 +406,7 @@ namespace xdom {
      // XTRY( domreg = DOMImplementationRegistry::getDOMImplementationList(ARGSTR(0)); );
     }
     if (domreg==NULL) {
-      return JS_EXCEPTION("[_domreg()] ERROR: \"domreg\" is a null pointer");
+      return JS_ERROR("[_domreg()] ERROR: \"domreg\" is a null pointer");
     }
     else {
       SAVE_PTR(0, domreg);
@@ -417,7 +417,7 @@ namespace xdom {
   JS_METHOD(_domreggetdomimplementation) {
     TryCatch tc;
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_domreggetdomimplementation()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_domreggetdomimplementation()] ERROR: Incorrect number of input parameters");
     }
     //DOMREG;
     if (xdom::initialized!=true) {
@@ -429,7 +429,7 @@ namespace xdom {
     const XMLCh * arg0 = X(intxt.str().c_str());
     XTRY( dom = DOMImplementationRegistry::getDOMImplementation(arg0); );
     if (dom==NULL) {
-      return JS_EXCEPTION("[_domreggetdomimplementation()] ERROR: \"dom\" is a null pointer");
+      return JS_ERROR("[_domreggetdomimplementation()] ERROR: \"dom\" is a null pointer");
     }
     else {
       XMLSize_t fargc = 1;
@@ -443,7 +443,7 @@ namespace xdom {
   JS_METHOD(_domreggetdomimplementationlist) {
     TryCatch tc;
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_domreggetdomimplementationlist()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_domreggetdomimplementationlist()] ERROR: Incorrect number of input parameters");
     }
     //DOMREG;
     if (xdom::initialized!=true) {
@@ -455,7 +455,7 @@ namespace xdom {
     const XMLCh * arg0 = X(intxt.str().c_str());
     XTRY( domlist = DOMImplementationRegistry::getDOMImplementationList(arg0); );
     if (domlist==NULL) {
-      return JS_EXCEPTION("[_domreggetdomimplementationlist()] ERROR: \"domlist\" is a null pointer");
+      return JS_ERROR("[_domreggetdomimplementationlist()] ERROR: \"domlist\" is a null pointer");
     }
     else {
       XMLSize_t fargc = 1;
@@ -468,7 +468,7 @@ namespace xdom {
 
   JS_METHOD(_domregaddsource) {
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_domregaddsource()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_domregaddsource()] ERROR: Incorrect number of input parameters");
     }
     if (xdom::initialized!=true) {
       xercesc_3_0::XMLPlatformUtils::Initialize();
@@ -483,7 +483,7 @@ namespace xdom {
       src = RECAST(args[0]->ToObject()->GetInternalField(0),DOMImplementationSource *);
     }
     if (src==NULL) {
-      return JS_EXCEPTION("[_domregaddsource()] ERROR: \"src\" is a null pointer");
+      return JS_ERROR("[_domregaddsource()] ERROR: \"src\" is a null pointer");
     }
     else {
       XTRY( domreg->addSource(src); );
@@ -504,7 +504,7 @@ namespace xdom {
   JS_METHOD(_xmemory) {
     TryCatch tc;
     if (args.Length()<1)
-      return JS_EXCEPTION("[_xmemory()] ERROR: Missing input parameter");
+      return JS_ERROR("[_xmemory()] ERROR: Missing input parameter");
     ASSERT_CONSTRUCTOR;
     SAVE_PTR(0, NULL);
     GC * gc = GC_PTR;
@@ -517,7 +517,7 @@ namespace xdom {
       xmemory = RECAST(args[0]->ToObject()->GetInternalField(0),XMemory *);
     }
     if (xmemory==NULL) {
-      return JS_EXCEPTION("[_xmemory()] ERROR: \"xmemory\" is a null pointer");
+      return JS_ERROR("[_xmemory()] ERROR: \"xmemory\" is a null pointer");
     }
     else {
       SAVE_PTR(0, xmemory);
@@ -528,7 +528,7 @@ namespace xdom {
   JS_METHOD(_xmemorynew) {
     TryCatch tc;
     if (args.Length()!=1 && args.Length()!=2) {
-      return JS_EXCEPTION("[_xmemorynew()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_xmemorynew()] ERROR: Incorrect number of input parameters");
     }
     XMEM;
     XMLSize_t size = (XMLSize_t)args[0]->ToInteger()->IntegerValue();
@@ -545,14 +545,14 @@ namespace xdom {
 	mm = RECAST(args[1]->ToObject()->GetInternalField(0),MemoryManager *);
       }
       if (mm==NULL) {
-	return JS_EXCEPTION("[_xmemorynew()] ERROR: \"mm\" is a null pointer");
+	return JS_ERROR("[_xmemorynew()] ERROR: \"mm\" is a null pointer");
       }
       else {
 	XTRY( buf = mm->allocate(size); );
       }
     }
     if (buf==NULL) {
-      return JS_EXCEPTION("[_xmemorynew()] ERROR: \"buf\" is a null pointer");
+      return JS_ERROR("[_xmemorynew()] ERROR: \"buf\" is a null pointer");
     }
     else {
       Local<Value> fargv[] = { External::New((void *)buf), Integer::New(size) };
@@ -565,7 +565,7 @@ namespace xdom {
   JS_METHOD(_xmemorydelete) {
     TryCatch tc;
     if (args.Length()!=1 && args.Length()!=2) {
-      return JS_EXCEPTION("[_xmemorydelete()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_xmemorydelete()] ERROR: Incorrect number of input parameters");
     }
     XMEM;
     void * p = NULL;
@@ -587,7 +587,7 @@ namespace xdom {
 	mm = RECAST(args[1]->ToObject()->GetInternalField(0),MemoryManager *);
       }
       if (mm==NULL) {
-	return JS_EXCEPTION("[_xmemorydelete()] ERROR: \"mm\" is a null pointer");
+	return JS_ERROR("[_xmemorydelete()] ERROR: \"mm\" is a null pointer");
       }
       else {
 	XTRY( xmem->XMemory::operator delete(p, mm); );
@@ -610,7 +610,7 @@ namespace xdom {
   JS_METHOD(_domlsinput) {
     TryCatch tc;
     if (args.Length()<1)
-      return JS_EXCEPTION("[_domlsinput()] ERROR: Missing input parameter");
+      return JS_ERROR("[_domlsinput()] ERROR: Missing input parameter");
     ASSERT_CONSTRUCTOR;
     GC * gc = GC_PTR;
     gc->add(args.This(), "~DOMLSInput");
@@ -625,7 +625,7 @@ namespace xdom {
       }
     }
     if (domlsinput==NULL) {
-      return JS_EXCEPTION("[_domlsinput()] ERROR: \"domlsinput\" is a null pointer");
+      return JS_ERROR("[_domlsinput()] ERROR: \"domlsinput\" is a null pointer");
     }
     else {
       SAVE_PTR(0,domlsinput);
@@ -652,7 +652,7 @@ namespace xdom {
     InputSource * src = NULL;
     XLSTRY( src = domlsinput->getByteStream(); );
     if (src==NULL) {
-      return JS_EXCEPTION("[_domlsinputgetbytestream()] ERROR: \"src\" is a null pointer");
+      return JS_ERROR("[_domlsinputgetbytestream()] ERROR: \"src\" is a null pointer");
     }
     else {
       Local<Value> fargv[] = { External::New((void *)src) };
@@ -706,7 +706,7 @@ namespace xdom {
 
   JS_METHOD(_domlsinputgetbaseuri) {
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_domlsinputgetbaseuri()] ERROR: incorrect number of input parameters");
+      return JS_ERROR("[_domlsinputgetbaseuri()] ERROR: incorrect number of input parameters");
     }
     DOMLSINPUT;
     char * ret = NULL;
@@ -723,7 +723,7 @@ namespace xdom {
 
   JS_METHOD(_domlsinputsetstringdata) {
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_domlsinputsetstringdata()] ERROR: incorrect number of input parameters");
+      return JS_ERROR("[_domlsinputsetstringdata()] ERROR: incorrect number of input parameters");
     }
     DOMLSINPUT;
     XLSTRY( domlsinput->setStringData(ARGSTR(0)); );
@@ -732,7 +732,7 @@ namespace xdom {
 
   JS_METHOD(_domlsinputsetbytestream) {
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_domlsinputsetbytestream()] ERROR: incorrect number of input parameters");
+      return JS_ERROR("[_domlsinputsetbytestream()] ERROR: incorrect number of input parameters");
     }
     DOMLSINPUT;
     InputSource * src = NULL;
@@ -743,7 +743,7 @@ namespace xdom {
       src = RECAST(args[0]->ToObject()->GetInternalField(0),InputSource *);
     }
     if (src==NULL) {
-      return JS_EXCEPTION("[_domlsinputsetbytestream()] ERROR: \"src\" is a null pointer");
+      return JS_ERROR("[_domlsinputsetbytestream()] ERROR: \"src\" is a null pointer");
     }
     else {
       XLSTRY( domlsinput->setByteStream(src); );
@@ -753,7 +753,7 @@ namespace xdom {
 
   JS_METHOD(_domlsinputsetencoding) {
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_domlsinputsetstringdata()] ERROR: incorrect number of input parameters");
+      return JS_ERROR("[_domlsinputsetstringdata()] ERROR: incorrect number of input parameters");
     }
     DOMLSINPUT;
     XLSTRY( domlsinput->setEncoding(ARGSTR(0)); );
@@ -762,7 +762,7 @@ namespace xdom {
 
   JS_METHOD(_domlsinputsetpublicid) {
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_domlsinputsetpublicid()] ERROR: incorrect number of input parameters");
+      return JS_ERROR("[_domlsinputsetpublicid()] ERROR: incorrect number of input parameters");
     }
     DOMLSINPUT;
     XLSTRY( domlsinput->setPublicId(ARGSTR(0)); );
@@ -771,7 +771,7 @@ namespace xdom {
 
   JS_METHOD(_domlsinputsetsystemid) {
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_domlsinputsetsystemid()] ERROR: incorrect number of input parameters");
+      return JS_ERROR("[_domlsinputsetsystemid()] ERROR: incorrect number of input parameters");
     }
     DOMLSINPUT;
     XLSTRY( domlsinput->setSystemId(ARGSTR(0)); );
@@ -780,7 +780,7 @@ namespace xdom {
 
   JS_METHOD(_domlsinputsetbaseuri) {
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_domlsinputsetbaseuri()] ERROR: incorrect number of input parameters");
+      return JS_ERROR("[_domlsinputsetbaseuri()] ERROR: incorrect number of input parameters");
     }
     DOMLSINPUT;
     XLSTRY( domlsinput->setBaseURI(ARGSTR(0)); );
@@ -789,7 +789,7 @@ namespace xdom {
 
   JS_METHOD(_domlsinputsetissuefatalerrorifnotfound) {
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_domlsinputsetissuefatalerrorifnotfound()] ERROR: incorrect number of input parameters");
+      return JS_ERROR("[_domlsinputsetissuefatalerrorifnotfound()] ERROR: incorrect number of input parameters");
     }
     DOMLSINPUT;
     XLSTRY( domlsinput->setIssueFatalErrorIfNotFound(args[0]->ToBoolean()->BooleanValue()); );
@@ -798,7 +798,7 @@ namespace xdom {
 
   JS_METHOD(_domlsinputgetissuefatalerrorifnotfound) {
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_domlsinputgetissuefatalerrorifnotfound()] ERROR: incorrect number of input parameters");
+      return JS_ERROR("[_domlsinputgetissuefatalerrorifnotfound()] ERROR: incorrect number of input parameters");
     }
     DOMLSINPUT;
     bool ret = false;
@@ -819,7 +819,7 @@ namespace xdom {
   JS_METHOD(_domlsoutput) {
     TryCatch tc;
     if (args.Length()<1)
-      return JS_EXCEPTION("[_domlsoutput()] ERROR: Missing output parameter");
+      return JS_ERROR("[_domlsoutput()] ERROR: Missing output parameter");
     ASSERT_CONSTRUCTOR;
     GC * gc = GC_PTR;
     gc->add(args.This(), "~DOMLSOutput");
@@ -831,7 +831,7 @@ namespace xdom {
       domlsoutput = RECAST(args[0]->ToObject()->GetInternalField(0),DOMLSOutput *);
     }
     if (domlsoutput==NULL) {
-      return JS_EXCEPTION("[_domlsoutput()] ERROR: \"domlsoutput\" is a null pointer");
+      return JS_ERROR("[_domlsoutput()] ERROR: \"domlsoutput\" is a null pointer");
     }
     else {
       SAVE_PTR(0, domlsoutput);
@@ -844,7 +844,7 @@ namespace xdom {
     XMLFormatTarget * dst = NULL;
     XLSTRY( dst = domlsoutput->getByteStream(); );
     if (dst==NULL) {
-      return JS_EXCEPTION("[_domlsoutputgetbytestream()] ERROR: \"dst\" is a null pointer");
+      return JS_ERROR("[_domlsoutputgetbytestream()] ERROR: \"dst\" is a null pointer");
     }
     else {
       Local<Value> fargv[] = { External::New((void *)dst) };
@@ -884,7 +884,7 @@ namespace xdom {
 
   JS_METHOD(_domlsoutputsetencoding) {
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_domlsoutputsetstringdata()] ERROR: incorrect number of output parameters");
+      return JS_ERROR("[_domlsoutputsetstringdata()] ERROR: incorrect number of output parameters");
     }
     DOMLSOUTPUT;
     XLSTRY( domlsoutput->setEncoding(ARGSTR(0)); );
@@ -893,7 +893,7 @@ namespace xdom {
 
   JS_METHOD(_domlsoutputsetsystemid) {
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_domlsoutputsetsystemid()] ERROR: incorrect number of output parameters");
+      return JS_ERROR("[_domlsoutputsetsystemid()] ERROR: incorrect number of output parameters");
     }
     DOMLSOUTPUT;
     XLSTRY( domlsoutput->setSystemId(ARGSTR(0)); );
@@ -902,7 +902,7 @@ namespace xdom {
 
   JS_METHOD(_domlsoutputsetbytestream) {
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_domlsoutputsetbytestream()] ERROR: incorrect number of output parameters");
+      return JS_ERROR("[_domlsoutputsetbytestream()] ERROR: incorrect number of output parameters");
     }
     DOMLSOUTPUT;
     XMLFormatTarget * target = NULL;
@@ -913,7 +913,7 @@ namespace xdom {
       target = RECAST(args[0]->ToObject()->GetInternalField(0),XMLFormatTarget *);
     }
     if (target==NULL) {
-      return JS_EXCEPTION("[_domlsoutputsetbytestream()] ERROR: \"target\" is a null pointer");
+      return JS_ERROR("[_domlsoutputsetbytestream()] ERROR: \"target\" is a null pointer");
     }
     else {
       XLSTRY( domlsoutput->setByteStream(target); );
@@ -934,7 +934,7 @@ namespace xdom {
   JS_METHOD(_bininput) {
     /* TryCatch tc; */
     if (args.Length()<1)
-      return JS_EXCEPTION("[_bininput()] ERROR: Missing input parameter");
+      return JS_ERROR("[_bininput()] ERROR: Missing input parameter");
     ASSERT_CONSTRUCTOR;
     SAVE_PTR(0, NULL);
     GC * gc = GC_PTR;
@@ -947,7 +947,7 @@ namespace xdom {
       bininputstream = RECAST(args[0]->ToObject()->GetInternalField(0),BinInputStream *);
     }
     if (bininputstream==NULL) {
-      return JS_EXCEPTION("[_bininput()] ERROR: \"bininputstream\" is a null pointer");
+      return JS_ERROR("[_bininput()] ERROR: \"bininputstream\" is a null pointer");
     }
     else {
       SAVE_PTR(0, bininputstream);
@@ -982,7 +982,7 @@ namespace xdom {
   JS_METHOD(_binfileinput) {
     /* TryCatch tc; */
     if (args.Length()<1)
-      return JS_EXCEPTION("[_binfileinput()] ERROR: Missing input parameter");
+      return JS_ERROR("[_binfileinput()] ERROR: Missing input parameter");
     ASSERT_CONSTRUCTOR;
     SAVE_PTR(0, NULL);
     GC * gc = GC_PTR;
@@ -995,7 +995,7 @@ namespace xdom {
       binfileinput = RECAST(args[0]->ToObject()->GetInternalField(0),BinFileInputStream *);
     }
     if (binfileinput==NULL) {
-      return JS_EXCEPTION("[_binfileinput()] ERROR: \"binfileinput\" is a null pointer");
+      return JS_ERROR("[_binfileinput()] ERROR: \"binfileinput\" is a null pointer");
     }
     else {
       SAVE_PTR(0, binfileinput);
@@ -1031,7 +1031,7 @@ namespace xdom {
   JS_METHOD(_binmeminputstream) {
     /* TryCatch tc; */
     if (args.Length()<1)
-      return JS_EXCEPTION("[_binmeminputstream()] ERROR: Missing input parameter");
+      return JS_ERROR("[_binmeminputstream()] ERROR: Missing input parameter");
     ASSERT_CONSTRUCTOR;
     SAVE_PTR(0, NULL);
     GC * gc = GC_PTR;
@@ -1044,7 +1044,7 @@ namespace xdom {
       binmeminputstream = RECAST(args[0]->ToObject()->GetInternalField(0),BinMemInputStream *);
     }
     if (binmeminputstream==NULL) {
-      return JS_EXCEPTION("[_binmeminputstream()] ERROR: \"binmeminputstream\" is a null pointer");
+      return JS_ERROR("[_binmeminputstream()] ERROR: \"binmeminputstream\" is a null pointer");
     }
     else {
       SAVE_PTR(0, binmeminputstream);
@@ -1075,7 +1075,7 @@ namespace xdom {
   JS_METHOD(_buffer) {
     /* TryCatch tc; */
     if (args.Length()<1)
-      return JS_EXCEPTION("[_buffer()] ERROR: Missing input parameter");
+      return JS_ERROR("[_buffer()] ERROR: Missing input parameter");
     ASSERT_CONSTRUCTOR;
     SAVE_PTR(0, NULL);
     GC * gc = GC_PTR;
@@ -1091,7 +1091,7 @@ namespace xdom {
       size = (XMLSize_t)args[0]->ToObject()->GetInternalField(1)->ToInteger()->IntegerValue();
     }
     if (buf==NULL) {
-      return JS_EXCEPTION("[_buffer()] ERROR: \"buf\" is a null pointer");
+      return JS_ERROR("[_buffer()] ERROR: \"buf\" is a null pointer");
     }
     else {
       SAVE_PTR(0, buf);
@@ -1113,7 +1113,7 @@ namespace xdom {
   JS_METHOD(_dommemorymanager) {
     TryCatch tc;
     if (args.Length()<1)
-      return JS_EXCEPTION("[_dommemorymanager()] ERROR: Missing input parameter");
+      return JS_ERROR("[_dommemorymanager()] ERROR: Missing input parameter");
     ASSERT_CONSTRUCTOR;
     SAVE_PTR(0, NULL);
     GC * gc = GC_PTR;
@@ -1126,7 +1126,7 @@ namespace xdom {
       dommm = RECAST(args[0]->ToObject()->GetInternalField(0),DOMMemoryManager *);
     }
     if (dommm==NULL) {
-      return JS_EXCEPTION("[_dommemorymanager()] ERROR: \"dommm\" is a null pointer");
+      return JS_ERROR("[_dommemorymanager()] ERROR: \"dommm\" is a null pointer");
     }
     else {
       SAVE_PTR(0, dommm);
@@ -1137,7 +1137,7 @@ namespace xdom {
   JS_METHOD(_dommemorymanagerallocate) {
     TryCatch tc;
     if (args.Length()!=1 && args.Length()!=2) {
-      return JS_EXCEPTION("[_dommemorymanagerallocate()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_dommemorymanagerallocate()] ERROR: Incorrect number of input parameters");
     }
     DOMMEMMGR;
     XMLSize_t size = (XMLSize_t)args[0]->ToInteger()->IntegerValue();
@@ -1158,7 +1158,7 @@ namespace xdom {
   JS_METHOD(_dommemorymanagergetmemoryallocationblocksize) {
     TryCatch tc;
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_dommemorymanagergetmemoryallocationblocksize()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_dommemorymanagergetmemoryallocationblocksize()] ERROR: Incorrect number of input parameters");
     }
     DOMMEMMGR;
     XMLSize_t size = 0;
@@ -1169,7 +1169,7 @@ namespace xdom {
   JS_METHOD(_dommemorymanagersetmemoryallocationblocksize) {
     TryCatch tc;
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_dommemorymanagersetmemoryallocationblocksize()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_dommemorymanagersetmemoryallocationblocksize()] ERROR: Incorrect number of input parameters");
     }
     DOMMEMMGR;
     XMLSize_t size = (XMLSize_t)args[0]->ToInteger()->IntegerValue();
@@ -1180,7 +1180,7 @@ namespace xdom {
   JS_METHOD(_dommemorymanagerclonestring) {
     TryCatch tc;
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_dommemorymanagerclonestring()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_dommemorymanagerclonestring()] ERROR: Incorrect number of input parameters");
     }
     DOMMEMMGR;
     XS data = NULL;
@@ -1208,7 +1208,7 @@ namespace xdom {
   JS_METHOD(_memorymanager) {
     TryCatch tc;
     if (args.Length()<1)
-      return JS_EXCEPTION("[_memorymanager()] ERROR: Missing input parameter");
+      return JS_ERROR("[_memorymanager()] ERROR: Missing input parameter");
     ASSERT_CONSTRUCTOR;
     SAVE_PTR(0, NULL);
     GC * gc = GC_PTR;
@@ -1221,7 +1221,7 @@ namespace xdom {
       mm = RECAST(args[0]->ToObject()->GetInternalField(0),MemoryManager *);
     }
     if (mm==NULL) {
-      return JS_EXCEPTION("[_memorymanager()] ERROR: \"mm\" is a null pointer");
+      return JS_ERROR("[_memorymanager()] ERROR: \"mm\" is a null pointer");
     }
     else {
       SAVE_PTR(0, mm);
@@ -1235,7 +1235,7 @@ namespace xdom {
     MemoryManager * exmm = NULL;
     XTRY( exmm = mm->getExceptionMemoryManager(); );
     if (exmm==NULL) {
-      return JS_EXCEPTION("[_memorymanagergetexceptionmemorymanager()] ERROR: \"exmm\" is a null pointer");
+      return JS_ERROR("[_memorymanagergetexceptionmemorymanager()] ERROR: \"exmm\" is a null pointer");
     }
     else {
       Local<Value> fargv[] = { External::New((void *)exmm) };
@@ -1248,7 +1248,7 @@ namespace xdom {
   JS_METHOD(_memorymanagerallocate) {
     TryCatch tc;
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_memorymanagerallocate()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_memorymanagerallocate()] ERROR: Incorrect number of input parameters");
     }
     MM;
     XMLSize_t size = (XMLSize_t)args[0]->ToInteger()->IntegerValue();
@@ -1263,7 +1263,7 @@ namespace xdom {
   JS_METHOD(_memorymanagerdeallocate) {
     TryCatch tc;
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_memorymanagerallocate()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_memorymanagerallocate()] ERROR: Incorrect number of input parameters");
     }
     MM;
     void * p = NULL;
@@ -1291,7 +1291,7 @@ namespace xdom {
   JS_METHOD(_inputsource) {
     TryCatch tc;
     if (args.Length()<1)
-      return JS_EXCEPTION("[_inputsource()] ERROR: Missing input parameter");
+      return JS_ERROR("[_inputsource()] ERROR: Missing input parameter");
     ASSERT_CONSTRUCTOR;
     SAVE_PTR(0, NULL);
     GC * gc = GC_PTR;
@@ -1304,7 +1304,7 @@ namespace xdom {
       inputsource = RECAST(args[0]->ToObject()->GetInternalField(0),InputSource *);
     }
     if (inputsource==NULL) {
-      return JS_EXCEPTION("[_inputsource()] ERROR: \"inputsource\" is a null pointer");
+      return JS_ERROR("[_inputsource()] ERROR: \"inputsource\" is a null pointer");
     }
     else {
       SAVE_PTR(0, inputsource);
@@ -1315,14 +1315,14 @@ namespace xdom {
   JS_METHOD(_inputsourcemakestream) {
     TryCatch tc;
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_inputsourcemakestream()] ERROR: Too many input parameters");
+      return JS_ERROR("[_inputsourcemakestream()] ERROR: Too many input parameters");
     }
     INPUTSOURCE;
     Handle<Object> ret;
     BinInputStream * bin = NULL;
     XTRY( bin = inputsource->makeStream(); );
     if (bin==NULL) {
-      return JS_EXCEPTION("[_inputsourcemakestream()] ERROR: \"bin\" is a null pointer");
+      return JS_ERROR("[_inputsourcemakestream()] ERROR: \"bin\" is a null pointer");
     }
     else {
       Local<Value> fargv[] = { External::New((void *)bin) };
@@ -1335,7 +1335,7 @@ namespace xdom {
   JS_METHOD(_inputsourcegetencoding) {
     TryCatch tc;
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_inputsourcegetencoding()] ERROR: Too many input parameters");
+      return JS_ERROR("[_inputsourcegetencoding()] ERROR: Too many input parameters");
     }
     INPUTSOURCE;
     char * ret = NULL;
@@ -1352,7 +1352,7 @@ namespace xdom {
 
   JS_METHOD(_inputsourcegetpublicid) {
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_inputsourcegetpublicid()] ERROR: Too many input parameters");
+      return JS_ERROR("[_inputsourcegetpublicid()] ERROR: Too many input parameters");
     }
     INPUTSOURCE;
     char * ret = NULL;
@@ -1369,7 +1369,7 @@ namespace xdom {
 
   JS_METHOD(_inputsourcegetsystemid) {
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_inputsourcegetsystemid()] ERROR: Too many input parameters");
+      return JS_ERROR("[_inputsourcegetsystemid()] ERROR: Too many input parameters");
     }
     INPUTSOURCE;
     char * ret = NULL;
@@ -1386,7 +1386,7 @@ namespace xdom {
 
   JS_METHOD(_inputsourcegetissuefatalerrorifnotfound) {
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_inputsourcegetissuefatalerrorifnotfound()] ERROR: Too many input parameters");
+      return JS_ERROR("[_inputsourcegetissuefatalerrorifnotfound()] ERROR: Too many input parameters");
     }
     INPUTSOURCE;
     bool ret = false;
@@ -1396,14 +1396,14 @@ namespace xdom {
 
   JS_METHOD(_inputsourcegetmemorymanager) {
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_inputsourcegetmemorymanager()] ERROR: Too many input parameters");
+      return JS_ERROR("[_inputsourcegetmemorymanager()] ERROR: Too many input parameters");
     }
     INPUTSOURCE;
     Handle<Object> ret;
     MemoryManager * mm = NULL;
     XTRY( mm = inputsource->getMemoryManager(); );
     if (mm==NULL) {
-      return JS_EXCEPTION("[_inputsourcegetmemorymanager()] ERROR: \"mm\" is a null pointer");
+      return JS_ERROR("[_inputsourcegetmemorymanager()] ERROR: \"mm\" is a null pointer");
     }
     else {
       Local<Value> fargv[] = { External::New((void *)mm) };
@@ -1415,7 +1415,7 @@ namespace xdom {
 
   JS_METHOD(_inputsourcesetencoding) {
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_inputsourcesetencoding()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_inputsourcesetencoding()] ERROR: Incorrect number of input parameters");
     }
     INPUTSOURCE;
     XTRY( inputsource->setEncoding(ARGSTR(0)); );
@@ -1424,7 +1424,7 @@ namespace xdom {
 
   JS_METHOD(_inputsourcesetpublicid) {
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_inputsourcesetpublicid()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_inputsourcesetpublicid()] ERROR: Incorrect number of input parameters");
     }
     INPUTSOURCE;
     XTRY( inputsource->setPublicId(ARGSTR(0)); );
@@ -1433,7 +1433,7 @@ namespace xdom {
 
   JS_METHOD(_inputsourcesetsystemid) {
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_inputsourcesetsystemid()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_inputsourcesetsystemid()] ERROR: Incorrect number of input parameters");
     }
     INPUTSOURCE;
     XTRY( inputsource->setSystemId(ARGSTR(0)); );
@@ -1442,7 +1442,7 @@ namespace xdom {
 
   JS_METHOD(_inputsourcesetissuefatalerrorifnotfound) {
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_inputsourcesetissuefatalerrorifnotfound()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_inputsourcesetissuefatalerrorifnotfound()] ERROR: Incorrect number of input parameters");
     }
     INPUTSOURCE;
     XTRY( inputsource->setIssueFatalErrorIfNotFound(args[0]->ToBoolean()->BooleanValue()); );
@@ -1462,7 +1462,7 @@ namespace xdom {
   JS_METHOD(_fileinput) {
     /* TryCatch tc; */
     if (args.Length()<1) {
-      return JS_EXCEPTION("[_fileinput()] ERROR: Missing input parameter");
+      return JS_ERROR("[_fileinput()] ERROR: Missing input parameter");
     }
     ASSERT_CONSTRUCTOR;
     if (xdom::initialized!=true) {
@@ -1480,7 +1480,7 @@ namespace xdom {
       fileinput = RECAST(args[0]->ToObject()->GetInternalField(0),LocalFileInputSource *);
     }
     if (fileinput==NULL) {
-      return JS_EXCEPTION("[_fileinput()] ERROR: \"fileinput\" is a null pointer");
+      return JS_ERROR("[_fileinput()] ERROR: \"fileinput\" is a null pointer");
     }
     else {
       SAVE_PTR(0, fileinput);
@@ -1501,7 +1501,7 @@ namespace xdom {
   JS_METHOD(_membufinput) {
     /* TryCatch tc; */
     if (args.Length()<1) {
-      return JS_EXCEPTION("[_membuf()] ERROR: Missing input parameter");
+      return JS_ERROR("[_membuf()] ERROR: Missing input parameter");
     }
     bool * adopt = new bool;
     *adopt = false;
@@ -1529,7 +1529,7 @@ namespace xdom {
       *adopt = true;
     }
     if (membuf==NULL) {
-      return JS_EXCEPTION("[_membuf()] ERROR: \"membuf\" is a null pointer");
+      return JS_ERROR("[_membuf()] ERROR: \"membuf\" is a null pointer");
     }
     else {
       SAVE_PTR(0, membuf);
@@ -1540,7 +1540,7 @@ namespace xdom {
 
   JS_METHOD(_membufinputsetcopybuftostream) {
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_membufinputsetcopybuftostream()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_membufinputsetcopybuftostream()] ERROR: Incorrect number of input parameters");
     }
     MEMBUFINPUT;
     const bool newState = args[0]->ToBoolean()->BooleanValue();
@@ -1550,7 +1550,7 @@ namespace xdom {
 
   JS_METHOD(_membufinputresetmembufinputsource) {
     if (args.Length()!=1 && args.Length()!=2) {
-      return JS_EXCEPTION("[_membufinputresetmembufinputsource()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_membufinputresetmembufinputsource()] ERROR: Incorrect number of input parameters");
     }
     MEMBUFINPUT;
     const XMLByte *const srcDocBytes = reinterpret_cast<const XMLByte *const>(*String::Utf8Value(args[0]->ToString()));
@@ -1575,7 +1575,7 @@ namespace xdom {
   JS_METHOD(_stdin) {
     /* TryCatch tc; */
     if (args.Length()<1) {
-      return JS_EXCEPTION("[_stdin()] ERROR: Missing input parameter");
+      return JS_ERROR("[_stdin()] ERROR: Missing input parameter");
     }
     ASSERT_CONSTRUCTOR;
     if (xdom::initialized!=true) {
@@ -1593,7 +1593,7 @@ namespace xdom {
       my_stdin = RECAST(args[0]->ToObject()->GetInternalField(0),StdInInputSource *);
     }
     if (my_stdin==NULL) {
-      return JS_EXCEPTION("[_stdin()] ERROR: \"my_stdin\" is a null pointer");
+      return JS_ERROR("[_stdin()] ERROR: \"my_stdin\" is a null pointer");
     }
     else {
       SAVE_PTR(0, my_stdin);
@@ -1614,7 +1614,7 @@ namespace xdom {
   JS_METHOD(_xmlurl) {
     /* TryCatch tc; */
     if (args.Length()<1) {
-      return JS_EXCEPTION("[_xmlurl()] ERROR: Missing input parameter");
+      return JS_ERROR("[_xmlurl()] ERROR: Missing input parameter");
     }
     ASSERT_CONSTRUCTOR;
     if (xdom::initialized!=true) {
@@ -1635,7 +1635,7 @@ namespace xdom {
       XTRY( xmlurl = new XMLURL(ARGSTR(0)); );
     }
     if (xmlurl==NULL) {
-      return JS_EXCEPTION("[_xmlurl()] ERROR: \"xmlurl\" is a null pointer");
+      return JS_ERROR("[_xmlurl()] ERROR: \"xmlurl\" is a null pointer");
     }
     else {
       SAVE_PTR(0, xmlurl);
@@ -1850,7 +1850,7 @@ namespace xdom {
   JS_METHOD(_urlinput) {
     /* TryCatch tc; */
     if (args.Length()<1) {
-      return JS_EXCEPTION("[_url()] ERROR: Missing input parameter");
+      return JS_ERROR("[_url()] ERROR: Missing input parameter");
     }
     ASSERT_CONSTRUCTOR;
     if (xdom::initialized!=true) {
@@ -1868,7 +1868,7 @@ namespace xdom {
       url = RECAST(args[0]->ToObject()->GetInternalField(0),URLInputSource *);
     }
     if (url==NULL) {
-      return JS_EXCEPTION("[_url()] ERROR: \"url\" is a null pointer");
+      return JS_ERROR("[_url()] ERROR: \"url\" is a null pointer");
     }
     else {
       SAVE_PTR(0, url);
@@ -1894,7 +1894,7 @@ namespace xdom {
   JS_METHOD(_xpathnamespace) {
     /* TryCatch tc; */
     if (args.Length()<1)
-      return JS_EXCEPTION("[_xpathnamespace()] ERROR: Missing input parameter");
+      return JS_ERROR("[_xpathnamespace()] ERROR: Missing input parameter");
     ASSERT_CONSTRUCTOR;
     SAVE_PTR(0, NULL);
     GC * gc = GC_PTR;
@@ -1907,7 +1907,7 @@ namespace xdom {
       xpath = RECAST(args[0]->ToObject()->GetInternalField(0),DOMXPathNamespace *);
     }
     if (xpath==NULL) {
-      return JS_EXCEPTION("[_xpathnamespace()] ERROR: \"xpath\" is a null pointer");
+      return JS_ERROR("[_xpathnamespace()] ERROR: \"xpath\" is a null pointer");
     }
     else {
       SAVE_PTR(0, xpath);
@@ -1918,12 +1918,12 @@ namespace xdom {
   JS_METHOD(_xpathgetownerelement) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_xpathgetownerelement()] ERROR: Too many input parameters");
+      return JS_ERROR("[_xpathgetownerelement()] ERROR: Too many input parameters");
     XPATH;
     DOMElement * el = NULL;
     XTRY( el = xpath->getOwnerElement(); );
     if (el==NULL) {
-      return JS_EXCEPTION("[_xpathgetownerelement()] ERROR: \"el\" is a null pointer");
+      return JS_ERROR("[_xpathgetownerelement()] ERROR: \"el\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)el) };
@@ -1949,7 +1949,7 @@ namespace xdom {
   JS_METHOD(_cdatasection) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_cdatasection()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_cdatasection()] ERROR: Incorrect number of input parameters");
     ASSERT_CONSTRUCTOR;
     SAVE_PTR(0, NULL);
     GC * gc = GC_PTR;
@@ -1962,7 +1962,7 @@ namespace xdom {
       cdatasect = RECAST(args[0]->ToObject()->GetInternalField(0),DOMCDATASection *);
     }
     if (cdatasect==NULL) {
-      return JS_EXCEPTION("[_cdatasection()] ERROR: \"cdatasect\" is a null pointer");
+      return JS_ERROR("[_cdatasection()] ERROR: \"cdatasect\" is a null pointer");
     }
     else {
       SAVE_PTR(0, cdatasect);
@@ -1985,7 +1985,7 @@ namespace xdom {
   JS_METHOD(_stringlist) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_stringlist()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_stringlist()] ERROR: Incorrect number of input parameters");
     ASSERT_CONSTRUCTOR;
     SAVE_PTR(0, NULL);
     GC * gc = GC_PTR;
@@ -1998,7 +1998,7 @@ namespace xdom {
       dslist = RECAST(args[0]->ToObject()->GetInternalField(0),DOMStringList *);
     }
     if (dslist==NULL) {
-      return JS_EXCEPTION("[_stringlist()] ERROR: \"dslist\" is a null pointer");
+      return JS_ERROR("[_stringlist()] ERROR: \"dslist\" is a null pointer");
     }
     else {
       SAVE_PTR(0, dslist);
@@ -2009,7 +2009,7 @@ namespace xdom {
   JS_METHOD(_stringlistitem) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_stringlistitem()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_stringlistitem()] ERROR: Incorrect number of input parameters");
     STRINGLIST;
     XMLSize_t index = (XMLSize_t)(args[0]->ToInteger()->IntegerValue());
     XS val = NULL;
@@ -2026,7 +2026,7 @@ namespace xdom {
   JS_METHOD(_stringlistgetlength) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_stringlistgetlength()] ERROR: Too many input parameters");
+      return JS_ERROR("[_stringlistgetlength()] ERROR: Too many input parameters");
     STRINGLIST;
     XMLSize_t length = 0;
     XTRY( length = dslist->getLength(); );
@@ -2036,7 +2036,7 @@ namespace xdom {
   JS_METHOD(_stringlistcontains) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_stringlistcontains()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_stringlistcontains()] ERROR: Incorrect number of input parameters");
     STRINGLIST;
     SS val(*String::Utf8Value(args[0]->ToString()));
     bool ret = false;
@@ -2061,7 +2061,7 @@ namespace xdom {
   JS_METHOD(_namednodemap) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_namednodemap()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_namednodemap()] ERROR: Incorrect number of input parameters");
     ASSERT_CONSTRUCTOR;
     SAVE_PTR(0, NULL);
     GC * gc = GC_PTR;
@@ -2074,7 +2074,7 @@ namespace xdom {
       nodemap = RECAST(args[0]->ToObject()->GetInternalField(0),DOMNamedNodeMap *);
     }
     if (nodemap==NULL) {
-      return JS_EXCEPTION("[_namednodemap()] ERROR: \"nodemap\" is a null pointer");
+      return JS_ERROR("[_namednodemap()] ERROR: \"nodemap\" is a null pointer");
     }
     else {
       SAVE_PTR(0, nodemap);
@@ -2085,13 +2085,13 @@ namespace xdom {
   JS_METHOD(_nodemapitem) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_nodemapitem()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_nodemapitem()] ERROR: Incorrect number of input parameters");
     NODEMAP;
     XMLSize_t index = (XMLSize_t)(args[0]->ToInteger()->IntegerValue());
     DOMNode * item = NULL;
     XTRY( item = nodemap->item(index); );
     if (item==NULL) {
-      return JS_EXCEPTION("[_nodemapitem()] ERROR: \"item\" is a null pointer");
+      return JS_ERROR("[_nodemapitem()] ERROR: \"item\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)item) };
@@ -2103,7 +2103,7 @@ namespace xdom {
   JS_METHOD(_nodemapgetlength) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_nodemapgetlength()] ERROR: Too many input parameters");
+      return JS_ERROR("[_nodemapgetlength()] ERROR: Too many input parameters");
     NODEMAP;
     XMLSize_t length = 0;
     XTRY( length = nodemap->getLength(); );
@@ -2113,12 +2113,12 @@ namespace xdom {
   JS_METHOD(_nodemapgetnameditem) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_nodemapgetnameditem()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_nodemapgetnameditem()] ERROR: Incorrect number of input parameters");
     NODEMAP;
     DOMNode * item = NULL;
     XTRY( item = nodemap->getNamedItem(ARGSTR(0)); );
     if (item==NULL) {
-      return JS_EXCEPTION("[_nodemapgetnameditem()] ERROR: \"item\" is a null pointer");
+      return JS_ERROR("[_nodemapgetnameditem()] ERROR: \"item\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)item) };
@@ -2130,12 +2130,12 @@ namespace xdom {
   JS_METHOD(_nodemapgetnameditemns) {
     /* TryCatch tc; */
     if (args.Length()!=2)
-      return JS_EXCEPTION("[_nodemapgetnameditemns()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_nodemapgetnameditemns()] ERROR: Incorrect number of input parameters");
     NODEMAP;
     DOMNode * item = NULL;
     XTRY( item = nodemap->getNamedItemNS(ARGSTR(0),ARGSTR(1)); );
     if (item==NULL) {
-      return JS_EXCEPTION("[_nodemapgetnameditemns()] ERROR: \"item\" is a null pointer");
+      return JS_ERROR("[_nodemapgetnameditemns()] ERROR: \"item\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)item) };
@@ -2147,7 +2147,7 @@ namespace xdom {
   JS_METHOD(_nodemapsetnameditem) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_nodemapsetnameditem()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_nodemapsetnameditem()] ERROR: Incorrect number of input parameters");
     NODEMAP;
     DOMNode * arg = NULL;
     if (args[0]->IsExternal()) {
@@ -2158,12 +2158,12 @@ namespace xdom {
       arg = RECAST(tobj->GetInternalField(0),DOMNode *);
     }
     if (arg==NULL)
-      return JS_EXCEPTION("[_nodemapsetnameditem()] ERROR: \"arg\" is a null pointer");
+      return JS_ERROR("[_nodemapsetnameditem()] ERROR: \"arg\" is a null pointer");
     else {
       DOMNode * newNode = NULL;
       XTRY( newNode = nodemap->setNamedItem(arg); );
       if (newNode==NULL) {
-	return JS_EXCEPTION("[_nodemapsetnameditem()] ERROR: \"newNode\" is a null pointer");
+	return JS_ERROR("[_nodemapsetnameditem()] ERROR: \"newNode\" is a null pointer");
       }
       else {
 	Handle<Value> fargs[] = { External::New((void *)newNode) };
@@ -2176,7 +2176,7 @@ namespace xdom {
   JS_METHOD(_nodemapsetnameditemns) {
     /* TryCatch tc; */
     if (args.Length()!=2)
-      return JS_EXCEPTION("[_nodemapsetnameditemns()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_nodemapsetnameditemns()] ERROR: Incorrect number of input parameters");
     NODEMAP;
     DOMNode * arg = NULL;
     if (args[0]->IsExternal()) {
@@ -2187,13 +2187,13 @@ namespace xdom {
       arg = RECAST(tobj->GetInternalField(0),DOMNode *);
     }
     if (arg==NULL) {
-      return JS_EXCEPTION("[_nodemapsetnameditem()] ERROR: \"arg\" is a null pointer");
+      return JS_ERROR("[_nodemapsetnameditem()] ERROR: \"arg\" is a null pointer");
     }
     else {
       DOMNode * newNode = NULL;
       XTRY( newNode = nodemap->setNamedItemNS(arg); );
       if (newNode==NULL) {
-	return JS_EXCEPTION("[_nodemapsetnameditem()] ERROR: \"newNode\" is a null pointer");
+	return JS_ERROR("[_nodemapsetnameditem()] ERROR: \"newNode\" is a null pointer");
       }
       else {
 	Handle<Value> fargs[] = { External::New((void *)newNode) };
@@ -2206,12 +2206,12 @@ namespace xdom {
   JS_METHOD(_nodemapremovenameditem) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_nodemapremovenameditem()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_nodemapremovenameditem()] ERROR: Incorrect number of input parameters");
     NODEMAP;
     DOMNode * item = NULL;
     XTRY( item = nodemap->removeNamedItem(ARGSTR(0)); );
     if (item==NULL) {
-      return JS_EXCEPTION("[_nodemapremovenameditem()] ERROR: \"item\" is a null pointer");
+      return JS_ERROR("[_nodemapremovenameditem()] ERROR: \"item\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)item) };
@@ -2223,12 +2223,12 @@ namespace xdom {
   JS_METHOD(_nodemapremovenameditemns) {
     /* TryCatch tc; */
     if (args.Length()!=2)
-      return JS_EXCEPTION("[_nodemapremovenameditemns()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_nodemapremovenameditemns()] ERROR: Incorrect number of input parameters");
     NODEMAP;
     DOMNode * item = NULL;
     XTRY( item = nodemap->removeNamedItemNS(ARGSTR(0),ARGSTR(1)); );
     if (item==NULL) {
-      return JS_EXCEPTION("[_nodemapremovenameditemns()] ERROR: \"item\" is a null pointer");
+      return JS_ERROR("[_nodemapremovenameditemns()] ERROR: \"item\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)item) };
@@ -2251,7 +2251,7 @@ namespace xdom {
   JS_METHOD(_nodelist) {
     /* TryCatch tc; */
     if (args.Length()<1)
-      return JS_EXCEPTION("[_nodelist()] ERROR: Missing input parameter");
+      return JS_ERROR("[_nodelist()] ERROR: Missing input parameter");
     ASSERT_CONSTRUCTOR;
     SAVE_PTR(0, NULL);
     GC * gc = GC_PTR;
@@ -2264,13 +2264,13 @@ namespace xdom {
   JS_METHOD(_nodelistitem) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_nodelistitem()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_nodelistitem()] ERROR: Incorrect number of input parameters");
     NODELIST;
     XMLSize_t index = (XMLSize_t)(args[0]->ToInteger()->IntegerValue());
     DOMNode * item = NULL;
     XTRY( item = nodelist->item(index); );
     if (item==NULL) {
-      return JS_EXCEPTION("[_nodelistitem()] ERROR: \"item\" is a null pointer");
+      return JS_ERROR("[_nodelistitem()] ERROR: \"item\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)item) };
@@ -2282,7 +2282,7 @@ namespace xdom {
   JS_METHOD(_nodelistgetlength) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_nodelistgetlength()] ERROR: Too many input parameters");
+      return JS_ERROR("[_nodelistgetlength()] ERROR: Too many input parameters");
     NODELIST;
     XMLSize_t length = 0;
     XTRY( length = nodelist->getLength(); );
@@ -2292,7 +2292,7 @@ namespace xdom {
   JS_METHOD(_nodelisttoarray) {
     //TryCatch tc;
     if (args.Length()>0)
-      return JS_EXCEPTION("[_nodelisttoarray()] ERROR: Too many input parameters");
+      return JS_ERROR("[_nodelisttoarray()] ERROR: Too many input parameters");
     NODELIST;
     Handle<Array> ret;
     XMLSize_t len = 0;
@@ -2303,7 +2303,7 @@ namespace xdom {
 	DOMNode * val = NULL;
 	XTRY( val = nodelist->item(i); );
 	if (val==NULL) {
-	  return JS_EXCEPTION("[_nodelisttoarray()] ERROR: \"val\" is a null pointer");
+	  return JS_ERROR("[_nodelisttoarray()] ERROR: \"val\" is a null pointer");
 	}
 	else {
 	  Local<Value> fargs[] = { v8::External::New((void *)val) };
@@ -2328,7 +2328,7 @@ namespace xdom {
   JS_METHOD(_domuserdatahandler) {
     /* TryCatch tc; */
     if (args.Length()<1) {
-      return JS_EXCEPTION("[_domuserdatahandler()] ERROR: Missing input parameter");
+      return JS_ERROR("[_domuserdatahandler()] ERROR: Missing input parameter");
     }
     ASSERT_CONSTRUCTOR;
     if (xdom::initialized!=true) {
@@ -2351,7 +2351,7 @@ namespace xdom {
 	dhandler = RECAST(args[0]->ToObject()->GetInternalField(0),DOMUserDataHandler *);
       }
       if (dhandler==NULL) {
-	return JS_EXCEPTION("[_domuserdatahandler()] ERROR: \"dhandler\" is a null pointer");
+	return JS_ERROR("[_domuserdatahandler()] ERROR: \"dhandler\" is a null pointer");
       }
       else {
 	SAVE_PTR(0, dhandler);
@@ -2363,7 +2363,7 @@ namespace xdom {
   JS_METHOD(_domuserdatahandlerhandle) {
     /* TryCatch tc; */
     if (args.Length()!=5) {
-      return JS_EXCEPTION("[_domuserdatahandlerhandle()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_domuserdatahandlerhandle()] ERROR: Incorrect number of input parameters");
     }
     if (xdom::initialized!=true) {
       xercesc_3_0::XMLPlatformUtils::Initialize();
@@ -2389,10 +2389,10 @@ namespace xdom {
       dst = RECAST(tobj->GetInternalField(0),DOMNode *);
     }
     if (src==NULL) {
-      return JS_EXCEPTION("[_handle()] ERROR: \"src\" is a null pointer");
+      return JS_ERROR("[_handle()] ERROR: \"src\" is a null pointer");
     }
     else if (dst==NULL) {
-      return JS_EXCEPTION("[_handle()] ERROR: \"dst\" is a null pointer");
+      return JS_ERROR("[_handle()] ERROR: \"dst\" is a null pointer");
     }
     else {
       XTRY( dhandler->handle(operation,ARGSTR(1),data,src,dst); );
@@ -2415,7 +2415,7 @@ namespace xdom {
   JS_METHOD(_implls) {
     /* TryCatch tc; */
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_implls()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_implls()] ERROR: Incorrect number of input parameters");
     }
     ASSERT_CONSTRUCTOR;
     if (xdom::initialized!=true) {
@@ -2438,7 +2438,7 @@ namespace xdom {
 	DOMImplementation * dom = NULL;
 	dom = RECAST(args[0]->ToObject()->GetInternalField(0),DOMImplementation *);
 	if (dom==NULL) {
-	  return JS_EXCEPTION("[_implls()] ERROR: \"dom\" is a null pointer");
+	  return JS_ERROR("[_implls()] ERROR: \"dom\" is a null pointer");
 	}
 	else {
 	  domls = (DOMImplementationLS *)dom;
@@ -2446,7 +2446,7 @@ namespace xdom {
       }
     }
     if (domls==NULL) {
-      return JS_EXCEPTION("[_implls()] ERROR: \"domls\" is a null pointer");
+      return JS_ERROR("[_implls()] ERROR: \"domls\" is a null pointer");
     }
     else {
       SAVE_PTR(0,domls);
@@ -2485,7 +2485,7 @@ namespace xdom {
     DOMLSParser * parser = NULL;
     XLSTRY( parser = domls->createLSParser(mode,schemaType,manager,gramPool); );
     if (parser==NULL) {
-      return JS_EXCEPTION("[_createlsparser()] ERROR: \"parser\" is a null pointer");
+      return JS_ERROR("[_createlsparser()] ERROR: \"parser\" is a null pointer");
     }
     else {
       XMLSize_t fargc = 1;
@@ -2509,7 +2509,7 @@ namespace xdom {
     DOMLSSerializer * serializer = NULL;
     XLSTRY( serializer = domls->createLSSerializer(manager); );
     if (serializer==NULL) {
-      return JS_EXCEPTION("[_createlsserializer()] ERROR: \"serializer\" is a null pointer");
+      return JS_ERROR("[_createlsserializer()] ERROR: \"serializer\" is a null pointer");
     }
     else {
       XMLSize_t fargc = 1;
@@ -2533,7 +2533,7 @@ namespace xdom {
     DOMLSInput * lsinput = NULL;
     XLSTRY( lsinput = domls->createLSInput(manager); );
     if (lsinput==NULL) {
-      return JS_EXCEPTION("[_createlsinput()] ERROR: \"lsinput\" is a null pointer");
+      return JS_ERROR("[_createlsinput()] ERROR: \"lsinput\" is a null pointer");
     }
     else {
       XMLSize_t fargc = 1;
@@ -2557,7 +2557,7 @@ namespace xdom {
     DOMLSOutput * lsoutput = NULL;
     XLSTRY( lsoutput = domls->createLSOutput(manager); );
     if (lsoutput==NULL) {
-      return JS_EXCEPTION("[_createlsoutput()] ERROR: \"lsoutput\" is a null pointer");
+      return JS_ERROR("[_createlsoutput()] ERROR: \"lsoutput\" is a null pointer");
     }
     else {
       XMLSize_t fargc = 1;
@@ -2639,7 +2639,7 @@ namespace xdom {
       }
     }
     if (dom==NULL) {
-      return JS_EXCEPTION("[_impl()] ERROR: \"dom\" is a null pointer");
+      return JS_ERROR("[_impl()] ERROR: \"dom\" is a null pointer");
     }
     else {
       SAVE_PTR(0,dom);
@@ -2650,7 +2650,7 @@ namespace xdom {
   JS_METHOD(_domcreateimplementationls) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_domcreateimplementationls()] ERROR: Too many input parameters");
+      return JS_ERROR("[_domcreateimplementationls()] ERROR: Too many input parameters");
     DOM;
     Local<Value> fargs[] = { External::New((void *)dom) };
     Handle<Object> ret( xdom::fdomls->GetFunction()->NewInstance(1, fargs) );
@@ -2660,7 +2660,7 @@ namespace xdom {
   JS_METHOD(_domgetimplementation) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_domgetimplementation()] ERROR: Too many input parameters");
+      return JS_ERROR("[_domgetimplementation()] ERROR: Too many input parameters");
     DOM;
     Handle<Value> fargs[] = { External::New((void *)dom) };
     return Handle<Function>::Cast(args.This()->Get(JS_STR("DOMImplementation")))->NewInstance(1, fargs);
@@ -2669,7 +2669,7 @@ namespace xdom {
   JS_METHOD(_domloaddomexceptionmsg) {
     /* TryCatch tc; */
     if (args.Length()!=2)
-      return JS_EXCEPTION("[_domloaddomexceptionmsg()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_domloaddomexceptionmsg()] ERROR: Incorrect number of input parameters");
     DOM;
     short msgToLoad = (short)args[0]->ToInteger()->Int32Value();
     XS const toFill = ARGSTR(1);
@@ -2681,7 +2681,7 @@ namespace xdom {
   JS_METHOD(_domhasfeature) {
     /* TryCatch tc; */
     if (args.Length()!=2)
-      return JS_EXCEPTION("[_domhasfeature()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_domhasfeature()] ERROR: Incorrect number of input parameters");
     DOM;
     bool ret = false;
     XTRY( ret = dom->hasFeature(ARGSTR(0),ARGSTR(1)); );
@@ -2691,7 +2691,7 @@ namespace xdom {
   JS_METHOD(_domcreateparser) {
     /* TryCatch tc; */
     if (args.Length()>1)
-      return JS_EXCEPTION("[_domcreateparser()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_domcreateparser()] ERROR: Incorrect number of input parameters");
     DOM;
     XS schemaType = NULL;
     if (args.Length()>0) {
@@ -2710,7 +2710,7 @@ namespace xdom {
 	//dc->setParameter(XMLUni::fgDOMValidate, true);
     );
     if (parser==NULL) {
-      return JS_EXCEPTION("[_impl()] ERROR: \"parser\" is a null pointer");
+      return JS_ERROR("[_impl()] ERROR: \"parser\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)parser), External::New((void *)dom) };
@@ -2722,7 +2722,7 @@ namespace xdom {
   JS_METHOD(_domcreatedocumenttype) {
     /* TryCatch tc; */
     if (args.Length()!=3 && args.Length()!=1)
-      return JS_EXCEPTION("[_domcreatedocumenttype()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_domcreatedocumenttype()] ERROR: Incorrect number of input parameters");
     DOM;
     XS qualifiedName = X("");
     XS publicId = X("");
@@ -2762,7 +2762,7 @@ namespace xdom {
       XTRY( docType = dom->createDocumentType(NULL,publicId,systemId); );
     }
     if (docType==NULL) {
-      return JS_EXCEPTION("[_domcreatedocumenttype()] ERROR: \"docType\" is a null pointer");
+      return JS_ERROR("[_domcreatedocumenttype()] ERROR: \"docType\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((DOMDocumentType *)docType) };
@@ -2774,7 +2774,7 @@ namespace xdom {
   JS_METHOD(_domcreatedocument) {
     /* TryCatch tc; */
     if (args.Length()!=3 && args.Length()!=0)
-      return JS_EXCEPTION("[_domcreatedocumenttype()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_domcreatedocumenttype()] ERROR: Incorrect number of input parameters");
     DOM;
     DOMDocumentType * docType = NULL;
     DOMDocument * doc = NULL;
@@ -2792,14 +2792,14 @@ namespace xdom {
 	docType = RECAST(tobj->GetInternalField(0),DOMDocumentType *);
       }
       if (docType==NULL) {
-	return JS_EXCEPTION("[_domcreatedocument()] ERROR: \"docType\" is a null pointer");
+	return JS_ERROR("[_domcreatedocument()] ERROR: \"docType\" is a null pointer");
       }
       else {
 	XTRY( doc = dom->createDocument(X_STR(namespaceURI),X_STR(qualifiedName),docType); );
       }
     }
     if (doc==NULL) {
-      return JS_EXCEPTION("[_domcreatedocument()] ERROR: \"doc\" is a null pointer");
+      return JS_ERROR("[_domcreatedocument()] ERROR: \"doc\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)doc) };
@@ -2832,7 +2832,7 @@ namespace xdom {
   JS_METHOD(_serializer) {
     ///* TryCatch tc; */
     if (args.Length()<1) {
-      return JS_EXCEPTION("[_serializer()] ERROR: Missing input parameter");
+      return JS_ERROR("[_serializer()] ERROR: Missing input parameter");
     }
     ASSERT_CONSTRUCTOR;
     GC * gc = GC_PTR;
@@ -2852,7 +2852,7 @@ namespace xdom {
       dom = RECAST(args[1]->ToObject()->GetInternalField(0), DOMImplementation *);
     }
     if (serializer==NULL) {
-      return JS_EXCEPTION("[_serializer()] ERROR: \"serializer\" is a null pointer");
+      return JS_ERROR("[_serializer()] ERROR: \"serializer\" is a null pointer");
     }
     else {
       SAVE_PTR(0,serializer);
@@ -2864,13 +2864,13 @@ namespace xdom {
   JS_METHOD(_serializergetdomconfig) {
     /* TryCatch tc; */
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_serializergetdomconfig()] ERROR: Too many input parameters");
+      return JS_ERROR("[_serializergetdomconfig()] ERROR: Too many input parameters");
     }
     SERIALIZER;
     DOMConfiguration * domconfig = NULL;
     XLSTRY( domconfig = serializer->getDomConfig(); );
     if (domconfig==NULL) {
-      return JS_EXCEPTION("[_serializergetdomconfig()] ERROR: \"domconfig\" is a null pointer");
+      return JS_ERROR("[_serializergetdomconfig()] ERROR: \"domconfig\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)domconfig) };
@@ -2882,13 +2882,13 @@ namespace xdom {
   JS_METHOD(_serializergetfilter) {
     /* TryCatch tc; */
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_serializergetfilter()] ERROR: Too many input parameters");
+      return JS_ERROR("[_serializergetfilter()] ERROR: Too many input parameters");
     }
     SERIALIZER;
     DOMLSSerializerFilter * filter = NULL;
     XLSTRY( filter = (DOMLSSerializerFilter *)serializer->getFilter(); );
     if (filter==NULL) {
-      return JS_EXCEPTION("[_serializergetfilter()] ERROR: \"filter\" is a null pointer");
+      return JS_ERROR("[_serializergetfilter()] ERROR: \"filter\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)filter) };
@@ -2900,13 +2900,13 @@ namespace xdom {
   JS_METHOD(_serializergetnewline) {
     /* TryCatch tc; */
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_serializergetfilter()] ERROR: Too many input parameters");
+      return JS_ERROR("[_serializergetfilter()] ERROR: Too many input parameters");
     }
     SERIALIZER;
     DOMLSSerializerFilter * filter = NULL;
     XLSTRY( filter = (DOMLSSerializerFilter *)serializer->getFilter(); );
     if (filter==NULL) {
-      return JS_EXCEPTION("[_serializergetfilter()] ERROR: \"filter\" is a null pointer");
+      return JS_ERROR("[_serializergetfilter()] ERROR: \"filter\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)filter) };
@@ -2918,7 +2918,7 @@ namespace xdom {
   JS_METHOD(_serializersetfilter) {
     /* TryCatch tc; */
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_serializersetfilter()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_serializersetfilter()] ERROR: Incorrect number of input parameters");
     }
     SERIALIZER;
     DOMLSSerializerFilter * filter = NULL;
@@ -2929,7 +2929,7 @@ namespace xdom {
       filter = RECAST(args[0]->ToObject()->GetInternalField(0),DOMLSSerializerFilter *);
     }
     if (filter==NULL) {
-      return JS_EXCEPTION("[_serializersetfilter()] ERROR: \"filter\" is a null pointer");
+      return JS_ERROR("[_serializersetfilter()] ERROR: \"filter\" is a null pointer");
     }
     XLSTRY( serializer->setFilter(filter); );
     return args.This();
@@ -2938,7 +2938,7 @@ namespace xdom {
   JS_METHOD(_serializersetnewline) {
     /* TryCatch tc; */
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_serializersetnewline()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_serializersetnewline()] ERROR: Incorrect number of input parameters");
     }
     SERIALIZER;
     XLSTRY( serializer->setNewLine(ARGSTR(0)); );
@@ -2948,7 +2948,7 @@ namespace xdom {
   JS_METHOD(_serializerwrite) {
     /* TryCatch tc; */
     if (args.Length()!=2) {
-      return JS_EXCEPTION("[_serializerwrite()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_serializerwrite()] ERROR: Incorrect number of input parameters");
     }
     SERIALIZER;
     DOMNode * node = NULL;
@@ -2960,7 +2960,7 @@ namespace xdom {
       node = RECAST(args[0]->ToObject()->GetInternalField(0),DOMNode *);
     }
     if (node==NULL) {
-      return JS_EXCEPTION("[_serializerwrite()] ERROR: \"node\" is a null pointer");
+      return JS_ERROR("[_serializerwrite()] ERROR: \"node\" is a null pointer");
     }
     if (args[1]->IsExternal()) {
       dst = RECAST(args[1],DOMLSOutput *);
@@ -2969,7 +2969,7 @@ namespace xdom {
       dst = RECAST(args[1]->ToObject()->GetInternalField(1),DOMLSOutput *);
     }
     if (dst==NULL) {
-      return JS_EXCEPTION("[_serializerwrite()] ERROR: \"dst\" is a null pointer");
+      return JS_ERROR("[_serializerwrite()] ERROR: \"dst\" is a null pointer");
     }
     XLSTRY( serializer->write(node,dst); );
     return args.This();
@@ -2977,7 +2977,7 @@ namespace xdom {
 
   JS_METHOD(_serializerwritetouri) {
     if (args.Length()!=2) {
-      return JS_EXCEPTION("[_serializerwritetouri()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_serializerwritetouri()] ERROR: Incorrect number of input parameters");
     }
     SERIALIZER;
     DOMNode * node = NULL;
@@ -2989,7 +2989,7 @@ namespace xdom {
       node = RECAST(args[0]->ToObject()->GetInternalField(0),DOMNode *);
     }
     if (node==NULL) {
-      return JS_EXCEPTION("[_serializerwritetouri()] ERROR: \"node\" is a null pointer");
+      return JS_ERROR("[_serializerwritetouri()] ERROR: \"node\" is a null pointer");
     }
     XLSTRY( serializer->writeToURI(node,uri); );
     return args.This();
@@ -2997,7 +2997,7 @@ namespace xdom {
 
   JS_METHOD(_serializerwritetostring) {
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_serializerwritetostring()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_serializerwritetostring()] ERROR: Incorrect number of input parameters");
     }
     SERIALIZER;
     DOMNode * node = NULL;
@@ -3009,11 +3009,11 @@ namespace xdom {
       node = RECAST(args[0]->ToObject()->GetInternalField(0),DOMNode *);
     }
     if (node==NULL) {
-      return JS_EXCEPTION("[_serializerwritetostring()] ERROR: \"node\" is a null pointer");
+      return JS_ERROR("[_serializerwritetostring()] ERROR: \"node\" is a null pointer");
     }
     XLSTRY( ret = X(serializer->writeToString(node)); );
     if (ret==NULL) {
-      return JS_EXCEPTION("[_serializerwritetostring()] ERROR: \"ret\" is a null pointer");
+      return JS_ERROR("[_serializerwritetostring()] ERROR: \"ret\" is a null pointer");
     }
     else {
       return JS_STR(ret);
@@ -3042,7 +3042,7 @@ namespace xdom {
   JS_METHOD(_serializerfilter) {
     // /* TryCatch tc; */
     if (args.Length()<1) {
-      return JS_EXCEPTION("[_serializerfilter()] ERROR: Missing input parameter");
+      return JS_ERROR("[_serializerfilter()] ERROR: Missing input parameter");
     }
     ASSERT_CONSTRUCTOR;
     GC * gc = GC_PTR;
@@ -3055,7 +3055,7 @@ namespace xdom {
       filter = RECAST(args[0]->ToObject()->GetInternalField(0), DOMLSSerializerFilter *);
     }
     if (filter==NULL)
-      return JS_EXCEPTION("[_serializerfilter()] ERROR: \"filter\" is a null pointer");
+      return JS_ERROR("[_serializerfilter()] ERROR: \"filter\" is a null pointer");
     else {
       SAVE_PTR(0,filter);
       return args.This();
@@ -3089,7 +3089,7 @@ namespace xdom {
   JS_METHOD(_nodefilter) {
     // /* TryCatch tc; */
     if (args.Length()<1) {
-      return JS_EXCEPTION("[_domnodefilter()] ERROR: Missing input parameter");
+      return JS_ERROR("[_domnodefilter()] ERROR: Missing input parameter");
     }
     ASSERT_CONSTRUCTOR;
     GC * gc = GC_PTR;
@@ -3102,7 +3102,7 @@ namespace xdom {
       filter = RECAST(args[0]->ToObject()->GetInternalField(0), DOMNodeFilter *);
     }
     if (filter==NULL)
-      return JS_EXCEPTION("[_domnodefilter()] ERROR: \"filter\" is a null pointer");
+      return JS_ERROR("[_domnodefilter()] ERROR: \"filter\" is a null pointer");
     else {
       SAVE_PTR(0,filter);
       return args.This();
@@ -3143,7 +3143,7 @@ namespace xdom {
   JS_METHOD(_parser) {
     ///* TryCatch tc; */
     if (args.Length()<1) {
-      return JS_EXCEPTION("[_parser()] ERROR: Missing input parameter");
+      return JS_ERROR("[_parser()] ERROR: Missing input parameter");
     }
     ASSERT_CONSTRUCTOR;
     GC * gc = GC_PTR;
@@ -3163,7 +3163,7 @@ namespace xdom {
       dom = RECAST(args[1]->ToObject()->GetInternalField(0), DOMImplementation *);
     }
     if (parser==NULL) {
-      return JS_EXCEPTION("[_parser()] ERROR: \"parser\" is a null pointer");
+      return JS_ERROR("[_parser()] ERROR: \"parser\" is a null pointer");
     }
     else {
       SAVE_PTR(0,parser);
@@ -3175,13 +3175,13 @@ namespace xdom {
   JS_METHOD(_parsergetdomconfig) {
     /* TryCatch tc; */
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_parsergetdomconfig()] ERROR: Too many input parameters");
+      return JS_ERROR("[_parsergetdomconfig()] ERROR: Too many input parameters");
     }
     PARSER;
     DOMConfiguration * domconfig = NULL;
     XLSTRY( domconfig = parser->getDomConfig(); );
     if (domconfig==NULL) {
-      return JS_EXCEPTION("[_parsergetdomconfig()] ERROR: \"domconfig\" is a null pointer");
+      return JS_ERROR("[_parsergetdomconfig()] ERROR: \"domconfig\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)domconfig) };
@@ -3193,13 +3193,13 @@ namespace xdom {
   JS_METHOD(_parsergetfilter) {
     /* TryCatch tc; */
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_parsergetfilter()] ERROR: Too many input parameters");
+      return JS_ERROR("[_parsergetfilter()] ERROR: Too many input parameters");
     }
     PARSER;
     DOMLSParserFilter * filter = NULL;
     XLSTRY( filter = (DOMLSParserFilter *)parser->getFilter(); );
     if (filter==NULL) {
-      return JS_EXCEPTION("[_parsergetfilter()] ERROR: \"filter\" is a null pointer");
+      return JS_ERROR("[_parsergetfilter()] ERROR: \"filter\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)filter) };
@@ -3211,7 +3211,7 @@ namespace xdom {
   JS_METHOD(_parsergetasync) {
     /* TryCatch tc; */
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_parsergetasync()] ERROR: Too many input parameters");
+      return JS_ERROR("[_parsergetasync()] ERROR: Too many input parameters");
     }
     PARSER;
     bool async = false;
@@ -3223,7 +3223,7 @@ namespace xdom {
   JS_METHOD(_parsergetbusy) {
     /* TryCatch tc; */
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_parsergetbusy()] ERROR: Too many input parameters");
+      return JS_ERROR("[_parsergetbusy()] ERROR: Too many input parameters");
     }
     PARSER;
     bool busy = false;
@@ -3235,7 +3235,7 @@ namespace xdom {
   JS_METHOD(_parsersetfilter) {
     /* TryCatch tc; */
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_parsersetfilter()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_parsersetfilter()] ERROR: Incorrect number of input parameters");
     }
     PARSER;
     DOMLSParserFilter * filter = NULL;
@@ -3246,7 +3246,7 @@ namespace xdom {
       filter = RECAST(args[0]->ToObject()->GetInternalField(0),DOMLSParserFilter *);
     }
     if (filter==NULL) {
-      return JS_EXCEPTION("[_parsersetfilter()] ERROR: \"filter\" is a null pointer");
+      return JS_ERROR("[_parsersetfilter()] ERROR: \"filter\" is a null pointer");
     }
     XLSTRY( parser->setFilter(filter); );
     return args.This();
@@ -3255,7 +3255,7 @@ namespace xdom {
   JS_METHOD(_parserparse) {
     TryCatch tc;
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_parserparse()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_parserparse()] ERROR: Incorrect number of input parameters");
     }
     PARSER_DOM;
     DOMLSInput * inv = NULL;
@@ -3276,7 +3276,7 @@ namespace xdom {
       XMLSize_t * len = reinterpret_cast<XMLSize_t *>(&isize);
       MemBufInputSource * mem = new MemBufInputSource(reinterpret_cast<const XMLByte*>(src),*len,"test",false);
       if (dom==NULL) {
-        return JS_EXCEPTION("[_parserparse()] ERROR (1): \"dom\" is a null pointer");
+        return JS_ERROR("[_parserparse()] ERROR (1): \"dom\" is a null pointer");
       }
       inv = ((DOMImplementationLS *)dom)->createLSInput();
       mem->setCopyBufToStream(false);
@@ -3284,12 +3284,12 @@ namespace xdom {
       inv->setEncoding(XMLUni::fgUTF8EncodingString);
     }
     if (inv==NULL) {
-      return JS_EXCEPTION("[_parserparse()] ERROR (2): \"inv\" is a null pointer");
+      return JS_ERROR("[_parserparse()] ERROR (2): \"inv\" is a null pointer");
     }
     DOMDocument * doc = NULL;
     XLSTRY( doc = parser->parse(inv); );
     if (doc==NULL) {
-      return JS_EXCEPTION("[_parserparse()] ERROR (3): \"doc\" is a null pointer");
+      return JS_ERROR("[_parserparse()] ERROR (3): \"doc\" is a null pointer");
     }
     else {
         Handle<Value> fargs[] = { External::New((void *)doc) };
@@ -3301,7 +3301,7 @@ namespace xdom {
   JS_METHOD(_parserparseuri) {
     /* TryCatch tc; */
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_parserparseuri()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_parserparseuri()] ERROR: Incorrect number of input parameters");
     }
     PARSER;
     XMLURL * uri = NULL;
@@ -3318,13 +3318,13 @@ namespace xdom {
       XLSTRY( uri = new XMLURL((const XMLCh *)ARGSTR(0)); );
     }
     if (uri==NULL) {
-      return JS_EXCEPTION("[_parserparseuri()] ERROR: \"uri\" is a null pointer");
+      return JS_ERROR("[_parserparseuri()] ERROR: \"uri\" is a null pointer");
     }
     DOMDocument * doc = NULL;
    // XLSTRY( doc = parser->parseURI((const char *)src); );
     XLSTRY( doc = parser->parseURI(uri->getURLText()); );
     if (doc==NULL) {
-      return JS_EXCEPTION("[_parserparseuri()] ERROR: \"doc\" is a null pointer");
+      return JS_ERROR("[_parserparseuri()] ERROR: \"doc\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)doc) };
@@ -3336,7 +3336,7 @@ namespace xdom {
   JS_METHOD(_parserparsewithcontext) {
     TryCatch tc;
     if (args.Length()!=3) {
-      return JS_EXCEPTION("[_parserparsewithcontext()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_parserparsewithcontext()] ERROR: Incorrect number of input parameters");
     }
     PARSER;
     DOMLSInput * inv = NULL;
@@ -3355,7 +3355,7 @@ namespace xdom {
       inv = (DOMLSInput *)(&mem);
     }
     if (inv==NULL) {
-      return JS_EXCEPTION("[_parserparsewithcontext()] ERROR: \"inv\" is a null pointer");
+      return JS_ERROR("[_parserparsewithcontext()] ERROR: \"inv\" is a null pointer");
     }
     DOMNode * context = NULL;
     if (args[1]->IsExternal()) {
@@ -3365,7 +3365,7 @@ namespace xdom {
       context = RECAST(args[1]->ToObject()->GetInternalField(0),DOMNode *);
     }
     if (context==NULL) {
-      return JS_EXCEPTION("[_parserparsewithcontext()] ERROR: \"context\" is a null pointer");
+      return JS_ERROR("[_parserparsewithcontext()] ERROR: \"context\" is a null pointer");
     }
     else {
       int action = args[2]->ToInteger()->IntegerValue();
@@ -3416,7 +3416,7 @@ namespace xdom {
   JS_METHOD(_parsergetsrcoffset) {
     TryCatch tc;
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_parsergetsrcoffset()] ERROR: Too many input parameters");
+      return JS_ERROR("[_parsergetsrcoffset()] ERROR: Too many input parameters");
     }
     PARSER;
     unsigned int pos = 0;
@@ -3427,11 +3427,11 @@ namespace xdom {
   JS_METHOD(_parsergetimplementation) {
     TryCatch tc;
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_parsergetimplementation()] ERROR: Too many input parameters");
+      return JS_ERROR("[_parsergetimplementation()] ERROR: Too many input parameters");
     }
     DOM;
     if (dom==NULL) {
-      return JS_EXCEPTION("[_parsergetimplementation()] ERROR: \"dom\" is a null pointer");
+      return JS_ERROR("[_parsergetimplementation()] ERROR: \"dom\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)dom) };
@@ -3466,7 +3466,7 @@ namespace xdom {
   JS_METHOD(_parserfilter) {
     // /* TryCatch tc; */
     if (args.Length()<1) {
-      return JS_EXCEPTION("[_parserfilter()] ERROR: Missing input parameter");
+      return JS_ERROR("[_parserfilter()] ERROR: Missing input parameter");
     }
     ASSERT_CONSTRUCTOR;
     GC * gc = GC_PTR;
@@ -3479,7 +3479,7 @@ namespace xdom {
       filter = RECAST(args[0]->ToObject()->GetInternalField(0), DOMLSParserFilter *);
     }
     if (filter==NULL)
-      return JS_EXCEPTION("[_parserfilter()] ERROR: \"filter\" is a null pointer");
+      return JS_ERROR("[_parserfilter()] ERROR: \"filter\" is a null pointer");
     else {
       SAVE_PTR(0,filter);
       return args.This();
@@ -3541,7 +3541,7 @@ namespace xdom {
       }
     }
     if (domconfig==NULL) {
-      return JS_EXCEPTION("[_domconfiguration()] ERROR: \"domconfig\" is a null pointer");
+      return JS_ERROR("[_domconfiguration()] ERROR: \"domconfig\" is a null pointer");
     }
     else {
       SAVE_PTR(0,domconfig);
@@ -3552,13 +3552,13 @@ namespace xdom {
   JS_METHOD(_domconfiggetparameter) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_domconfiggetparameter()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_domconfiggetparameter()] ERROR: Incorrect number of input parameters");
     DOMCONFIG;
     SS name(*String::Utf8Value(args[0]->ToString()));
     bool * paramval = NULL;
     XTRY( paramval = (bool *)domconfig->getParameter(X_STR(name)); );
     if (paramval==NULL) {
-      return JS_EXCEPTION("[_domconfiggetparameter()] ERROR: \"paramval\" is a null pointer");
+      return JS_ERROR("[_domconfiggetparameter()] ERROR: \"paramval\" is a null pointer");
     }
     else {
       return JS_BOOL(*paramval);
@@ -3568,7 +3568,7 @@ namespace xdom {
   JS_METHOD(_domconfigsetparameter) {
     /* TryCatch tc; */
     if (args.Length()!=2)
-      return JS_EXCEPTION("[_domconfigsetparameter()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_domconfigsetparameter()] ERROR: Incorrect number of input parameters");
     DOMCONFIG;
     SS name (*String::Utf8Value(args[0]->ToString()));
     bool val = args[1]->ToBoolean()->BooleanValue();
@@ -3579,7 +3579,7 @@ namespace xdom {
   JS_METHOD(_domconfigcansetparameter) {
     /* TryCatch tc; */
     if (args.Length()!=2)
-      return JS_EXCEPTION("[_domconfigcansetparameter()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_domconfigcansetparameter()] ERROR: Incorrect number of input parameters");
     DOMCONFIG;
     SS name(*String::Utf8Value(args[0]->ToString()));
     bool val = args[1]->ToBoolean()->BooleanValue();
@@ -3591,12 +3591,12 @@ namespace xdom {
   JS_METHOD(_domconfiggetparameternames) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_domconfiggetparameternames()] ERROR: Too many input parameters");
+      return JS_ERROR("[_domconfiggetparameternames()] ERROR: Too many input parameters");
     DOMCONFIG;
     DOMStringList * dslist = NULL;
     XTRY( dslist = (DOMStringList *)domconfig->getParameterNames(); );
     if (dslist==NULL) {
-      return JS_EXCEPTION("[_domconfiggetparameternames()] ERROR: \"dslist\" is a null pointer");
+      return JS_ERROR("[_domconfiggetparameternames()] ERROR: \"dslist\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)dslist) };
@@ -3634,7 +3634,7 @@ namespace xdom {
       node = RECAST(args[0]->ToObject()->GetInternalField(0), DOMNode *);
     }
     if (node==NULL) {
-      return JS_EXCEPTION("[_node()] ERROR: \"node\" is a null pointer");
+      return JS_ERROR("[_node()] ERROR: \"node\" is a null pointer");
     }
     if (args.Length() > 1) {
       if (args[1]->IsBoolean()) {
@@ -3687,11 +3687,11 @@ namespace xdom {
   JS_METHOD(_nodegetaselement) {
 	/* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_nodegetaselement()] ERROR: Too many input parameters");
+      return JS_ERROR("[_nodegetaselement()] ERROR: Too many input parameters");
     DOMNode * node = NULL;
     node = RECAST(args.This()->GetInternalField(0),DOMNode *);
     if (node==NULL) {
-      return JS_EXCEPTION("[_nodegetaselement()] ERROR: \"node\" is a null pointer");
+      return JS_ERROR("[_nodegetaselement()] ERROR: \"node\" is a null pointer");
     }
     else {
       const int fargc = 2;
@@ -3713,7 +3713,7 @@ namespace xdom {
     bool cleanSer = true;
     bool cleanOut = true;
     if (args.Length()>2) {
-      return JS_EXCEPTION("[_nodeserialize()] ERROR: Too many input parameters");
+      return JS_ERROR("[_nodeserialize()] ERROR: Too many input parameters");
     }
     SS encoding("UTF-8");
     if (args.Length()>0) {
@@ -3790,7 +3790,7 @@ namespace xdom {
     bool cleanSer = true;
     bool cleanOut = true;
     if (args.Length()>2) {
-      return JS_EXCEPTION("[_nodeserializeinner()] ERROR: Too many input parameters");
+      return JS_ERROR("[_nodeserializeinner()] ERROR: Too many input parameters");
     }
     SS encoding("UTF-8");
     if (args.Length()>0) {
@@ -3870,7 +3870,7 @@ namespace xdom {
   JS_METHOD(_nodegetnodename) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_nodegetnodename()] ERROR: Too many input parameters");
+      return JS_ERROR("[_nodegetnodename()] ERROR: Too many input parameters");
     NODE;
     XS name = NULL;
     XTRY( name = (XMLCh *)node->getNodeName(); );
@@ -3886,7 +3886,7 @@ namespace xdom {
   JS_METHOD(_nodegetnodevalue) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_nodegetnodevalue()] ERROR: Too many input parameters");
+      return JS_ERROR("[_nodegetnodevalue()] ERROR: Too many input parameters");
     NODE;
     XS val = NULL;
     XTRY( val = (XMLCh *)node->getNodeValue(); );
@@ -3902,12 +3902,12 @@ namespace xdom {
   JS_METHOD(_nodegetnodetype) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_nodegetnodetype()] ERROR: Too many input parameters");
+      return JS_ERROR("[_nodegetnodetype()] ERROR: Too many input parameters");
     NODE;
     int ret = -1;
     XTRY( ret = (int)node->getNodeType(); );
     if (ret<0) {
-      return JS_EXCEPTION("[_nodegetnodetype()] ERROR: \"ret\" has an invalid value");
+      return JS_ERROR("[_nodegetnodetype()] ERROR: \"ret\" has an invalid value");
     }
     else {
       return JS_INT(ret);
@@ -3917,7 +3917,7 @@ namespace xdom {
   JS_METHOD(_nodegetparentnode) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_nodegetparentnode()] ERROR: Too many input parameters");
+      return JS_ERROR("[_nodegetparentnode()] ERROR: Too many input parameters");
     NODE;
     DOMNode * parent = NULL;
     XTRY( parent = node->getParentNode(); );
@@ -3929,12 +3929,12 @@ namespace xdom {
   JS_METHOD(_nodegetchildnodes) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_nodegetchildnodes()] ERROR: Too many input parameters");
+      return JS_ERROR("[_nodegetchildnodes()] ERROR: Too many input parameters");
     NODE;
     DOMNodeList * nodelist = NULL;
     XTRY( nodelist = node->getChildNodes(); );
     if (nodelist==NULL) {
-      return JS_EXCEPTION("[_nodegetchildnodes()] ERROR: \"nodelist\" is a null pointer");
+      return JS_ERROR("[_nodegetchildnodes()] ERROR: \"nodelist\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)nodelist) };
@@ -3946,12 +3946,12 @@ namespace xdom {
   JS_METHOD(_nodegetfirstchild) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_nodegetfirstchild()] ERROR: Too many input parameters");
+      return JS_ERROR("[_nodegetfirstchild()] ERROR: Too many input parameters");
     NODE;
     DOMNode * child = NULL;
     XTRY( child = node->getFirstChild(); );
     if (child==NULL) {
-      return JS_EXCEPTION("[_nodegetfirstchild()] ERROR: \"child\" is a null pointer");
+      return JS_ERROR("[_nodegetfirstchild()] ERROR: \"child\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)child) };
@@ -3963,12 +3963,12 @@ namespace xdom {
   JS_METHOD(_nodegetlastchild) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_nodegetlastchild()] ERROR: Too many input parameters");
+      return JS_ERROR("[_nodegetlastchild()] ERROR: Too many input parameters");
     NODE;
     DOMNode * child = NULL;
     XTRY( child = node->getLastChild(); );
     if (child==NULL) {
-      return JS_EXCEPTION("[_nodegetlastchild()] ERROR: \"child\" is a null pointer");
+      return JS_ERROR("[_nodegetlastchild()] ERROR: \"child\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)child) };
@@ -3980,12 +3980,12 @@ namespace xdom {
   JS_METHOD(_nodegetprevioussibling) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_nodegetprevioussibling()] ERROR: Too many input parameters");
+      return JS_ERROR("[_nodegetprevioussibling()] ERROR: Too many input parameters");
     NODE;
     DOMNode * sib = NULL;
     XTRY( sib = node->getPreviousSibling(); );
     if (sib==NULL) {
-      return JS_EXCEPTION("[_nodegetprevioussibling()] ERROR: \"sib\" is a null pointer");
+      return JS_ERROR("[_nodegetprevioussibling()] ERROR: \"sib\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)sib) };
@@ -3997,12 +3997,12 @@ namespace xdom {
   JS_METHOD(_nodegetnextsibling) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_nodegetnextsibling()] ERROR: Too many input parameters");
+      return JS_ERROR("[_nodegetnextsibling()] ERROR: Too many input parameters");
     NODE;
     DOMNode * sib = NULL;
     XTRY( sib = node->getNextSibling(); );
     if (sib==NULL) {
-      return JS_EXCEPTION("[_nodegetnextsibling()] ERROR: \"sib\" is a null pointer");
+      return JS_ERROR("[_nodegetnextsibling()] ERROR: \"sib\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)sib) };
@@ -4014,12 +4014,12 @@ namespace xdom {
   JS_METHOD(_nodegetattributes) {
     TryCatch tc;
     if (args.Length()>0)
-      return JS_EXCEPTION("[_nodegetattributes()] ERROR: Too many input parameters");
+      return JS_ERROR("[_nodegetattributes()] ERROR: Too many input parameters");
     NODE;
     DOMNamedNodeMap * nodemap = NULL;
     XTRY( nodemap = node->getAttributes(); );
     if (nodemap==NULL) {
-      return JS_EXCEPTION("[_nodegetattributes()] ERROR: \"nodemap\" is a null pointer");
+      return JS_ERROR("[_nodegetattributes()] ERROR: \"nodemap\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)nodemap) };
@@ -4031,12 +4031,12 @@ namespace xdom {
   JS_METHOD(_nodegetownerdocument) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_nodegetownerdocument()] ERROR: Too many input parameters");
+      return JS_ERROR("[_nodegetownerdocument()] ERROR: Too many input parameters");
     NODE;
     DOMDocument * doc = NULL;
     XTRY( doc = node->getOwnerDocument(); );
     if (doc==NULL) {
-      return JS_EXCEPTION("[_nodegetownerdocument()] ERROR: \"doc\" is a null pointer");
+      return JS_ERROR("[_nodegetownerdocument()] ERROR: \"doc\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)doc) };
@@ -4048,18 +4048,18 @@ namespace xdom {
   JS_METHOD(_nodegetownerimplementation) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_nodegetownerimplementation()] ERROR: Too many input parameters");
+      return JS_ERROR("[_nodegetownerimplementation()] ERROR: Too many input parameters");
     NODE;
     DOMDocument * doc = NULL;
     XTRY( doc = node->getOwnerDocument(); );
     if (doc==NULL) {
-      return JS_EXCEPTION("[_nodegetownerimplementation()] ERROR: \"doc\" is a null pointer");
+      return JS_ERROR("[_nodegetownerimplementation()] ERROR: \"doc\" is a null pointer");
     }
     else {
       DOMImplementation * impl = NULL;
       XTRY( impl = doc->getImplementation(); );
       if (impl==NULL) {
-	return JS_EXCEPTION("[_nodegetownerimplementation()] ERROR: \"impl\" is a null pointer");
+	return JS_ERROR("[_nodegetownerimplementation()] ERROR: \"impl\" is a null pointer");
       }
       else {
 	Handle<Value> fargs[] = { External::New((void *)impl) };
@@ -4072,13 +4072,13 @@ namespace xdom {
   JS_METHOD(_nodeclonenode) {
     /* TryCatch tc; */
     if (args.Length()>1)
-      return JS_EXCEPTION("[_nodeclonenode()] ERROR: Too many input parameters");
+      return JS_ERROR("[_nodeclonenode()] ERROR: Too many input parameters");
     NODE;
     Local<Boolean> inDepth ( args[0]->ToBoolean() );
     DOMNode * clone = NULL;
     XTRY( clone = node->cloneNode(*inDepth); );
     if (clone==NULL) {
-      return JS_EXCEPTION("[_nodeclonenode()] ERROR: \"clone\" is a null pointer");
+      return JS_ERROR("[_nodeclonenode()] ERROR: \"clone\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)clone) };
@@ -4090,14 +4090,14 @@ namespace xdom {
   JS_METHOD(_nodeinsertbefore) {
     /* TryCatch tc; */
     if (args.Length()!=2)
-      return JS_EXCEPTION("[_nodeinsertbefore()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_nodeinsertbefore()] ERROR: Incorrect number of input parameters");
     NODE;
     DOMNode * newChild = RECAST(args[0],DOMNode *);
     DOMNode * refChild = RECAST(args[1],DOMNode *);
     DOMNode * retChild = NULL;
     XTRY( retChild = node->insertBefore(newChild,refChild); );
     if (retChild==NULL) {
-      return JS_EXCEPTION("[_nodeinsertbefore()] ERROR: \"retChild\" is a null pointer");
+      return JS_ERROR("[_nodeinsertbefore()] ERROR: \"retChild\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)retChild) };
@@ -4109,7 +4109,7 @@ namespace xdom {
   JS_METHOD(_nodereplacechild) {
     /* TryCatch tc; */
     if (args.Length()!=2)
-      return JS_EXCEPTION("[_nodereplacechild()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_nodereplacechild()] ERROR: Incorrect number of input parameters");
     Handle<Object> ret;
     {
       NODE;
@@ -4118,7 +4118,7 @@ namespace xdom {
       DOMNode * retChild = NULL;
       XTRY( retChild = node->replaceChild(newChild,oldChild); );
       if (retChild==NULL) {
-	return JS_EXCEPTION("[_nodereplacechild()] ERROR: \"retChild\" is a null pointer");
+	return JS_ERROR("[_nodereplacechild()] ERROR: \"retChild\" is a null pointer");
       }
       else {
 	Local<Value> fargs[] = { External::New((void *)retChild) };
@@ -4131,13 +4131,13 @@ namespace xdom {
   JS_METHOD(_noderemovechild) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_noderemovechild()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_noderemovechild()] ERROR: Incorrect number of input parameters");
     NODE;
     DOMNode * oldChild = RECAST(args[0],DOMNode *);
     DOMNode * retChild = NULL;
     XTRY( retChild = node->removeChild(oldChild); );
     if (retChild==NULL) {
-      return JS_EXCEPTION("[_noderemovechild()] ERROR: \"retChild\" is a null pointer");
+      return JS_ERROR("[_noderemovechild()] ERROR: \"retChild\" is a null pointer");
     }
     else {
       Local<Value> fargs[] = { External::New((void *)retChild) };
@@ -4149,9 +4149,9 @@ namespace xdom {
   JS_METHOD(_nodeappendchild) {
     /* TryCatch tc; */
     if (args.Length()<1)
-      return JS_EXCEPTION("[_nodeappendchild()] ERROR: Missing input parameter");
+      return JS_ERROR("[_nodeappendchild()] ERROR: Missing input parameter");
     else if (args.Length()>1)
-      return JS_EXCEPTION("[_nodeappendchild()] ERROR: Too many input parameters");
+      return JS_ERROR("[_nodeappendchild()] ERROR: Too many input parameters");
     NODE;
     DOMNode * newChild = NULL;
     if (args[0]->IsExternal()) {
@@ -4161,13 +4161,13 @@ namespace xdom {
       newChild = RECAST(args[0]->ToObject()->GetInternalField(0),DOMNode *);
     }
     if (newChild==NULL) {
-      return JS_EXCEPTION("[_nodeappendchild()] ERROR: \"newChild\" is a null pointer");
+      return JS_ERROR("[_nodeappendchild()] ERROR: \"newChild\" is a null pointer");
     }
     else {
       DOMNode * res = NULL;
       XTRY( res = node->appendChild(newChild); );
       if (res==NULL) {
-	return JS_EXCEPTION("[_nodeappendchild()] ERROR: \"res\" is a null pointer");
+	return JS_ERROR("[_nodeappendchild()] ERROR: \"res\" is a null pointer");
       }
       else {
 	Handle<Value> fargs[] = { External::New((void *)res) };
@@ -4180,7 +4180,7 @@ namespace xdom {
   JS_METHOD(_nodehaschildnodes) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_nodehaschildnodes()] ERROR: Too many input parameters");
+      return JS_ERROR("[_nodehaschildnodes()] ERROR: Too many input parameters");
     NODE;
     bool ret = false;
     XTRY( ret = node->hasChildNodes(); );
@@ -4190,7 +4190,7 @@ namespace xdom {
   JS_METHOD(_nodesetnodevalue) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_nodesetnodevalue()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_nodesetnodevalue()] ERROR: Incorrect number of input parameters");
     NODE;
     SS val( *String::Utf8Value(args[0]->ToString()) );
     XTRY( node->setNodeValue(X_STR(val)); );
@@ -4200,7 +4200,7 @@ namespace xdom {
   JS_METHOD(_nodenormalize) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_nodenormalize()] ERROR: Too many input parameters");
+      return JS_ERROR("[_nodenormalize()] ERROR: Too many input parameters");
     NODE;
     XTRY( node->normalize(); );
     return args.This();
@@ -4209,7 +4209,7 @@ namespace xdom {
   JS_METHOD(_nodeissupported) {
     /* TryCatch tc; */
     if (args.Length()!=2)
-      return JS_EXCEPTION("[_nodeissupported()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_nodeissupported()] ERROR: Incorrect number of input parameters");
     NODE;
     bool ret = false;
     SS feature ("");
@@ -4223,7 +4223,7 @@ namespace xdom {
   JS_METHOD(_nodegetnamespaceuri) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_nodegetnamespaceuri()] ERROR: Too many input parameters");
+      return JS_ERROR("[_nodegetnamespaceuri()] ERROR: Too many input parameters");
     NODE;
     Handle<String> ret;
     XTRY( ret = JS_STR((char *) node->getNamespaceURI()); );
@@ -4233,7 +4233,7 @@ namespace xdom {
   JS_METHOD(_nodegetprefix) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_nodegetprefix()] ERROR: Too many input parameters");
+      return JS_ERROR("[_nodegetprefix()] ERROR: Too many input parameters");
     NODE;
     Handle<String> ret;
     XTRY( ret = JS_STR((char *)node->getPrefix()); );
@@ -4243,7 +4243,7 @@ namespace xdom {
   JS_METHOD(_nodegetlocalname) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_nodegetlocalname()] ERROR: Too many input parameters");
+      return JS_ERROR("[_nodegetlocalname()] ERROR: Too many input parameters");
     NODE;
     Handle<String> ret;
     XTRY( ret = JS_STR((char *)node->getLocalName()); );
@@ -4253,7 +4253,7 @@ namespace xdom {
   JS_METHOD(_nodesetprefix) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_nodesetprefix()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_nodesetprefix()] ERROR: Incorrect number of input parameters");
     else {
       NODE;
       SS prefix( *String::Utf8Value(args[0]->ToString()) );
@@ -4265,7 +4265,7 @@ namespace xdom {
   JS_METHOD(_nodehasattributes) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_nodehasattributes()] ERROR: Too many input parameters");
+      return JS_ERROR("[_nodehasattributes()] ERROR: Too many input parameters");
     NODE;
     bool ret = false;
     XTRY( ret = node->hasAttributes(); );
@@ -4275,7 +4275,7 @@ namespace xdom {
   JS_METHOD(_nodeissamenode) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_nodeissamenode()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_nodeissamenode()] ERROR: Incorrect number of input parameters");
     NODE;
     DOMNode * other = NULL;
     if (args[0]->IsExternal()) {
@@ -4284,7 +4284,7 @@ namespace xdom {
     else if(args[0]->IsObject())
       other = RECAST(args[0]->ToObject()->GetInternalField(0),DOMNode *);
     if (other==NULL)
-      return JS_EXCEPTION("[_nodeissamenode()] ERROR: \"other\" is a null pointer");
+      return JS_ERROR("[_nodeissamenode()] ERROR: \"other\" is a null pointer");
     else {
       bool ret = false;
       XTRY( ret = node->isSameNode(other); );
@@ -4295,7 +4295,7 @@ namespace xdom {
   JS_METHOD(_nodeisequalnode) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_nodeisequalnode()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_nodeisequalnode()] ERROR: Incorrect number of input parameters");
     NODE;
     DOMNode * other = NULL;
     if (args[0]->IsExternal()) {
@@ -4304,7 +4304,7 @@ namespace xdom {
     else if(args[0]->IsObject())
       other = RECAST(args[0]->ToObject()->GetInternalField(0),DOMNode *);
     if (other==NULL)
-      return JS_EXCEPTION("[_nodeisequalnode()] ERROR: \"other\" is a null pointer");
+      return JS_ERROR("[_nodeisequalnode()] ERROR: \"other\" is a null pointer");
     else {
       bool ret = false;
       XTRY( ret = node->isEqualNode(other); );
@@ -4315,7 +4315,7 @@ namespace xdom {
   JS_METHOD(_nodesetuserdata) {
     /* TryCatch tc; */
     if (args.Length()>3 || args.Length()<2)
-      return JS_EXCEPTION("[_nodesetuserdata()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_nodesetuserdata()] ERROR: Incorrect number of input parameters");
     NODE;
     SS key("");
     key << *String::Utf8Value( args[0] );
@@ -4340,7 +4340,7 @@ namespace xdom {
   JS_METHOD(_nodegetuserdata) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_nodegetuserdata()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_nodegetuserdata()] ERROR: Incorrect number of input parameters");
     NODE;
     SS key("");
     key << *String::Utf8Value( args[0] );
@@ -4352,7 +4352,7 @@ namespace xdom {
   JS_METHOD(_nodegetbaseuri) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_nodegetbaseuri()] ERROR: Too many input parameters");
+      return JS_ERROR("[_nodegetbaseuri()] ERROR: Too many input parameters");
     NODE;
     XS uri = NULL;
     XTRY( uri = (XMLCh *)node->getBaseURI(); );
@@ -4368,7 +4368,7 @@ namespace xdom {
   JS_METHOD(_nodecomparedocumentposition) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_nodegetbaseuri()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_nodegetbaseuri()] ERROR: Incorrect number of input parameters");
     NODE;
     DOMNode * other = NULL;
     if (args[0]->IsExternal()) {
@@ -4381,7 +4381,7 @@ namespace xdom {
       }
     }
     if (other==NULL)
-      return JS_EXCEPTION("[_nodecomparedocumentposition()] ERROR: \"other\" is a null pointer");
+      return JS_ERROR("[_nodecomparedocumentposition()] ERROR: \"other\" is a null pointer");
     else {
       short ret = 0;
       XTRY( ret = node->compareDocumentPosition(other); );
@@ -4392,7 +4392,7 @@ namespace xdom {
   JS_METHOD(_nodegettextcontent) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_nodegettextcontent()] ERROR: Too many input parameters");
+      return JS_ERROR("[_nodegettextcontent()] ERROR: Too many input parameters");
     NODE;
     XS textcontent = NULL;
     XTRY( textcontent = (XMLCh *)node->getTextContent(); );
@@ -4408,7 +4408,7 @@ namespace xdom {
   JS_METHOD(_nodesettextcontent) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_nodesettextcontent()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_nodesettextcontent()] ERROR: Incorrect number of input parameters");
     NODE;
     SS content("");
     content << *String::Utf8Value(args[0]->ToString());
@@ -4419,7 +4419,7 @@ namespace xdom {
   JS_METHOD(_nodelookupprefix) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_nodelookupprefix()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_nodelookupprefix()] ERROR: Incorrect number of input parameters");
     NODE;
     SS prefix("");
     prefix << *String::Utf8Value(args[0]->ToString());
@@ -4437,7 +4437,7 @@ namespace xdom {
   JS_METHOD(_nodeisdefaultnamespace) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_nodeisdefaultnamespace()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_nodeisdefaultnamespace()] ERROR: Incorrect number of input parameters");
     NODE;
     SS ns(*String::Utf8Value(args[0]->ToString()));
     bool ret = false;
@@ -4448,7 +4448,7 @@ namespace xdom {
   JS_METHOD(_nodelookupnamespaceuri) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_nodelookupnamespaceuri()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_nodelookupnamespaceuri()] ERROR: Incorrect number of input parameters");
     NODE;
     SS ns(*String::Utf8Value(args[0]->ToString()));
     XS res = NULL;
@@ -4465,7 +4465,7 @@ namespace xdom {
   JS_METHOD(_nodegetfeature) {
     /* TryCatch tc; */
     if (args.Length()!=2)
-      return JS_EXCEPTION("[_nodegetfeature()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_nodegetfeature()] ERROR: Incorrect number of input parameters");
     NODE;
     SS feature ("");
     SS version ("");
@@ -4500,7 +4500,7 @@ namespace xdom {
   JS_METHOD(_text) {
     /* TryCatch tc; */
     if (args.Length()!=1 && args.Length()!=1)
-      return JS_EXCEPTION("[_text()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_text()] ERROR: Incorrect number of input parameters");
     ASSERT_CONSTRUCTOR;
     GC * gc = GC_PTR;
     gc->add(args.This(), "~DOMText");
@@ -4513,7 +4513,7 @@ namespace xdom {
       text = RECAST(tobj->GetInternalField(0),DOMText *);
     }
     if (text==NULL)
-      return JS_EXCEPTION("[_text()] ERROR: \"text\" is a null pointer");
+      return JS_ERROR("[_text()] ERROR: \"text\" is a null pointer");
     else {
       SAVE_PTR(0,text);
       return args.This();
@@ -4523,7 +4523,7 @@ namespace xdom {
   JS_METHOD(_textsplittext) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_textsplittext] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_textsplittext] ERROR: Incorrect number of input parameters");
     TEXT;
     XMLSize_t offset = (XMLSize_t)(args[0]->ToInteger()->Uint32Value());
     DOMText * splitText = NULL;
@@ -4536,7 +4536,7 @@ namespace xdom {
   JS_METHOD(_textgetiselementcontentwhitespace) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_textgetiselementcontentwhitespace] ERROR: Too many input parameters");
+      return JS_ERROR("[_textgetiselementcontentwhitespace] ERROR: Too many input parameters");
     TEXT;
     bool ret = false;
     XTRY( ret = text->getIsElementContentWhitespace(); );
@@ -4546,7 +4546,7 @@ namespace xdom {
   JS_METHOD(_textgetwholetext) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_textgetwholetext] ERROR: Too many input parameters");
+      return JS_ERROR("[_textgetwholetext] ERROR: Too many input parameters");
     TEXT;
     XS wholeText = NULL;
     XTRY( wholeText = (XMLCh *)text->getWholeText(); );
@@ -4562,13 +4562,13 @@ namespace xdom {
   JS_METHOD(_textreplacewholetext) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_textreplacewholetext] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_textreplacewholetext] ERROR: Incorrect number of input parameters");
     TEXT;
     SS content( *String::Utf8Value(args[0]->ToString()) );
     DOMText * newText = NULL;
     XTRY( newText = text->replaceWholeText(X_STR(content)); );
     if (newText==NULL)
-      return JS_EXCEPTION("[_textreplacewholetext] ERROR: \"newText\" is a null pointer");
+      return JS_ERROR("[_textreplacewholetext] ERROR: \"newText\" is a null pointer");
     else
       SAVE_PTR(0,newText);
     XTRY( text->~DOMText(); );
@@ -4578,7 +4578,7 @@ namespace xdom {
   JS_METHOD(_textisignorablewhitespace) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_textisignorablewhitespace] ERROR: Too many input parameters");
+      return JS_ERROR("[_textisignorablewhitespace] ERROR: Too many input parameters");
     TEXT;
     bool ret = false;
     XTRY( ret = text->isIgnorableWhitespace(); );
@@ -4615,7 +4615,7 @@ namespace xdom {
       docType = RECAST(args[0]->ToObject()->GetInternalField(0),DOMDocumentType *);
     }
     if (docType==NULL) {
-      return JS_EXCEPTION("[_documenttype()] ERROR: \"docType\" is a null pointer");
+      return JS_ERROR("[_documenttype()] ERROR: \"docType\" is a null pointer");
     }
     else {
       SAVE_PTR(0,docType);
@@ -4626,7 +4626,7 @@ namespace xdom {
   JS_METHOD(_dtgetname) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_dtgetname()] ERROR: Too many input parameters");
+      return JS_ERROR("[_dtgetname()] ERROR: Too many input parameters");
     DOCTYPE;
     XS name = NULL;
     XTRY( name = (XMLCh *)docType->getName(); );
@@ -4642,7 +4642,7 @@ namespace xdom {
   JS_METHOD(_dtgetentities) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_dtgetentities()] ERROR: Too many input parameters");
+      return JS_ERROR("[_dtgetentities()] ERROR: Too many input parameters");
     DOCTYPE;
     DOMNamedNodeMap * nodemap = NULL;
     XTRY( nodemap = docType->getEntities(); );
@@ -4654,7 +4654,7 @@ namespace xdom {
   JS_METHOD(_dtgetnotations) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_dtgetnotations()] ERROR: Too many input parameters");
+      return JS_ERROR("[_dtgetnotations()] ERROR: Too many input parameters");
     DOCTYPE;
     DOMNamedNodeMap * nodemap = NULL;
     XTRY( nodemap = docType->getNotations(); );
@@ -4666,7 +4666,7 @@ namespace xdom {
   JS_METHOD(_dtgetpublicid) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_dtgetpublicid()] ERROR: Too many input parameters");
+      return JS_ERROR("[_dtgetpublicid()] ERROR: Too many input parameters");
     DOCTYPE;
     XS publicId = NULL;
     XTRY( publicId = (XMLCh *)docType->getPublicId(); );
@@ -4682,7 +4682,7 @@ namespace xdom {
   JS_METHOD(_dtgetsystemid) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_dtgetsystemid()] ERROR: Too many input parameters");
+      return JS_ERROR("[_dtgetsystemid()] ERROR: Too many input parameters");
     DOCTYPE;
     XS systemId = NULL;
     XTRY( systemId = (XMLCh *)docType->getSystemId(); );
@@ -4698,7 +4698,7 @@ namespace xdom {
   JS_METHOD(_dtgetinternalsubset) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_dtgetinternalsubset()] ERROR: Too many input parameters");
+      return JS_ERROR("[_dtgetinternalsubset()] ERROR: Too many input parameters");
     DOCTYPE;
     XS subset = NULL;
     XTRY( subset = (XMLCh *)docType->getInternalSubset(); );
@@ -4732,7 +4732,7 @@ namespace xdom {
   JS_METHOD(_documentfragment) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_documentfragment()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_documentfragment()] ERROR: Incorrect number of input parameters");
     ASSERT_CONSTRUCTOR;
     GC * gc = GC_PTR;
     gc->add(args.This(), "~DOMDocumentFragment");
@@ -4745,7 +4745,7 @@ namespace xdom {
       frag = RECAST(tobj->GetInternalField(0),DOMDocumentFragment *);
     }
     if (frag==NULL)
-      return JS_EXCEPTION("[_documentfragment()] ERROR: \"frag\" is a null pointer");
+      return JS_ERROR("[_documentfragment()] ERROR: \"frag\" is a null pointer");
     else {
       SAVE_PTR(0,frag);
       return args.This();
@@ -4772,7 +4772,7 @@ namespace xdom {
     /* TryCatch tc; */
     ASSERT_CONSTRUCTOR;
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_document()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_document()] ERROR: Incorrect number of input parameters");
     }
     GC * gc = GC_PTR;
     gc->add(args.This(), "~DOMDocument");
@@ -4784,7 +4784,7 @@ namespace xdom {
       doc = RECAST(args[0]->ToObject()->GetInternalField(0),DOMDocument *);
     }
     if (doc==NULL) {
-      return JS_EXCEPTION("[_document()] ERROR: \"doc\" is a null pointer");
+      return JS_ERROR("[_document()] ERROR: \"doc\" is a null pointer");
     }
     else {
       SAVE_PTR(0,doc);
@@ -4813,7 +4813,7 @@ namespace xdom {
       target->setEncoding(X_STR(encoding));
     );
     if (target==NULL) {
-      return JS_EXCEPTION("[_documentcreatelsoutput()] ERROR: \"target\" is a null pointer");
+      return JS_ERROR("[_documentcreatelsoutput()] ERROR: \"target\" is a null pointer");
     }
     else {
       XMLSize_t fargc = 1;
@@ -4855,7 +4855,7 @@ namespace xdom {
       config->setParameter(XMLUni::fgDOMWRTDiscardDefaultContent, discarddefaultcontent);
     );
     if (ser==NULL) {
-      return JS_EXCEPTION("[_documentcreatelsserializer()] ERROR: \"ser\" is a null pointer");
+      return JS_ERROR("[_documentcreatelsserializer()] ERROR: \"ser\" is a null pointer");
     }
     else {
       XMLSize_t fargc = 1;
@@ -4874,12 +4874,12 @@ namespace xdom {
   JS_METHOD(_documentcreateelement) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_documentcreateelement()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_documentcreateelement()] ERROR: Incorrect number of input parameters");
     DOC;
     DOMElement * el = NULL;
     XTRY( el = doc->createElement(ARGSTR(0)); );
     if (el==NULL) {
-      return JS_EXCEPTION("[_documentcreateelement()] ERROR: \"el\" is a null pointer");
+      return JS_ERROR("[_documentcreateelement()] ERROR: \"el\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)(el)) };
@@ -4891,7 +4891,7 @@ namespace xdom {
   JS_METHOD(_documentcreatedocumentfragment) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_documentcreatedocumentfragment()] ERROR: Too many input parameters");
+      return JS_ERROR("[_documentcreatedocumentfragment()] ERROR: Too many input parameters");
     DOC;
     DOMDocumentFragment * frag = NULL;
     XTRY( frag = doc->createDocumentFragment(); );
@@ -4903,7 +4903,7 @@ namespace xdom {
   JS_METHOD(_documentcreatetextnode) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_documentcreatetextnode()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_documentcreatetextnode()] ERROR: Incorrect number of input parameters");
     DOC;
     DOMText * text = NULL;
     XTRY( text = doc->createTextNode(ARGSTR(0)); );
@@ -4915,7 +4915,7 @@ namespace xdom {
   JS_METHOD(_documentcreatecomment) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_documentcreatecomment()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_documentcreatecomment()] ERROR: Incorrect number of input parameters");
     DOC;
     DOMComment * comment = NULL;
     XTRY( comment = doc->createComment(ARGSTR(0)); );
@@ -4927,7 +4927,7 @@ namespace xdom {
   JS_METHOD(_documentcreatecdatasection) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_documentcreatecdatasection()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_documentcreatecdatasection()] ERROR: Incorrect number of input parameters");
     DOC;
     DOMCDATASection * cdata = NULL;
     XTRY( cdata = doc->createCDATASection(ARGSTR(0)); );
@@ -4939,12 +4939,12 @@ namespace xdom {
   JS_METHOD(_documentcreateprocessinginstruction) {
     /* TryCatch tc; */
     if (args.Length()!=2)
-      return JS_EXCEPTION("[_documentcreateprocessinginstruction()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_documentcreateprocessinginstruction()] ERROR: Incorrect number of input parameters");
     DOC;
     DOMProcessingInstruction * procinst = NULL;
     XTRY( procinst = doc->createProcessingInstruction(ARGSTR(0),ARGSTR(1)); );
     if (procinst==NULL) {
-      return JS_EXCEPTION("[_documentcreateprocessinginstruction()] ERROR: \"procinst\" is a null pointer");
+      return JS_ERROR("[_documentcreateprocessinginstruction()] ERROR: \"procinst\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((DOMProcessingInstruction *)procinst) };
@@ -4956,13 +4956,13 @@ namespace xdom {
   JS_METHOD(_documentcreateattribute) {
     /* TryCatch tc; */
     if (args.Length()!=1 && args.Length()!=2)
-      return JS_EXCEPTION("[_documentcreateattribute()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_documentcreateattribute()] ERROR: Incorrect number of input parameters");
     DOC;
     SS name(*String::Utf8Value(args[0]->ToString()));
     DOMAttr * attr = NULL;
     XTRY( attr = doc->createAttribute(ARGSTR(0)); );
     if (attr==NULL) {
-      return JS_EXCEPTION("[_documentcreateattribute()] ERROR: \"attr\" is a null pointer");
+      return JS_ERROR("[_documentcreateattribute()] ERROR: \"attr\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((DOMAttr *)attr) };
@@ -4974,13 +4974,13 @@ namespace xdom {
   JS_METHOD(_documentcreateentityreference) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_documentcreateentityreference()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_documentcreateentityreference()] ERROR: Incorrect number of input parameters");
     DOC;
     SS name(*String::Utf8Value(args[0]->ToString()));
     DOMEntityReference * entityref = NULL;
     XTRY( entityref = doc->createEntityReference(X_STR(name)); );
     if (entityref==NULL) {
-      return JS_EXCEPTION("[_documentcreateentityref()] ERROR: \"entityref\" is a null pointer");
+      return JS_ERROR("[_documentcreateentityref()] ERROR: \"entityref\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)(entityref)) };
@@ -4992,12 +4992,12 @@ namespace xdom {
   JS_METHOD(_documentcreateelementns) {
     /* TryCatch tc; */
     if (args.Length()!=2)
-      return JS_EXCEPTION("[_documentcreateelementns()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_documentcreateelementns()] ERROR: Incorrect number of input parameters");
     DOC;
     DOMElement * el = NULL;
     XTRY( el = doc->createElementNS(ARGSTR(0),ARGSTR(1)); );
     if (el==NULL) {
-      return JS_EXCEPTION("[_documentcreateelementns()] ERROR: \"el\" is a null pointer");
+      return JS_ERROR("[_documentcreateelementns()] ERROR: \"el\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)el) };
@@ -5009,12 +5009,12 @@ namespace xdom {
   JS_METHOD(_documentcreateattributens) {
     /* TryCatch tc; */
     if (args.Length()!=2)
-      return JS_EXCEPTION("[_documentcreateattributens()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_documentcreateattributens()] ERROR: Incorrect number of input parameters");
     DOC;
     DOMAttr * attr = NULL;
     XTRY( attr = doc->createAttributeNS(ARGSTR(0),ARGSTR(1)); );
     if (attr==NULL) {
-      return JS_EXCEPTION("[_documentcreateattributens()] ERROR: \"attr\" is a null pointer");
+      return JS_ERROR("[_documentcreateattributens()] ERROR: \"attr\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)(attr)) };
@@ -5026,12 +5026,12 @@ namespace xdom {
   JS_METHOD(_documentgetdoctype) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_documentgetdoctype()] ERROR: Too many input parameters");
+      return JS_ERROR("[_documentgetdoctype()] ERROR: Too many input parameters");
     DOC;
     DOMDocumentType * docType = NULL;
     XTRY( docType = doc->getDoctype(); );
     if (docType==NULL) {
-      return JS_EXCEPTION("[_documentgetdoctype()] ERROR: \"docType\" is a null pointer");
+      return JS_ERROR("[_documentgetdoctype()] ERROR: \"docType\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)(docType)) };
@@ -5043,12 +5043,12 @@ namespace xdom {
   JS_METHOD(_documentgetimplementation) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_documentgetimplementation()] ERROR: Too many input parameters");
+      return JS_ERROR("[_documentgetimplementation()] ERROR: Too many input parameters");
     DOC;
     DOMImplementation * dom = NULL;
     XTRY( dom = doc->getImplementation(); );
     if (dom==NULL) {
-      return JS_EXCEPTION("[_documentgetimplementation()] ERROR: \"dom\" is a null pointer");
+      return JS_ERROR("[_documentgetimplementation()] ERROR: \"dom\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)(dom)) };
@@ -5061,12 +5061,12 @@ namespace xdom {
   JS_METHOD(_documentgetdocumentelement) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_documentgetdocumentelement()] ERROR: Too many input parameters");
+      return JS_ERROR("[_documentgetdocumentelement()] ERROR: Too many input parameters");
     DOC;
     DOMElement * el = NULL;
     XTRY( el = doc->getDocumentElement(); );
     if (el==NULL) {
-      return JS_EXCEPTION("[_documentgetodocumentelement()] ERROR: \"el\" is a null pointer");
+      return JS_ERROR("[_documentgetodocumentelement()] ERROR: \"el\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)el) };
@@ -5078,12 +5078,12 @@ namespace xdom {
   JS_METHOD(_documentgetelementsbytagname) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_documentgetelementsbytagname()] ERROR: Too many input parameters");
+      return JS_ERROR("[_documentgetelementsbytagname()] ERROR: Too many input parameters");
     DOC;
     DOMNodeList * nodelist = NULL;
     XTRY( nodelist = doc->getElementsByTagName(ARGSTR(0)); );
     if (nodelist==NULL) {
-      return JS_EXCEPTION("[_documentgetelementsbytagname()] ERROR: \"nodelist\" is a null pointer");
+      return JS_ERROR("[_documentgetelementsbytagname()] ERROR: \"nodelist\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)nodelist) };
@@ -5095,7 +5095,7 @@ namespace xdom {
   JS_METHOD(_documentimportnode) {
     /* TryCatch tc; */
     if (args.Length()!=2 && args.Length()!=1)
-      return JS_EXCEPTION("[_documentgetdoctype()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_documentgetdoctype()] ERROR: Incorrect number of input parameters");
     DOC;
     bool deep = false;
     if (args.Length()>1)
@@ -5111,7 +5111,7 @@ namespace xdom {
     DOMNode * node = NULL;
     XTRY( node = doc->importNode(importedNode, deep); );
     if (node==NULL)
-      return JS_EXCEPTION("[_documentimportnode()] ERROR: \"node\" is a null pointer");
+      return JS_ERROR("[_documentimportnode()] ERROR: \"node\" is a null pointer");
     Handle<Value> fargs[] = { External::New((void *)node) };
     Handle<Object> ret( xdom::fnode->GetFunction()->NewInstance(1, fargs) );
     return ret;
@@ -5120,7 +5120,7 @@ namespace xdom {
   JS_METHOD(_documentgetelementsbytagnamens) {
     /* TryCatch tc; */
     if (args.Length()!=2)
-      return JS_EXCEPTION("[_documentgetelementsbytagnamens()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_documentgetelementsbytagnamens()] ERROR: Incorrect number of input parameters");
     DOC;
     SS namespaceURI(*String::Utf8Value(args[0]->ToString()));
     SS localName(*String::Utf8Value(args[1]->ToString()));
@@ -5134,13 +5134,13 @@ namespace xdom {
   JS_METHOD(_documentgetelementbyid) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_documentgetelementbyid()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_documentgetelementbyid()] ERROR: Incorrect number of input parameters");
     DOC;
     SS elementId(*String::Utf8Value(args[0]->ToString()));
     DOMElement * el = NULL;
     XTRY( el = doc->getElementById(X_STR(elementId)); );
     if (el==NULL)
-      return JS_EXCEPTION("[_documentgetelementbyid()] ERROR: \"el\" is a null pointer");
+      return JS_ERROR("[_documentgetelementbyid()] ERROR: \"el\" is a null pointer");
     Handle<Value> fargs[] = { External::New((void *)(el)) };
     Handle<Object> ret( xdom::felement->GetFunction()->NewInstance(1, fargs) );
     return ret;
@@ -5149,7 +5149,7 @@ namespace xdom {
   JS_METHOD(_documentgetinputencoding) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_documentgetinputencoding()] ERROR: Too many input parameters");
+      return JS_ERROR("[_documentgetinputencoding()] ERROR: Too many input parameters");
     DOC;
     XS encoding = NULL;
     XTRY( encoding = (XMLCh *)doc->getInputEncoding(); );
@@ -5165,7 +5165,7 @@ namespace xdom {
   JS_METHOD(_documentgetxmlencoding) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_documentgetxmlencoding()] ERROR: Too many input parameters");
+      return JS_ERROR("[_documentgetxmlencoding()] ERROR: Too many input parameters");
     DOC;
     XS encoding = NULL;
     XTRY( encoding = (XMLCh *)doc->getXmlEncoding(); );
@@ -5181,7 +5181,7 @@ namespace xdom {
   JS_METHOD(_documentgetxmlstandalone) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_documentgetxmlstandalone()] ERROR: Too many input parameters");
+      return JS_ERROR("[_documentgetxmlstandalone()] ERROR: Too many input parameters");
     DOC;
     bool ret = false;
     XTRY( ret = doc->getXmlStandalone(); );
@@ -5191,7 +5191,7 @@ namespace xdom {
   JS_METHOD(_documentsetxmlstandalone) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_documentsetxmlstandalone()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_documentsetxmlstandalone()] ERROR: Incorrect number of input parameters");
     DOC;
     bool standalone = args[0]->ToBoolean()->BooleanValue();
     XTRY( doc->setXmlStandalone(standalone); );
@@ -5201,7 +5201,7 @@ namespace xdom {
   JS_METHOD(_documentgetxmlversion) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_documentgetxmlversion()] ERROR: Too many input parameters");
+      return JS_ERROR("[_documentgetxmlversion()] ERROR: Too many input parameters");
     DOC;
     XS version = NULL;
     XTRY( version = (XMLCh *)doc->getXmlVersion(); );
@@ -5217,7 +5217,7 @@ namespace xdom {
   JS_METHOD(_documentsetxmlversion) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_documentsetxmlstandalone()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_documentsetxmlstandalone()] ERROR: Incorrect number of input parameters");
     DOC;
     SS version(*String::Utf8Value(args[0]->ToString()));
     XTRY( doc->setXmlVersion(X_STR(version)); );
@@ -5227,7 +5227,7 @@ namespace xdom {
   JS_METHOD(_documentgetdocumenturi) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_documentgetdocumenturi()] ERROR: Too many input parameters");
+      return JS_ERROR("[_documentgetdocumenturi()] ERROR: Too many input parameters");
     DOC;
     XS uri = NULL;
     XTRY( uri = (XMLCh *)doc->getDocumentURI(); );
@@ -5243,7 +5243,7 @@ namespace xdom {
   JS_METHOD(_documentsetdocumenturi) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_documentsetxmlstandalone()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_documentsetxmlstandalone()] ERROR: Incorrect number of input parameters");
     DOC;
     SS uri(*String::Utf8Value(args[0]->ToString()));
     XTRY( doc->setDocumentURI(X_STR(uri)); );
@@ -5253,7 +5253,7 @@ namespace xdom {
   JS_METHOD(_documentgetstricterrorchecking) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_documentgetxmlstandalone()] ERROR: Too many input parameters");
+      return JS_ERROR("[_documentgetxmlstandalone()] ERROR: Too many input parameters");
     DOC;
     bool ret = false;
     XTRY( ret = doc->getStrictErrorChecking(); );
@@ -5263,7 +5263,7 @@ namespace xdom {
   JS_METHOD(_documentsetstricterrorchecking) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_documentsetxmlstandalone()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_documentsetxmlstandalone()] ERROR: Incorrect number of input parameters");
     DOC;
     bool strict = args[0]->ToBoolean()->BooleanValue();
     XTRY( doc->setStrictErrorChecking(strict); );
@@ -5273,7 +5273,7 @@ namespace xdom {
   JS_METHOD(_documentrenamenode) {
     /* TryCatch tc; */
     if (args.Length()!=3)
-      return JS_EXCEPTION("[_documentrenamenode()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_documentrenamenode()] ERROR: Incorrect number of input parameters");
     DOC;
     SS namespaceURI(*String::Utf8Value(args[1]->ToString()));
     SS qualifiedName(*String::Utf8Value(args[2]->ToString()));
@@ -5288,7 +5288,7 @@ namespace xdom {
     }
     XTRY( newNode = doc->renameNode(n, X_STR(namespaceURI), X_STR(qualifiedName)); );
     if (newNode==NULL)
-      return JS_EXCEPTION("[_documentrenamenode()] ERROR: \"newNode\" is a null pointer");
+      return JS_ERROR("[_documentrenamenode()] ERROR: \"newNode\" is a null pointer");
     else {
       Handle<Value> fargs[] = { External::New((void *)newNode) };
       Handle<Object> ret( xdom::fnode->GetFunction()->NewInstance(1, fargs) );
@@ -5299,7 +5299,7 @@ namespace xdom {
   JS_METHOD(_documentadoptnode) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_documentadoptnode()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_documentadoptnode()] ERROR: Incorrect number of input parameters");
     DOC;
     DOMNode * source = NULL;
     if (args[0]->IsExternal()) {
@@ -5312,7 +5312,7 @@ namespace xdom {
     DOMNode * node = NULL;
     XTRY( node = doc->adoptNode(source); );
     if (node==NULL)
-      return JS_EXCEPTION("[_documentadoptnode()] ERROR: \"node\" is a null pointer");
+      return JS_ERROR("[_documentadoptnode()] ERROR: \"node\" is a null pointer");
     Handle<Value> fargs[] = { External::New((void *)node) };
     Handle<Object> ret( xdom::fnode->GetFunction()->NewInstance(1, fargs) );
     return ret;
@@ -5328,13 +5328,13 @@ namespace xdom {
   JS_METHOD(_documentgetdomconfig) {
     /* TryCatch tc; */
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_documentgetdomconfig()] ERROR: Too many input parameters");
+      return JS_ERROR("[_documentgetdomconfig()] ERROR: Too many input parameters");
     }
     DOC;
     DOMConfiguration * domconfig = NULL;
     XTRY( domconfig = doc->getDOMConfig(); );
     if (domconfig==NULL) {
-      return JS_EXCEPTION("[_documentgetdomconfig()] ERROR: \"domconfig\" is a null pointer");
+      return JS_ERROR("[_documentgetdomconfig()] ERROR: \"domconfig\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)domconfig) };
@@ -5346,13 +5346,13 @@ namespace xdom {
   JS_METHOD(_documentcreateentity) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_documentcreateentity()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_documentcreateentity()] ERROR: Incorrect number of input parameters");
     DOC;
     SS name(*String::Utf8Value(args[0]->ToString()));
     DOMEntity * entity = NULL;
     XTRY( entity = doc->createEntity(X_STR(name)); );
     if (entity==NULL)
-      return JS_EXCEPTION("[_documentcreateentity()] ERROR: \"entity\" is a null pointer");
+      return JS_ERROR("[_documentcreateentity()] ERROR: \"entity\" is a null pointer");
     Handle<Value> fargs[] = { External::New((void *)(entity)) };
     Handle<Object> ret( xdom::fentity->GetFunction()->NewInstance(1, fargs) );
     return ret;
@@ -5361,7 +5361,7 @@ namespace xdom {
   JS_METHOD(_documentcreatenotation) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_documentcreatenotation()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_documentcreatenotation()] ERROR: Incorrect number of input parameters");
     DOC;
     SS name(*String::Utf8Value(args[0]->ToString()));
     DOMNotation * notation = NULL;
@@ -5374,7 +5374,7 @@ namespace xdom {
   JS_METHOD(_documentcreatedocumenttype) {
     /* TryCatch tc; */
     if (args.Length()!=3 && args.Length()!=1)
-      return JS_EXCEPTION("[_documentcreatedocumenttype()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_documentcreatedocumenttype()] ERROR: Incorrect number of input parameters");
     DOC;
     DOMDocumentType * docType = NULL;
     SS qName(*String::Utf8Value(args[0]->ToString()));
@@ -5387,7 +5387,7 @@ namespace xdom {
       XTRY( docType = doc->createDocumentType(X_STR(qName),X_STR(publicId),X_STR(systemId)); );
     }
     if (docType==NULL)
-      return JS_EXCEPTION("[_documentcreatedocumenttype()] ERROR: \"docType\" is a null pointer");
+      return JS_ERROR("[_documentcreatedocumenttype()] ERROR: \"docType\" is a null pointer");
     Handle<Value> fargs[] = { External::New((void *)docType) };
     Handle<Object> ret( xdom::fdocumenttype->GetFunction()->NewInstance(1, fargs) );
     return ret;
@@ -5401,7 +5401,7 @@ namespace xdom {
     bool cleanSer = true;
     bool cleanOut = true;
     if (args.Length()>2) {
-      return JS_EXCEPTION("[_documentserialize()] ERROR: Too many input parameters");
+      return JS_ERROR("[_documentserialize()] ERROR: Too many input parameters");
     }
     SS encoding("UTF-8");
     if (args.Length()>0) {
@@ -5490,7 +5490,7 @@ namespace xdom {
   JS_METHOD(_preelement) {
     /* TryCatch tc; */
     if (args.Length()!=1 && args.Length()!=2)
-      return JS_EXCEPTION("[_preelement()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_preelement()] ERROR: Incorrect number of input parameters");
     ASSERT_CONSTRUCTOR;
     //GC * gc = GC_PTR;
     //gc->add(args.This(), "~PreElement");
@@ -5503,7 +5503,7 @@ namespace xdom {
       element = RECAST(tobj->GetInternalField(0),DOMElement *);
     }
     if (element==NULL) {
-      return JS_EXCEPTION("[_preelement()] ERROR: \"element\" is a null pointer");
+      return JS_ERROR("[_preelement()] ERROR: \"element\" is a null pointer");
     }
     else {
       SAVE_PTR(0,element);
@@ -5529,7 +5529,7 @@ namespace xdom {
   JS_METHOD(_element) {
     /* TryCatch tc; */
     if (args.Length()!=1 && args.Length()!=2)
-      return JS_EXCEPTION("[_element()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_element()] ERROR: Incorrect number of input parameters");
     ASSERT_CONSTRUCTOR;
     //GC * gc = GC_PTR;
     //gc->add(args.This(), "~DOMElement");
@@ -5542,7 +5542,7 @@ namespace xdom {
       element = RECAST(tobj->GetInternalField(0),DOMElement *);
     }
     if (element==NULL) {
-      return JS_EXCEPTION("[_element()] ERROR: \"element\" is a null pointer");
+      return JS_ERROR("[_element()] ERROR: \"element\" is a null pointer");
     }
     else {
       SAVE_PTR(0,element);
@@ -5553,11 +5553,11 @@ namespace xdom {
   JS_METHOD(_elementgetasnode) {
 	/* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_elementgetasnode()] ERROR: Too many input parameters");
+      return JS_ERROR("[_elementgetasnode()] ERROR: Too many input parameters");
     DOMNode * node = NULL;
     node = RECAST(args.This()->GetInternalField(0),DOMNode *);
     if (node==NULL) {
-      return JS_EXCEPTION("[elementgetasnode()] ERROR: \"node\" is a null pointer");
+      return JS_ERROR("[elementgetasnode()] ERROR: \"node\" is a null pointer");
     }
     else {
       const int fargc = 2;
@@ -5572,7 +5572,7 @@ namespace xdom {
   JS_METHOD(_elementgettagname) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_elementgettagname()] ERROR: Too many input parameters");
+      return JS_ERROR("[_elementgettagname()] ERROR: Too many input parameters");
     EL;
     XS name = NULL;
     XTRY( name = (XMLCh *)el->getTagName(); );
@@ -5588,7 +5588,7 @@ namespace xdom {
   JS_METHOD(_elementgetattribute) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_elementgetattribute()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_elementgetattribute()] ERROR: Incorrect number of input parameters");
     EL;
     XS val = NULL;
     XTRY( val = (XMLCh *)el->getAttribute(ARGSTR(0)); );
@@ -5604,12 +5604,12 @@ namespace xdom {
   JS_METHOD(_elementgetattributenode) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_elementgetattributenode()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_elementgetattributenode()] ERROR: Incorrect number of input parameters");
     EL;
     DOMAttr * attr = NULL;
     XTRY( attr = el->getAttributeNode(ARGSTR(0)); );
     if (attr==NULL) {
-      return JS_EXCEPTION("[_elementgetattributenode()] ERROR: \"attr\" is a null pointer");
+      return JS_ERROR("[_elementgetattributenode()] ERROR: \"attr\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)attr) };
@@ -5621,13 +5621,13 @@ namespace xdom {
   JS_METHOD(_elementgetelementsbytagname) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_elementgetelementsbytagname()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_elementgetelementsbytagname()] ERROR: Incorrect number of input parameters");
     EL;
     SS name( *String::Utf8Value(args[0]->ToString()) );
     DOMNodeList * nodelist = NULL;
     XTRY( nodelist = el->getElementsByTagName(X_STR(name)); );
     if (nodelist==NULL) {
-      return JS_EXCEPTION("[_elementgetelementsbytagname()] ERROR: \"nodelist\" is a null pointer");
+      return JS_ERROR("[_elementgetelementsbytagname()] ERROR: \"nodelist\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)nodelist) };
@@ -5639,7 +5639,7 @@ namespace xdom {
   JS_METHOD(_elementsetattribute) {
     /* TryCatch tc; */
     if (args.Length()!=2)
-      return JS_EXCEPTION("[_elementsetattribute()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_elementsetattribute()] ERROR: Incorrect number of input parameters");
     EL;
     XTRY( el->setAttribute(ARGSTR(0),ARGSTR(1)); );
     return args.This();
@@ -5648,7 +5648,7 @@ namespace xdom {
   JS_METHOD(_elementsetattributenode) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_elementsetattributenode()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_elementsetattributenode()] ERROR: Incorrect number of input parameters");
     EL;
     DOMAttr * newAttr = NULL;
     if (args[0]->IsExternal()) {
@@ -5658,7 +5658,7 @@ namespace xdom {
       newAttr = RECAST(args[0]->ToObject()->GetInternalField(0),DOMAttr *);
     }
     if (newAttr==NULL) {
-      return JS_EXCEPTION("[_elementsetattributenode()] ERROR: \"newAttr\" is a null pointer");
+      return JS_ERROR("[_elementsetattributenode()] ERROR: \"newAttr\" is a null pointer");
     }
     DOMAttr * ret = NULL;
     XTRY( ret = el->setAttributeNode(newAttr); );
@@ -5675,7 +5675,7 @@ namespace xdom {
   JS_METHOD(_elementremoveattributenode) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_elementremoveattributenode()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_elementremoveattributenode()] ERROR: Incorrect number of input parameters");
     EL;
     DOMAttr * oldAttr = NULL;
     if (args[0]->IsExternal()) {
@@ -5685,12 +5685,12 @@ namespace xdom {
       oldAttr = RECAST(args[0]->ToObject()->GetInternalField(0),DOMAttr *);
     }
     if (oldAttr==NULL) {
-      return JS_EXCEPTION("[_elementremoveattributenode()] ERROR: \"oldAttr\" is a null pointer");
+      return JS_ERROR("[_elementremoveattributenode()] ERROR: \"oldAttr\" is a null pointer");
     }
     DOMAttr * ret = NULL;
     XTRY( ret = el->removeAttributeNode(oldAttr); );
     if (ret==NULL) {
-      return JS_EXCEPTION("[_elementremoveattributenode()] ERROR: \"ret\" is a null pointer");
+      return JS_ERROR("[_elementremoveattributenode()] ERROR: \"ret\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)ret) };
@@ -5702,7 +5702,7 @@ namespace xdom {
   JS_METHOD(_elementremoveattribute) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_elementremoveattribute()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_elementremoveattribute()] ERROR: Incorrect number of input parameters");
     EL;
     XTRY( el->removeAttribute(ARGSTR(0)); );
     return JS_BOOL(true);
@@ -5711,7 +5711,7 @@ namespace xdom {
   JS_METHOD(_elementgetattributens) {
     /* TryCatch tc; */
     if (args.Length()!=2)
-      return JS_EXCEPTION("[_elementgetattributens()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_elementgetattributens()] ERROR: Incorrect number of input parameters");
     EL;
     XS val = NULL;
     XTRY( val = (XMLCh *)el->getAttributeNS(ARGSTR(0),ARGSTR(1)); );
@@ -5727,7 +5727,7 @@ namespace xdom {
   JS_METHOD(_elementsetattributens) {
     /* TryCatch tc; */
     if (args.Length()!=3)
-      return JS_EXCEPTION("[_elementsetattributens()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_elementsetattributens()] ERROR: Incorrect number of input parameters");
     EL;
     XTRY( el->setAttributeNS(ARGSTR(0),ARGSTR(1),ARGSTR(2)); );
     return args.This();
@@ -5736,7 +5736,7 @@ namespace xdom {
   JS_METHOD(_elementremoveattributens) {
     /* TryCatch tc; */
     if (args.Length()!=2)
-      return JS_EXCEPTION("[_elementremoveattributens()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_elementremoveattributens()] ERROR: Incorrect number of input parameters");
     EL;
     XTRY( el->removeAttributeNS(ARGSTR(0),ARGSTR(1)); );
     return JS_BOOL(true);
@@ -5745,12 +5745,12 @@ namespace xdom {
   JS_METHOD(_elementgetattributenodens) {
     /* TryCatch tc; */
     if (args.Length()!=2)
-      return JS_EXCEPTION("[_elementgetattributenodens()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_elementgetattributenodens()] ERROR: Incorrect number of input parameters");
     EL;
     DOMAttr * attr = NULL;
     XTRY( attr = el->getAttributeNodeNS(ARGSTR(0),ARGSTR(1)); );
     if (attr==NULL) {
-      return JS_EXCEPTION("[_elementgetattributenodens()] ERROR: \"attr\" is a null pointer");
+      return JS_ERROR("[_elementgetattributenodens()] ERROR: \"attr\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)attr) };
@@ -5762,7 +5762,7 @@ namespace xdom {
   JS_METHOD(_elementsetattributenodens) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_elementsetattributenodens()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_elementsetattributenodens()] ERROR: Incorrect number of input parameters");
     EL;
     DOMAttr * newAttr = NULL;
     if (args[0]->IsExternal()) {
@@ -5772,7 +5772,7 @@ namespace xdom {
       newAttr = RECAST(args[0]->ToObject()->GetInternalField(0),DOMAttr *);
     }
     if (newAttr==NULL) {
-      return JS_EXCEPTION("[_elementsetattributenodens()] ERROR: \"newAttr\" is a null pointer");
+      return JS_ERROR("[_elementsetattributenodens()] ERROR: \"newAttr\" is a null pointer");
     }
     DOMAttr * ret = NULL;
     XTRY( ret = el->setAttributeNodeNS(newAttr); );
@@ -5789,12 +5789,12 @@ namespace xdom {
   JS_METHOD(_elementgetelementsbytagnamens) {
     /* TryCatch tc; */
     if (args.Length()!=2)
-      return JS_EXCEPTION("[_elementgetelementsbytagnamens()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_elementgetelementsbytagnamens()] ERROR: Incorrect number of input parameters");
     EL;
     DOMNodeList * nodelist = NULL;
     XTRY( nodelist = el->getElementsByTagNameNS(ARGSTR(0),ARGSTR(1)); );
     if (nodelist==NULL) {
-      return JS_EXCEPTION("[_elementgetelementsbytagnamens()] ERROR: \"nodelist\" is a null pointer");
+      return JS_ERROR("[_elementgetelementsbytagnamens()] ERROR: \"nodelist\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)nodelist) };
@@ -5806,7 +5806,7 @@ namespace xdom {
   JS_METHOD(_elementhasattribute) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_elementhasattribute()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_elementhasattribute()] ERROR: Incorrect number of input parameters");
     EL;
     bool ret = false;
     XTRY( el->hasAttribute(ARGSTR(0)); );
@@ -5816,7 +5816,7 @@ namespace xdom {
   JS_METHOD(_elementhasattributens) {
     /* TryCatch tc; */
     if (args.Length()!=2)
-      return JS_EXCEPTION("[_elementhasattributens()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_elementhasattributens()] ERROR: Incorrect number of input parameters");
     EL;
     bool ret = false;
     XTRY( ret = el->hasAttributeNS(ARGSTR(0),ARGSTR(1)); );
@@ -5826,7 +5826,7 @@ namespace xdom {
   JS_METHOD(_elementsetidattribute) {
     /* TryCatch tc; */
     if (args.Length()!=2)
-      return JS_EXCEPTION("[_elementsetidattribute()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_elementsetidattribute()] ERROR: Incorrect number of input parameters");
     EL;
     bool isId = args[1]->ToBoolean()->BooleanValue();
     XTRY( el->setIdAttribute(ARGSTR(0),isId); );
@@ -5836,7 +5836,7 @@ namespace xdom {
   JS_METHOD(_elementsetidattributens) {
     /* TryCatch tc; */
     if (args.Length()!=3)
-      return JS_EXCEPTION("[_elementsetidattributens()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_elementsetidattributens()] ERROR: Incorrect number of input parameters");
     EL;
     bool isId = args[2]->ToBoolean()->BooleanValue();
     XTRY( el->setIdAttributeNS(ARGSTR(0),ARGSTR(1),isId); );
@@ -5846,7 +5846,7 @@ namespace xdom {
   JS_METHOD(_elementsetidattributenode) {
     /* TryCatch tc; */
     if (args.Length()!=2)
-      return JS_EXCEPTION("[_elementsetidattributenode()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_elementsetidattributenode()] ERROR: Incorrect number of input parameters");
     EL;
     DOMAttr * newAttr = NULL;
     if (args[0]->IsExternal()) {
@@ -5863,12 +5863,12 @@ namespace xdom {
   JS_METHOD(_elementgetschematypeinfo) {
     /* TryCatch tc; */
      if (args.Length()>0)
-      return JS_EXCEPTION("[_elementgetschematypeinfo()] ERROR: Too many input parameters");
+      return JS_ERROR("[_elementgetschematypeinfo()] ERROR: Too many input parameters");
     EL;
     DOMTypeInfo * typeinfo = NULL;
     XTRY( typeinfo = (DOMTypeInfo *)el->getSchemaTypeInfo(); );
     if (typeinfo==NULL) {
-      return JS_EXCEPTION("[_elementgetschematypeinfo()] ERROR: \"typeinfo\" is a null pointer");
+      return JS_ERROR("[_elementgetschematypeinfo()] ERROR: \"typeinfo\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)typeinfo) };
@@ -5899,7 +5899,7 @@ namespace xdom {
   JS_METHOD(_attribute) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_attribute()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_attribute()] ERROR: Incorrect number of input parameters");
     ASSERT_CONSTRUCTOR;
     GC * gc = GC_PTR;
     gc->add(args.This(), "~DOMAttr");
@@ -5911,7 +5911,7 @@ namespace xdom {
       attr = RECAST(args[0]->ToObject()->GetInternalField(0),DOMAttr *);
     }
     if (attr==NULL) {
-      return JS_EXCEPTION("[_attribute()] ERROR: \"attr\" is a null pointer");
+      return JS_ERROR("[_attribute()] ERROR: \"attr\" is a null pointer");
     }
     else {
       SAVE_PTR(0,attr);
@@ -5922,7 +5922,7 @@ namespace xdom {
   JS_METHOD(_attributegetname) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_attributegetname()] ERROR: Too many input parameters");
+      return JS_ERROR("[_attributegetname()] ERROR: Too many input parameters");
     ATTRIBUTE;
     XS name = NULL;
     XTRY( name = (XMLCh *)attribute->getName(); );
@@ -5938,7 +5938,7 @@ namespace xdom {
   JS_METHOD(_attributegetspecified) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_attributegetspecified()] ERROR: Too many input parameters");
+      return JS_ERROR("[_attributegetspecified()] ERROR: Too many input parameters");
     ATTRIBUTE;
     bool ret = false;
     XTRY( ret = (bool)attribute->getSpecified(); );
@@ -5948,7 +5948,7 @@ namespace xdom {
   JS_METHOD(_attributegetvalue) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_attributegetvalue()] ERROR: Too many input parameters");
+      return JS_ERROR("[_attributegetvalue()] ERROR: Too many input parameters");
     ATTRIBUTE;
     XS val = NULL;
     XTRY( val = (XMLCh *)attribute->getValue(); );
@@ -5964,7 +5964,7 @@ namespace xdom {
   JS_METHOD(_attributesetvalue) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_attributesetvalue()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_attributesetvalue()] ERROR: Incorrect number of input parameters");
     ATTRIBUTE;
     XTRY( attribute->setValue(ARGSTR(0)); );
     return args.This();
@@ -5973,12 +5973,12 @@ namespace xdom {
   JS_METHOD(_attributegetownerelement) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_attributegetownerelement()] ERROR: Too many input parameters");
+      return JS_ERROR("[_attributegetownerelement()] ERROR: Too many input parameters");
     ATTRIBUTE;
     DOMElement * el = NULL;
     XTRY( el = attribute->getOwnerElement(); );
     if (el==NULL) {
-      return JS_EXCEPTION("[_attributegetownerelement()] ERROR: \"el\" is a null pointer");
+      return JS_ERROR("[_attributegetownerelement()] ERROR: \"el\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)el) };
@@ -5990,7 +5990,7 @@ namespace xdom {
   JS_METHOD(_attributeisid) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_attributeisid()] ERROR: Too many input parameters");
+      return JS_ERROR("[_attributeisid()] ERROR: Too many input parameters");
     ATTRIBUTE;
     bool ret = false;
     XTRY( ret = attribute->isId(); );
@@ -6000,12 +6000,12 @@ namespace xdom {
   JS_METHOD(_attributegetschematypeinfo) {
     /* TryCatch tc; */
     if (args.Length()>0)
-      return JS_EXCEPTION("[_attributegetschematypeinfo()] ERROR: Too many input parameters");
+      return JS_ERROR("[_attributegetschematypeinfo()] ERROR: Too many input parameters");
     ATTRIBUTE;
     DOMTypeInfo * typeinfo = NULL;
     XTRY( typeinfo = (DOMTypeInfo *)attribute->getSchemaTypeInfo(); );
     if (typeinfo==NULL) {
-      return JS_EXCEPTION("[_attributegetschematypeinfo()] ERROR: \"typeinfo\" is a null pointer");
+      return JS_ERROR("[_attributegetschematypeinfo()] ERROR: \"typeinfo\" is a null pointer");
     }
     else {
       Handle<Value> fargs[] = { External::New((void *)typeinfo) };
@@ -6034,7 +6034,7 @@ namespace xdom {
   JS_METHOD(_cdata) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_cdata()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_cdata()] ERROR: Incorrect number of input parameters");
     ASSERT_CONSTRUCTOR;
     GC * gc = GC_PTR;
     gc->add(args.This(), "~DOMCharacterData");
@@ -6046,7 +6046,7 @@ namespace xdom {
       cdata = RECAST(args[0]->ToObject()->GetInternalField(0),DOMCharacterData *);
     }
     if (cdata==NULL) {
-      return JS_EXCEPTION("[_cdata()] ERROR: \"cdata\" is a null pointer");
+      return JS_ERROR("[_cdata()] ERROR: \"cdata\" is a null pointer");
     }
     else {
       SAVE_PTR(0,cdata);
@@ -6164,7 +6164,7 @@ namespace xdom {
       comment = RECAST(args[0]->ToObject()->GetInternalField(0),DOMComment *);
     }
     if (comment==NULL) {
-      return JS_EXCEPTION("[_comment()] ERROR: \"comment\" is a null pointer");
+      return JS_ERROR("[_comment()] ERROR: \"comment\" is a null pointer");
     }
     else {
       SAVE_PTR(0,comment);
@@ -6200,7 +6200,7 @@ namespace xdom {
       entity = RECAST(args[0]->ToObject()->GetInternalField(0), DOMEntity *);
     }
     if (entity==NULL) {
-      return JS_EXCEPTION("[_entity()] ERROR: \"entity\" is a null pointer");
+      return JS_ERROR("[_entity()] ERROR: \"entity\" is a null pointer");
     }
     else {
       SAVE_PTR(0,entity);
@@ -6211,7 +6211,7 @@ namespace xdom {
   JS_METHOD(_entitygetpublicid) {
     /* TryCatch tc; */
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_entitygetpublicid()] ERROR: Too many input parameters");
+      return JS_ERROR("[_entitygetpublicid()] ERROR: Too many input parameters");
     }
     ENTITY;
     XS publicid = NULL;
@@ -6228,7 +6228,7 @@ namespace xdom {
   JS_METHOD(_entitygetsystemid) {
     /* TryCatch tc; */
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_entitygetsystemid()] ERROR: Too many input parameters");
+      return JS_ERROR("[_entitygetsystemid()] ERROR: Too many input parameters");
     }
     ENTITY;
     XS systemid = NULL;
@@ -6245,7 +6245,7 @@ namespace xdom {
   JS_METHOD(_entitygetnotationname) {
     /* TryCatch tc; */
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_entitygetnotationname()] ERROR: Too many input parameters");
+      return JS_ERROR("[_entitygetnotationname()] ERROR: Too many input parameters");
     }
     ENTITY;
     XS name = NULL;
@@ -6262,7 +6262,7 @@ namespace xdom {
   JS_METHOD(_entitygetinputencoding) {
     /* TryCatch tc; */
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_entitygetinputencoding()] ERROR: Too many input parameters");
+      return JS_ERROR("[_entitygetinputencoding()] ERROR: Too many input parameters");
     }
     ENTITY;
     XS encoding = NULL;
@@ -6279,7 +6279,7 @@ namespace xdom {
   JS_METHOD(_entitygetxmlencoding) {
     /* TryCatch tc; */
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_entitygetxmlencoding()] ERROR: Too many input parameters");
+      return JS_ERROR("[_entitygetxmlencoding()] ERROR: Too many input parameters");
     }
     ENTITY;
     XS encoding = NULL;
@@ -6296,7 +6296,7 @@ namespace xdom {
   JS_METHOD(_entitygetxmlversion) {
     /* TryCatch tc; */
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_entitygetxmlversion()] ERROR: Too many input parameters");
+      return JS_ERROR("[_entitygetxmlversion()] ERROR: Too many input parameters");
     }
     ENTITY;
     XS version = NULL;
@@ -6338,7 +6338,7 @@ namespace xdom {
       entityreference = RECAST(args[0]->ToObject()->GetInternalField(0), DOMEntityReference *);
     }
     if (entityreference==NULL)
-      return JS_EXCEPTION("[_entityreference()] ERROR: \"entityreference\" is a null pointer");
+      return JS_ERROR("[_entityreference()] ERROR: \"entityreference\" is a null pointer");
     else {
       SAVE_PTR(0,entityreference);
       return args.This();
@@ -6373,7 +6373,7 @@ namespace xdom {
       notation = RECAST(args[0]->ToObject()->GetInternalField(0), DOMNotation *);
     }
     if (notation==NULL)
-      return JS_EXCEPTION("[_notation()] ERROR: \"notation\" is a null pointer");
+      return JS_ERROR("[_notation()] ERROR: \"notation\" is a null pointer");
     else {
       SAVE_PTR(0,notation);
       return args.This();
@@ -6436,7 +6436,7 @@ namespace xdom {
       procinst = RECAST(args[0]->ToObject()->GetInternalField(0), DOMProcessingInstruction *);
     }
     if (procinst==NULL)
-      return JS_EXCEPTION("[_procinst()] ERROR: \"procinst\" is a null pointer");
+      return JS_ERROR("[_procinst()] ERROR: \"procinst\" is a null pointer");
     else {
       SAVE_PTR(0,procinst);
       return args.This();
@@ -6459,7 +6459,7 @@ namespace xdom {
 
   JS_METHOD(_processinginstructionsetdata) {
     if (args.Length()!=1) {
-      return JS_EXCEPTION("[_processinginstructionsetdata()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_processinginstructionsetdata()] ERROR: Incorrect number of input parameters");
     }
     PROCINST;
     XTRY( procinst->setData(ARGSTR(0)); );
@@ -6499,7 +6499,7 @@ namespace xdom {
   JS_METHOD(_typeinfo) {
     /* TryCatch tc; */
     if (args.Length()!=1)
-      return JS_EXCEPTION("[_typeinfo()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_typeinfo()] ERROR: Incorrect number of input parameters");
     ASSERT_CONSTRUCTOR;
     SAVE_PTR(0, NULL);
     GC * gc = GC_PTR;
@@ -6512,7 +6512,7 @@ namespace xdom {
       typeinfo = RECAST(args[0]->ToObject()->GetInternalField(0),DOMTypeInfo *);
     }
     if (typeinfo==NULL) {
-      return JS_EXCEPTION("[_typeinfo()] ERROR: \"typeinfo\" is a null pointer");
+      return JS_ERROR("[_typeinfo()] ERROR: \"typeinfo\" is a null pointer");
     }
     else {
       SAVE_PTR(0, typeinfo);
@@ -6523,13 +6523,13 @@ namespace xdom {
   JS_METHOD(_typeinfogettypename) {
     /* TryCatch tc; */
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_typeinfogettypename()] ERROR: Too many input parameters");
+      return JS_ERROR("[_typeinfogettypename()] ERROR: Too many input parameters");
     }
     TYPEINFO;
     XS name = NULL;
     XTRY( name = (XMLCh *)typeinfo->getTypeName(); );
     if (name==NULL) {
-      return JS_EXCEPTION("[_typeinfogettypename()] ERROR: \"name\" is a null pointer");
+      return JS_ERROR("[_typeinfogettypename()] ERROR: \"name\" is a null pointer");
     }
     else {
       char * ret = X(name);
@@ -6540,13 +6540,13 @@ namespace xdom {
   JS_METHOD(_typeinfogettypenamespace) {
     /* TryCatch tc; */
     if (args.Length()>0) {
-      return JS_EXCEPTION("[_typeinfogettypename()] ERROR: Too many input parameters");
+      return JS_ERROR("[_typeinfogettypename()] ERROR: Too many input parameters");
     }
     TYPEINFO;
     XS lnamespace = NULL;
     XTRY( lnamespace = (XMLCh *)typeinfo->getTypeNamespace(); );
     if (lnamespace==NULL) {
-      return JS_EXCEPTION("[_typeinfogettypenamespace()] ERROR: \"namespace\" is a null pointer");
+      return JS_ERROR("[_typeinfogettypenamespace()] ERROR: \"namespace\" is a null pointer");
     }
     else {
       char * ret = X(lnamespace);
@@ -6557,7 +6557,7 @@ namespace xdom {
   JS_METHOD(_typeinfoisderivedfrom) {
     /* TryCatch tc; */
     if (args.Length()!=3) {
-      return JS_EXCEPTION("[_typeinfogettypename()] ERROR: Incorrect number of input parameters");
+      return JS_ERROR("[_typeinfogettypename()] ERROR: Incorrect number of input parameters");
     }
     TYPEINFO;
     int derivationMethod = (int)args[2]->ToInteger()->IntegerValue();
@@ -6590,7 +6590,7 @@ namespace xdom {
     int nodeType = 0;
     XTRY( nodeType = (int)node->getNodeType(); );
     if (nodeType==0) {
-      return JS_EXCEPTION("[get_node_type()] ERROR: nodeType is invalid");
+      return JS_ERROR("[get_node_type()] ERROR: nodeType is invalid");
     }
     else {
       Handle<Integer> ret( JS_INT(nodeType) );
@@ -6604,7 +6604,7 @@ namespace xdom {
     XS nodeName = NULL;
     XTRY( nodeName = (XMLCh *)node->getNodeName(); );
     if (nodeName==NULL) {
-      return JS_EXCEPTION("[get_node_name()] ERROR: \"nodeName\" is a null pointer");
+      return JS_ERROR("[get_node_name()] ERROR: \"nodeName\" is a null pointer");
     }
     else {
       Handle<String> ret( JS_STR(X(nodeName)) );
@@ -6618,7 +6618,7 @@ namespace xdom {
     XS nodeValue = NULL;
     XTRY( nodeValue = (XMLCh *)node->getNodeValue(); );
     if (nodeValue==NULL) {
-      return JS_EXCEPTION("[get_node_value()] ERROR: \"nodeValue\" is a null pointer");
+      return JS_ERROR("[get_node_value()] ERROR: \"nodeValue\" is a null pointer");
     }
     else {
       char * tmp = NULL;
@@ -6642,7 +6642,7 @@ namespace xdom {
     XS tagName = NULL;
     XTRY( tagName = (XMLCh *)el->getTagName(); );
     if (tagName==NULL) {
-      return JS_EXCEPTION("[get_tag_name()] ERROR: \"tagName\" is a null pointer");
+      return JS_ERROR("[get_tag_name()] ERROR: \"tagName\" is a null pointer");
     }
     else {
       char * tmp = NULL;
@@ -6809,7 +6809,7 @@ namespace xdom {
     DOMNode * node = NULL;
     node = RECAST(args.Holder()->GetInternalField(0),DOMNode *);
     if (node==NULL) {
-      return JS_EXCEPTION("[get_as_node()] ERROR: \"node\" is a null pointer");
+      return JS_ERROR("[get_as_node()] ERROR: \"node\" is a null pointer");
     }
     else {
       const int fargc = 2;
@@ -6827,7 +6827,7 @@ namespace xdom {
     DOMNode * node = NULL;
     node = RECAST(args.Holder()->GetInternalField(0),DOMNode *);
     if (node==NULL) {
-      return JS_EXCEPTION("[get_as_element()] ERROR: \"node\" is a null pointer");
+      return JS_ERROR("[get_as_element()] ERROR: \"node\" is a null pointer");
     }
     else {
       const int fargc = 2;
@@ -6854,7 +6854,7 @@ namespace xdom {
       DOMImplementation * val = NULL;
       XTRY( val = (DOMImplementation *)domlist->item(idx); );
       if (val==NULL) {
-	// JS_EXCEPTION("[indexed_property_get()] ERROR: (domlist) \"val\" is a null pointer");
+	// JS_ERROR("[indexed_property_get()] ERROR: (domlist) \"val\" is a null pointer");
 	ret = v8::Undefined();
       }
       else {
@@ -6867,7 +6867,7 @@ namespace xdom {
       XMLCh * val = NULL;
       XTRY( val = (XMLCh *)stringlist->item(idx); );
       if (val==NULL) {
-	JS_EXCEPTION("[indexed_property_get()] ERROR: (stringlist) \"val\" is a null pointer");
+	JS_ERROR("[indexed_property_get()] ERROR: (stringlist) \"val\" is a null pointer");
       }
       else {
 	ret = JS_STR(X(val));
@@ -6878,7 +6878,7 @@ namespace xdom {
       DOMNode * val = NULL;
       XTRY( val = nodemap->item(idx); );
       if (val==NULL) {
-	//JS_EXCEPTION("[indexed_property_get()] ERROR: (namednodemap) \"val\" is a null pointer");
+	//JS_ERROR("[indexed_property_get()] ERROR: (namednodemap) \"val\" is a null pointer");
 	ret = v8::Undefined();
       }
       else {
@@ -6891,7 +6891,7 @@ namespace xdom {
       DOMNode * val = NULL;
       XTRY( val = nodelist->item(idx); );
       if (val==NULL) {
-	//JS_EXCEPTION("[indexed_property_get()] ERROR: (nodelist) \"val\" is a null pointer");
+	//JS_ERROR("[indexed_property_get()] ERROR: (nodelist) \"val\" is a null pointer");
 	ret = v8::Undefined();
       }
       else {
@@ -6900,7 +6900,7 @@ namespace xdom {
       }
     }
     else {
-      return JS_EXCEPTION("[indexed_property_get()] ERROR: unrecognized object type");
+      return JS_ERROR("[indexed_property_get()] ERROR: unrecognized object type");
     }
     return ret;
   }
@@ -6911,18 +6911,18 @@ namespace xdom {
     Handle<Object> This( args.Holder() );
     Handle<Boolean> ret( JS_BOOL(false) );
     if (objtype=="stringlist") {
-      return JS_EXCEPTION("[indexed_property_set()] ERROR");
+      return JS_ERROR("[indexed_property_set()] ERROR");
     }
     else if (objtype=="domlist") {
-      return JS_EXCEPTION("[indexed_property_set()] ERROR");
+      return JS_ERROR("[indexed_property_set()] ERROR");
     }
     else if (objtype=="namednodemap") {
     }
     else if (objtype=="nodelist") {
-      return JS_EXCEPTION("[indexed_property_set()] ERROR");
+      return JS_ERROR("[indexed_property_set()] ERROR");
     }
     else {
-      return JS_EXCEPTION("[indexed_property_set()] ERROR: unrecognized object type");
+      return JS_ERROR("[indexed_property_set()] ERROR: unrecognized object type");
     }
     return JS_BOOL(true);
   }
@@ -6966,7 +6966,7 @@ namespace xdom {
       }
       catch( xercesc_3_0::DOMException& e ) {
 	char * msg = X(e.getMessage());
-	JS_EXCEPTION(msg);
+	JS_ERROR(msg);
       }
       if (val==NULL) {
 	ret = false;
@@ -6985,7 +6985,7 @@ namespace xdom {
       }
       catch( xercesc_3_0::DOMException& e ) {
 	char * msg = X(e.getMessage());
-	JS_EXCEPTION(msg);
+	JS_ERROR(msg);
       }
       if (val==NULL) {
 	ret = false;
@@ -6996,7 +6996,7 @@ namespace xdom {
      );
     }
     else {
-      JS_EXCEPTION("[indexed_property_get()] ERROR: unrecognized object type");
+      JS_ERROR("[indexed_property_get()] ERROR: unrecognized object type");
     }
     return JS_BOOL(ret);
   }
@@ -7019,11 +7019,11 @@ namespace xdom {
       }
       catch( xercesc_3_0::DOMException& e ) {
 	char * msg = X(e.getMessage());
-	JS_EXCEPTION(msg);
+	JS_ERROR(msg);
       }
     }
     else {
-      JS_EXCEPTION("[indexed_property_delete()] ERROR: unrecognized object type");
+      JS_ERROR("[indexed_property_delete()] ERROR: unrecognized object type");
     }
     return JS_BOOL(true);
   }
@@ -7067,7 +7067,7 @@ namespace xdom {
       ret = v8::Array::New(len);
       for (unsigned int i = (int)len; i < len; i++) {
 	DOMNode * val = NULL;
-	try { val = nodemap->item(i); } catch( DOMException& e ) { char * msg = X(e.getMessage()); JS_EXCEPTION(msg); }
+	try { val = nodemap->item(i); } catch( DOMException& e ) { char * msg = X(e.getMessage()); JS_ERROR(msg); }
 	if (val!=NULL) {
 	  Local<Value> fargs[] = { v8::External::New((void *)val) };
 	  Handle<Object> tmp( xdom::fnode->GetFunction()->NewInstance(1, fargs) );
@@ -7091,7 +7091,7 @@ namespace xdom {
      );
     }
     else {
-      JS_EXCEPTION("[indexed_property_enumerate()] ERROR: unrecognized object type");
+      JS_ERROR("[indexed_property_enumerate()] ERROR: unrecognized object type");
     }
     return ret;
   }
@@ -7144,7 +7144,7 @@ namespace xdom {
       );
     }
     else {
-      return JS_EXCEPTION("[named_property_get()] ERROR: unrecognized object type");
+      return JS_ERROR("[named_property_get()] ERROR: unrecognized object type");
     }
     return ret;
   }
@@ -7165,13 +7165,13 @@ namespace xdom {
 	node = RECAST(iValue->ToObject()->GetInternalField(0),DOMNode *);
       }
       if (node==NULL) {
-	return JS_EXCEPTION("[named_property_set()] ERROR: \"node\" is a null pointer");
+	return JS_ERROR("[named_property_set()] ERROR: \"node\" is a null pointer");
       }
       else {
 	DOMNode * retval = NULL;
 	XTRY( retval = nodemap->setNamedItem(node); );
 	if (retval==NULL) {
-	  //return JS_EXCEPTION("[named_property_set()] ERROR: \"retval\" is a null pointer");
+	  //return JS_ERROR("[named_property_set()] ERROR: \"retval\" is a null pointer");
 	  return v8::Null();
 	}
 	else {
@@ -7201,7 +7201,7 @@ namespace xdom {
      );
     }
     else {
-      return JS_EXCEPTION("[named_property_set()] ERROR: unrecognized object type");
+      return JS_ERROR("[named_property_set()] ERROR: unrecognized object type");
     }
     return v8::Undefined();
   }
@@ -7251,7 +7251,7 @@ namespace xdom {
      );
     }
     else {
-      JS_EXCEPTION("[named_property_query()] ERROR: unrecognized object type");
+      JS_ERROR("[named_property_query()] ERROR: unrecognized object type");
     }
     Handle<Boolean> ret( JS_BOOL(exists) );
     return ret;
@@ -7265,14 +7265,14 @@ namespace xdom {
     XS idx( X(tmp.str().c_str()) );
     if (objtype=="namednodemap") {
       DOMNamedNodeMap * nodemap = reinterpret_cast<DOMNamedNodeMap *>(v8::Handle<v8::External>::Cast(This->GetInternalField(0))->Value());
-      try { nodemap->removeNamedItem(idx); } catch( xercesc_3_0::DOMException& e ) { char * msg = X(e.getMessage()); JS_EXCEPTION(msg); }
+      try { nodemap->removeNamedItem(idx); } catch( xercesc_3_0::DOMException& e ) { char * msg = X(e.getMessage()); JS_ERROR(msg); }
     }
     else if (objtype=="element") {
       DOMElement * el = reinterpret_cast<DOMElement *>(v8::Handle<v8::External>::Cast(This->GetInternalField(0))->Value());
-      try { el->removeAttribute(idx); } catch( xercesc_3_0::DOMException& e ) { char * msg = X(e.getMessage()); JS_EXCEPTION(msg); }
+      try { el->removeAttribute(idx); } catch( xercesc_3_0::DOMException& e ) { char * msg = X(e.getMessage()); JS_ERROR(msg); }
     }
     else {
-      JS_EXCEPTION("[named_property_delete()] ERROR: unrecognized object type");
+      JS_ERROR("[named_property_delete()] ERROR: unrecognized object type");
     }
     return JS_BOOL(true);
   }
@@ -7314,7 +7314,7 @@ namespace xdom {
       Local<Array> arr( pobj->GetPropertyNames() );
 	XMLSize_t xlen = arr->Length();
       DOMNamedNodeMap * nodemap = NULL;
-      try { nodemap = pel->getAttributes(); } catch( DOMException& e ) { char * msg = X(e.getMessage()); JS_EXCEPTION(msg); }
+      try { nodemap = pel->getAttributes(); } catch( DOMException& e ) { char * msg = X(e.getMessage()); JS_ERROR(msg); }
       if (nodemap==NULL) {
 	ret = arr;
       }
@@ -7336,7 +7336,7 @@ namespace xdom {
       }
     }
     else {
-      JS_EXCEPTION("[named_property_enumerate()] ERROR: unrecognized object type");
+      JS_ERROR("[named_property_enumerate()] ERROR: unrecognized object type");
     }
     return ret;
   }

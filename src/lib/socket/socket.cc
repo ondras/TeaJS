@@ -65,7 +65,7 @@ inline int create_addr(char * address, int port, int family, sock_addr_t * resul
 			memset(addr, 0, sizeof(sockaddr_un));
 
 			if (length >= sizeof(addr->sun_path)) {
-				JS_EXCEPTION("Unix socket path too long");
+				JS_ERROR("Unix socket path too long");
 				return 1;
 			}
 			addr->sun_family = AF_UNIX;
@@ -172,7 +172,7 @@ inline v8::Handle<v8::Value> create_peer(sockaddr * addr) {
  */
 JS_METHOD(_socket) {
 	ASSERT_CONSTRUCTOR;
-	if (args.Length() < 2) { return JS_EXCEPTION("Invalid call format. Use 'new Socket(family, type, [proto])'"); }						
+	if (args.Length() < 2) { return JS_TYPE_ERROR("Invalid call format. Use 'new Socket(family, type, [proto])'"); }						
 	
 	int offset = (args[0]->IsExternal() ? 1 : 0);
 	int family = args[offset + 0]->Int32Value();
@@ -193,7 +193,7 @@ JS_METHOD(_socket) {
 	args.This()->Set(JS_STR("proto"), JS_INT(proto));									
 	
 	if (s == INVALID_SOCKET) {
-		return JS_EXCEPTION(strerror(errno));
+		return JS_ERROR(strerror(errno));
 	} else {
 		return args.This();
 	}
@@ -205,7 +205,7 @@ JS_METHOD(_getprotobyname) {
 	if (result) {
 		return JS_INT(result->p_proto);
 	} else {
-		return JS_EXCEPTION("Cannot retrieve protocol number");
+		return JS_ERROR("Cannot retrieve protocol number");
 	}
 }
 
@@ -219,7 +219,7 @@ JS_METHOD(_getaddrinfo) {
 
 	int result = getaddrinfo(*name, NULL, &hints, &servinfo);
 	if (result != 0) {
-		return JS_EXCEPTION(gai_strerror(result));
+		return JS_ERROR(gai_strerror(result));
 	}
 	
 	v8::Local<v8::Object> item = create_peer(servinfo->ai_addr)->ToObject();
@@ -238,12 +238,12 @@ JS_METHOD(_getnameinfo) {
 
 	int result = create_addr(*name, 0, family, &addr, &len);
 	if (result != 0) {
-		return JS_EXCEPTION("Malformed address");
+		return JS_ERROR("Malformed address");
 	}
 	
 	result = getnameinfo((sockaddr *) & addr, len, hostname, NI_MAXHOST, NULL, 0, 0);
 	if (result != 0) {
-		return JS_EXCEPTION(gai_strerror(result));
+		return JS_ERROR(gai_strerror(result));
 	} else {
 		return JS_STR(hostname);
 	}
@@ -265,7 +265,7 @@ JS_METHOD(_connect) {
 	int argcount = 1;
 	if (family != PF_UNIX) { argcount = 2; }
 	if (args.Length() < argcount) {
-		return JS_EXCEPTION("Bad argument count. Use 'socket.connect(address, [port])'");
+		return JS_TYPE_ERROR("Bad argument count. Use 'socket.connect(address, [port])'");
 	}
 	
 	v8::String::Utf8Value address(args[0]);
@@ -275,12 +275,12 @@ JS_METHOD(_connect) {
     
 	int result = create_addr(* address, port, family, &addr, &len);
 	if (result != 0) {
-        return JS_EXCEPTION("Malformed address");
+        return JS_ERROR("Malformed address");
 	}
 	
 	result = connect(sock, (sockaddr *) &addr, len);
     if (result) {
-        return JS_EXCEPTION(strerror(errno));
+        return JS_ERROR(strerror(errno));
     } else {
 		return args.This();
     }
@@ -291,7 +291,7 @@ JS_METHOD(_bind) {
 	int sock = LOAD_VALUE(0)->Int32Value();
 
 	if (args.Length() < 1) {
-		return JS_EXCEPTION("Bad argument count. Use 'socket.bind(address, [port])'");
+		return JS_TYPE_ERROR("Bad argument count. Use 'socket.bind(address, [port])'");
 	}
 	
 	v8::String::Utf8Value address(args[0]);
@@ -300,12 +300,12 @@ JS_METHOD(_bind) {
     socklen_t len = 0;
     int result = create_addr(*address, port, family, &addr, &len);
 	if (result != 0) {
-		return JS_EXCEPTION("Malformed address");
+		return JS_ERROR("Malformed address");
 	}
 
 	result = bind(sock, (sockaddr *) &addr, len);
     if (result) {
-        return JS_EXCEPTION(strerror(errno));
+        return JS_ERROR(strerror(errno));
     } else {
 		return args.This();
     }
@@ -319,7 +319,7 @@ JS_METHOD(_listen) {
 	
 	int result = listen(sock, num);
     if (result) {
-        return JS_EXCEPTION(strerror(errno));
+        return JS_ERROR(strerror(errno));
     } else {
 		return args.This();
     }
@@ -330,7 +330,7 @@ JS_METHOD(_accept) {
 
 	int sock2 = accept(sock, NULL, NULL);
     if (sock2 == INVALID_SOCKET) {
-        return JS_EXCEPTION(strerror(errno));
+        return JS_ERROR(strerror(errno));
     } else {
 		v8::Handle<v8::Value> argv[4];
 		argv[0] = v8::External::New(&sock2); // dummy field
@@ -347,7 +347,7 @@ JS_METHOD(_send) {
 	int sock = LOAD_VALUE(0)->Int32Value();
 
 	if (args.Length() < 1) {
-		return JS_EXCEPTION("Bad argument count. Use 'socket.send(data, [address], [port])'");
+		return JS_TYPE_ERROR("Bad argument count. Use 'socket.send(data, [address], [port])'");
 	}
 	
 	v8::String::Utf8Value data(args[0]);
@@ -362,14 +362,14 @@ JS_METHOD(_send) {
 		int port = args[2]->Int32Value();
 		int r = create_addr(*address, port, family, &taddr, &len);
 		if (r != 0) {
-			return JS_EXCEPTION("Malformed address");
+			return JS_ERROR("Malformed address");
 		}
 		target = (sockaddr *) &taddr;
 	}
 	
 	ssize_t result = sendto(sock, *data, data.length(), 0, target, len);
     if (result == SOCKET_ERROR) {
-        return JS_EXCEPTION(strerror(errno));
+        return JS_ERROR(strerror(errno));
     } else {
 		return args.This();
     }
@@ -387,7 +387,7 @@ JS_METHOD(_receive) {
 	ssize_t result = recvfrom(sock, data, count, 0, (sockaddr *) &addr, &len);
     if (result == SOCKET_ERROR) {
 		delete[] data;
-        return JS_EXCEPTION(strerror(errno));
+        return JS_ERROR(strerror(errno));
     } else {
 		v8::Handle<v8::Value> output;
 		
@@ -409,7 +409,7 @@ JS_METHOD(_socketclose) {
 	
 	int result = close(sock);
     if (result == SOCKET_ERROR) {
-        return JS_EXCEPTION(strerror(errno));
+        return JS_ERROR(strerror(errno));
     } else {
 		return v8::Undefined();
     }
@@ -417,7 +417,7 @@ JS_METHOD(_socketclose) {
 
 JS_METHOD(_setoption) {
 	if (args.Length() != 2) {
-		return JS_EXCEPTION("Bad argument count. Use 'socket.setOption(name, value)'");
+		return JS_TYPE_ERROR("Bad argument count. Use 'socket.setOption(name, value)'");
 	}
 	int sock = LOAD_VALUE(0)->Int32Value();
 	int name = args[0]->Int32Value();
@@ -427,13 +427,13 @@ JS_METHOD(_setoption) {
 	if (result == 0) {
         return args.This();
     } else {
-        return JS_EXCEPTION(strerror(errno));
+        return JS_ERROR(strerror(errno));
     }
 }
 
 JS_METHOD(_getoption) {
 	if (args.Length() < 1) {
-		return JS_EXCEPTION("Bad argument count. Use 'socket.getOption(name, [length])'");
+		return JS_TYPE_ERROR("Bad argument count. Use 'socket.getOption(name, [length])'");
 	}
 	int sock = LOAD_VALUE(0)->Int32Value();
 	int name = args[0]->Int32Value();
@@ -448,7 +448,7 @@ JS_METHOD(_getoption) {
             return response;
         } else {
 			delete[] buf;
-			return JS_EXCEPTION(strerror(errno));
+			return JS_ERROR(strerror(errno));
         }
     } else {
         unsigned int buf;
@@ -457,7 +457,7 @@ JS_METHOD(_getoption) {
 		if (result == 0) {
             return JS_INT(buf);
         } else {
-			return JS_EXCEPTION(strerror(errno));
+			return JS_ERROR(strerror(errno));
         }
     }
 }
@@ -472,7 +472,7 @@ JS_METHOD(_getpeername) {
 		if (result == 0) {
 			SAVE_VALUE(1, create_peer((sockaddr *) &addr));
 		} else {
-			return JS_EXCEPTION(strerror(errno));
+			return JS_ERROR(strerror(errno));
 		}
 	}
 	

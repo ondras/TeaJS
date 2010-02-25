@@ -87,10 +87,11 @@ ByteStorage * ByteStorage::transcode(const char * from, const char * to) {
 	if (!this->length) { return new ByteStorage(0); }
 
 	/* source and target are the same -> copy */
+/*
 	if ((from == to) || (from && to && (strcasecmp(from, to) == 0))) {
 		return new ByteStorage(this->data, this->length);
 	}
-
+*/
 	iconv_t cd = iconv_open(to, from);
 	if (cd == (iconv_t)(-1)) { 
 		std::string error = "Cannot transcode from ";
@@ -158,6 +159,7 @@ ByteStorage * ByteStorage::transcode(const char * from, const char * to) {
 						break;
 						case EINVAL:
 							error += "an incomplete multibyte sequence has been encountered in the input";
+						break;
 						default:
 							error += "unknown error";
 						break;

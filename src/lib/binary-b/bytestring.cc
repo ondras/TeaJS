@@ -7,7 +7,7 @@
 #include "bytestring.h"
 #include "bytestorage.h"
 
-#define WRONG_CTOR JS_EXCEPTION("ByteString called with wrong arguments.")
+#define WRONG_CTOR JS_TYPE_ERROR("ByteString called with wrong arguments.")
 
 namespace {
 
@@ -56,7 +56,7 @@ JS_METHOD(_ByteString) {
 			break;
 		}
 	} catch (std::string e) {
-		return JS_EXCEPTION(e.c_str());
+		return JS_ERROR(e.c_str());
 	}
 
 	GC * gc = GC_PTR;

@@ -7,7 +7,7 @@
 #include "bytearray.h"
 #include "bytestorage.h"
 
-#define WRONG_CTOR JS_EXCEPTION("ByteArray called with wrong arguments.")
+#define WRONG_CTOR JS_TYPE_ERROR("ByteArray called with wrong arguments.")
 
 namespace {
 
@@ -59,7 +59,7 @@ JS_METHOD(_ByteArray) {
 			break;
 		}
 	} catch (std::string e) {
-		return JS_EXCEPTION(e.c_str());
+		return JS_ERROR(e.c_str());
 	}
 	
 	GC * gc = GC_PTR;
@@ -161,7 +161,7 @@ v8::Handle<v8::Value> _set(uint32_t index, v8::Local<v8::Value> value, const v8:
 void _length(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::AccessorInfo &info) {
 	int num = value->IntegerValue();
 	if (num < 0) { 
-		JS_EXCEPTION("ByteArray length cannot be negative"); 
+		JS_RANGE_ERROR("ByteArray length cannot be negative"); 
 		return;
 	}
 

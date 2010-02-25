@@ -212,10 +212,10 @@
 #define DOMOPTYPE			xercesc_3_0::DOMUserDataHandler::DOMOperationType
 #define CSTR(sstream)			sstream.str().c_str()
 
-#define XTRY(...)			try{ __VA_ARGS__ }    catch( xercesc_3_0::DOMException& e ) { char * msg = X(e.getMessage()); return JS_EXCEPTION(msg); }
-#define ZTRY(...)			try{ __VA_ARGS__ }    catch( xercesc_3_0::DOMException& e ) { char * msg = X(e.getMessage()); JS_EXCEPTION(msg); }
-#define XLSTRY(...)			try{ __VA_ARGS__ }    catch( xercesc_3_0::DOMLSException& e ) { char * msg = X(e.getMessage()); return JS_EXCEPTION(msg); }
-#define ZLSTRY(...)			try{ __VA_ARGS__ }    catch( xercesc_3_0::DOMLSException& e ) { char * msg = X(e.getMessage()); JS_EXCEPTION(msg); }
+#define XTRY(...)			try{ __VA_ARGS__ }    catch( xercesc_3_0::DOMException& e ) { char * msg = X(e.getMessage()); return JS_ERROR(msg); }
+#define ZTRY(...)			try{ __VA_ARGS__ }    catch( xercesc_3_0::DOMException& e ) { char * msg = X(e.getMessage()); JS_ERROR(msg); }
+#define XLSTRY(...)			try{ __VA_ARGS__ }    catch( xercesc_3_0::DOMLSException& e ) { char * msg = X(e.getMessage()); return JS_ERROR(msg); }
+#define ZLSTRY(...)			try{ __VA_ARGS__ }    catch( xercesc_3_0::DOMLSException& e ) { char * msg = X(e.getMessage()); JS_ERROR(msg); }
 
 /*
  *	Function templates for each of the

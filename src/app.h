@@ -24,7 +24,7 @@ public:
 	virtual void init(); 
 	/* once per request */
 	int execute(char ** envp); 
-	v8::Handle<v8::Object> include(std::string name);
+	v8::Handle<v8::Object> include(std::string name, std::string moduleId);
 	v8::Handle<v8::Object> require(std::string name, std::string moduleId);
 	
 	/* termination mark. if present, termination exception is not handled */
@@ -79,10 +79,10 @@ private:
 
 	modulefiles resolve_module(std::string name, std::string relativeRoot);
 	modulefiles resolve_extension(std::string path);
-	void load_js(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module);
-	void load_dso(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module);
+	void load_js(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Function> include, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module);
+	void load_dso(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Function> include, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module);
 	v8::Handle<v8::Value> get_config(std::string name);
-	v8::Handle<v8::Function> build_require(std::string path);
+	v8::Handle<v8::Function> build_require(std::string path, v8::Handle<v8::Value> (*func) (const v8::Arguments&));
 	
 	v8::Persistent<v8::Array> paths; /* require.paths */
 	v8::Local<v8::Object> mainModule;

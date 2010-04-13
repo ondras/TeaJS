@@ -72,6 +72,14 @@ public:
 		fwrite((void *) data, sizeof(char), strlen(data), stderr);
 		fwrite((void *) "\n", sizeof(char), 1, stderr);
 	}
+	
+	/**
+	 * STDOUT flush
+	 * @return whether successful
+	 */
+	bool flush() {
+		return (fflush(stdout) == 0);
+	}
 
 	void fromEnvVars() {
 		char * env = getenv("PATH_TRANSLATED");

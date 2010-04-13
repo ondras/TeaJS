@@ -123,6 +123,11 @@ JS_METHOD(_getTimeInMicroseconds) {
 	return JS_STR(buffer)->ToNumber();
 }
 
+JS_METHOD(_flush) {
+	v8cgi_App * app = APP_PTR;
+	if (!app->flush()) { return JS_ERROR("Can not flush stdout"); }
+	return v8::Undefined();
+}
 
 }
 
@@ -143,8 +148,11 @@ void setup_system(v8::Handle<v8::Object> global, char ** envp, std::string mainf
 	}
 	system->Set(JS_STR("args"), arr);
 	
+
+	v8::Handle<v8::Function> stdout_function = v8::FunctionTemplate::New(_stdout)->GetFunction();
+	stdout_function->Set(JS_STR("flush"), v8::FunctionTemplate::New(_flush)->GetFunction());
+	system->Set(JS_STR("stdout"), stdout_function);
 	system->Set(JS_STR("stdin"), v8::FunctionTemplate::New(_stdin)->GetFunction());
-	system->Set(JS_STR("stdout"), v8::FunctionTemplate::New(_stdout)->GetFunction());
 	system->Set(JS_STR("stderr"), v8::FunctionTemplate::New(_stderr)->GetFunction());
 	system->Set(JS_STR("getcwd"), v8::FunctionTemplate::New(_getcwd)->GetFunction());
 	system->Set(JS_STR("sleep"), v8::FunctionTemplate::New(_sleep)->GetFunction());

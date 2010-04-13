@@ -39,7 +39,9 @@ public:
 	virtual size_t writer (const char * source, size_t size) = 0;
 	/* stderr */
 	virtual void error(const char * data, const char * file, int line) = 0;
-	
+	/* stdout flush */
+	virtual bool flush() = 0;	
+
 protected:
 	/* config file */
 	std::string cfgfile;

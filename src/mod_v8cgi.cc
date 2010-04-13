@@ -80,6 +80,10 @@ public:
 	void error(const char * data, const char * file, int line) {
 		ap_log_rerror(file, line, APLOG_ERR, 0, this->request, "%s", data);
 	}
+	
+	bool flush() {
+		return true; /* FIXME? */
+	}
 
 	/** 
 	 * Remember apache request structure and continue as usually

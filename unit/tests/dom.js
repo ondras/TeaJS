@@ -129,3 +129,15 @@ exports.testBadEntities = function() {
 		par.parseFromString(str2);
 	}, null, "Unfinished entity");
 }
+
+exports.testIssue65 = function() {
+	var str = "";
+	str += '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"\n';
+	str += ' "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">\n';
+	str += '<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">\n';
+	str += '</html>';
+	var par = new DOM.DOMParser();
+	var doc = par.parseFromString(str);
+	assert.equal(doc.doctype.systemId, "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd", "doctype - system id");
+	assert.equal(doc.doctype.publicId, "-//W3C//DTD XHTML 1.0 Strict//EN", "doctype - public id");
+}

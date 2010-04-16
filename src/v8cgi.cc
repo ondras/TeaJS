@@ -62,7 +62,6 @@ public:
 	 */
 	size_t writer(const char * data, size_t amount) {
 		return fwrite((void *) data, sizeof(char), amount, stdout);
-		fwrite((void *) "\n", sizeof(char), 1, stdout);
 	}
 
 	/**

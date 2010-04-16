@@ -5,8 +5,9 @@
 var assert = require("assert");
 var DOM = require("dom");
 
-var XMLSTR = '<!DOCTYPE a PUBLIC "b" "c">\n';
+var XMLSTR = "";
 XMLSTR += '<?xml version="1.0" encoding="utf-8"?>\n';
+XMLSTR += '<!DOCTYPE a PUBLIC "b" "c">\n';
 XMLSTR += '<?xml-stylesheet href="test.xsl"?>\n';
 XMLSTR += '<a x="y">';
 XMLSTR += '<b z="&amp;hi"><![CDATA[world]]></b><!--hello--></a>\n';

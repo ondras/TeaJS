@@ -148,7 +148,6 @@ static int mod_v8cgi_handler(request_rec *r) {
 	ap_setup_client_block(r, REQUEST_CHUNKED_DECHUNK);
 	ap_add_common_vars(r);
 	ap_add_cgi_vars(r);
-	
 
     if (r->headers_in) {
 		const char *auth;
@@ -177,8 +176,6 @@ static int mod_v8cgi_handler(request_rec *r) {
 		} 
     }
 	
-	
-
 	/* extract the CGI environment  */
 	arr = apr_table_elts(r->subprocess_env);
 	elts = (const apr_table_entry_t*) arr->elts;

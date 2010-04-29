@@ -114,8 +114,7 @@ void v8cgi_App::prepare(char ** envp) {
 	this->paths = v8::Persistent<v8::Array>::New(v8::Array::New());
 
 	/* config file */
-	this->include(path_normalize(this->cfgfile), path_getcwd()); 
-	
+	this->include(path_normalize(this->cfgfile), path_getcwd());
 	if (!this->paths->Length()) { throw std::string("require.paths is empty, have you forgotten to push some data there?"); }
 
 	setup_v8cgi(g);
@@ -176,14 +175,7 @@ int v8cgi_App::execute(char ** envp) {
 	}
 	
 	/* setup builtin request and response, if running as CGI */
-	if (this->http()) {
-		/* do we have a forced http handler? */
-		v8::Handle<v8::Value> handler = this->get_config("httpHandler");
-		if (handler->ToBoolean()->IsTrue()) {
-			v8::String::Utf8Value name(handler);
-			this->mainfile = *name;
-		}
-	}
+	this->http();
 
 	if (this->mainfile == "") {
 		this->error("Nothing to do :)", __FILE__, __LINE__);

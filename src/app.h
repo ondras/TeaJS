@@ -43,6 +43,9 @@ public:
 	virtual bool flush() = 0;	
 
 protected:
+	/* env. preparation */
+	virtual void prepare(char ** envp);
+
 	/* config file */
 	std::string cfgfile;
 	/* main script file */
@@ -65,7 +68,6 @@ private:
 	GC gc;
 
 	std::string format_exception(v8::TryCatch* try_catch);
-	void prepare(char ** envp);
 	void findmain();
 	void finish();
 	bool http();

@@ -133,8 +133,7 @@ JS_METHOD(_flush) {
 
 void setup_system(v8::Handle<v8::Object> global, char ** envp, std::string mainfile, std::vector<std::string> args) {
 	v8::HandleScope handle_scope;
-	v8::Handle<v8::ObjectTemplate> systemt = v8::ObjectTemplate::New();
-	v8::Handle<v8::Object> system = systemt->NewInstance();
+	v8::Handle<v8::Object> system = v8::Object::New();
 	v8::Handle<v8::Object> env = v8::Object::New();
 	global->Set(JS_STR("system"), system);
 	

@@ -36,42 +36,7 @@ public:
 	}
 
 	size_t writer(const char * data, size_t amount) {
-		if (this->output_started) {
-			/* response data */
-			return (size_t) ap_rwrite(data, amount, this->request);
-		} else { 
-			/* header or content separator */
-			char * end = strchr((char *) data, '\r');
-			if (!end) { end = strchr((char *) data, '\n'); }
-			/* header or separator must end with a newline */
-			if (!end) { return 0; } 
-			
-			if (end == data) { 
-				/* content separator */
-				this->output_started = true;
-				return 0;
-			} else { 
-				/* header */
-				char * colon = strchr((char *) data, ':');
-				/* header without colon is a bad header */
-				if (!colon) { return 0; }
-				size_t namelen = colon - data;
-				
-				/* skip space after colon */
-				if ((size_t) (colon-data+1) < amount && *(colon+1) == ' ') { colon++; } 
-				
-				size_t valuelen = end - colon - 1;
-				char * name = (char *) apr_palloc(request->pool, namelen + 1);
-				char * value = (char *) apr_palloc(request->pool, valuelen + 1);
-				name[namelen] = '\0';
-				value[valuelen] = '\0';
-				strncpy(name, data, namelen);
-				strncpy(value, colon+1, valuelen);
-				
-				this->header(name, value);
-				return (size_t) amount;
-			}
-		}
+		return (size_t) ap_rwrite(data, amount, this->request);
 	}
 
 	/**
@@ -89,7 +54,6 @@ public:
 	 * Remember apache request structure and continue as usually
 	 */
 	int execute(request_rec * request, char ** envp) {
-		this->output_started = false;
 		this->request = request;
 		this->mainfile = std::string(request->filename);
 		path_chdir(path_dirname(this->mainfile));
@@ -99,18 +63,6 @@ public:
 	void init(v8cgi_config * cfg) { 
 		v8cgi_App::init();
 		this->cfgfile = cfg->config;
-	}
-	
-private:
-	request_rec * request;
-	bool output_started;
-
-	const char * instanceType() {
-		return "module";
-	}
-
-	const char * executableName() {
-		return "?";
 	}
 
 	/**
@@ -129,10 +81,46 @@ private:
 			this->request->status_line = line;
 			this->request->status = atoi(value);
 		} else {
-			apr_table_addn(this->request->headers_out, name, value);
+			char * n = (char *) apr_palloc(request->pool, strlen(name)+1);
+			char * v = (char *) apr_palloc(request->pool, strlen(value)+1);
+			strcpy(n, name);
+			strcpy(v, value);
+			apr_table_addn(this->request->headers_out, n, v);
 		}
 	}
+
+protected:
+	void prepare(char ** envp);
+
+private:
+	request_rec * request;
+
+	const char * instanceType() {
+		return "module";
+	}
+
+	const char * executableName() {
+		return "?";
+	}
 };
+
+JS_METHOD(_header) {
+	v8cgi_Module * app = (v8cgi_Module *) APP_PTR;
+	v8::String::Utf8Value name(args[0]);
+	v8::String::Utf8Value value(args[1]);
+	app->header(*name, *value);
+	return v8::Undefined();
+}
+
+void v8cgi_Module::prepare(char ** envp) {
+	v8cgi_App::prepare(envp);
+
+	v8::HandleScope handle_scope;
+	v8::Handle<v8::Object> g = JS_GLOBAL;
+	v8::Handle<v8::Object> apache = v8::Object::New();
+	g->Set(JS_STR("apache"), apache);
+	apache->Set(JS_STR("header"), v8::FunctionTemplate::New(_header)->GetFunction());
+}
 
 static v8cgi_Module app;
 

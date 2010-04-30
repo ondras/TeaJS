@@ -174,9 +174,6 @@ int v8cgi_App::execute(char ** envp) {
 		return 1;
 	}
 	
-	/* setup builtin request and response, if running as CGI */
-	this->http();
-
 	if (this->mainfile == "") {
 		this->error("Nothing to do :)", __FILE__, __LINE__);
 		return 1;
@@ -448,33 +445,6 @@ v8cgi_App::modulefiles v8cgi_App::resolve_extension(std::string path) {
 	if (!result.size() && path_file_exists(fullPath)) { result.push_back(fullPath); }
 	
 	return result;
-}
-
-/**
- * Create global.response and global.request
- */
-bool v8cgi_App::http() {
-	v8::Handle<v8::Object> sys = JS_GLOBAL->Get(JS_STR("system"))->ToObject();
-	v8::Handle<v8::Value> env = sys->ToObject()->Get(JS_STR("env"));
-	v8::Handle<v8::Value> ss = env->ToObject()->Get(JS_STR("SERVER_SOFTWARE"));
-	if (!ss->IsString()) { return false; }
-	v8::Handle<v8::Object> http = JS_GLOBAL->Get(JS_STR("HTTP"))->ToObject();
-	v8::Handle<v8::Value> req = http->Get(JS_STR("ServerRequest"));
-	v8::Handle<v8::Value> res = http->Get(JS_STR("ServerResponse"));
-	v8::Handle<v8::Function> reqf = v8::Handle<v8::Function>::Cast(req);
-	v8::Handle<v8::Function> resf = v8::Handle<v8::Function>::Cast(res);
-
-	v8::Handle<v8::Value> reqargs[] = { 
-		sys->Get(JS_STR("stdin")),
-		sys->Get(JS_STR("env"))
-	};
-	v8::Handle<v8::Value> resargs[] = { 
-		sys->Get(JS_STR("stdout"))
-	};
-
-	JS_GLOBAL->Set(JS_STR("response"), resf->NewInstance(1, resargs));
-	JS_GLOBAL->Set(JS_STR("request"), reqf->NewInstance(2, reqargs));
-	return true;
 }
 
 /** 

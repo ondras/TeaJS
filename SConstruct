@@ -141,12 +141,13 @@ def build_module(env, sources):
 	e.Append(
 		CPPPATH = [env["apache_path"], env["apr_path"]]
 	)
-	if env["os"] == "darwin":
+	if e["os"] == "darwin":
 		e.Append(
-			LINKFLAGS = "-bundle_loader /opt/local/apache2/bin/httpd",
+			LINKFLAGS = "-bundle -bundle_loader /usr/sbin/httpd",
 			LIBS = ["apr-1", "aprutil-1"]
 		)
-	if env["os"] == "windows":
+		e["SHLINKFLAGS"] = e["LINKFLAGS"]
+	if e["os"] == "windows":
 		e.Append(
 			LIBS = ["apr-1", "httpd", "aprutil-1"]
 		)

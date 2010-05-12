@@ -7,8 +7,11 @@
 #include "macros.h"
 #include "common.h"
 #include <stdlib.h>
-#include <sys/wait.h>
-#include <paths.h>  // for _PATH_BSHELL
+
+#ifndef windows
+#  include <sys/wait.h>
+#  include <paths.h>  // for _PATH_BSHELL
+#endif
 
 namespace {
 
@@ -71,6 +74,9 @@ JS_METHOD(_exec) {
  *   err:    {String}  contents of stderr
  * }
  */
+ 
+#ifndef windows
+ 
 JS_METHOD(_exec2) {
 	int arg_count = args.Length();
 	if (arg_count < 1 || arg_count > 2) {
@@ -224,6 +230,7 @@ JS_METHOD(_fork) {
 	}
 }
 
+#endif
 
 }
 
@@ -238,8 +245,11 @@ SHARED_INIT() {
 	/* this module provides a set of (static) functions */
 	process->Set(JS_STR("system"), v8::FunctionTemplate::New(_system)->GetFunction());
 	process->Set(JS_STR("exec"), v8::FunctionTemplate::New(_exec)->GetFunction());
+
+#ifndef windows
 	process->Set(JS_STR("exec2"), v8::FunctionTemplate::New(_exec2)->GetFunction());
 	process->Set(JS_STR("fork"), v8::FunctionTemplate::New(_fork)->GetFunction());
-
+#endif
+	
 	exports->Set(JS_STR("Process"), funct->GetFunction());
 }

@@ -28,7 +28,7 @@ def build_mysql(env):
 	)
 	e.SharedLibrary(
 		target = "lib/mysql",
-		source = ["src/gc.cc", "src/lib/mysql/mysql.cc"],
+		source = ["src/gc.o", "src/lib/mysql/mysql.cc"],
 		SHLIBPREFIX=""
 	)
 # def
@@ -46,7 +46,7 @@ def build_pgsql(env):
 	# if
 	e.SharedLibrary(
 		target = "lib/pgsql",
-		source = ["src/gc.cc", "src/lib/pgsql/pgsql.cc"],
+		source = ["src/gc.o", "src/lib/pgsql/pgsql.cc"],
 		SHLIBPREFIX=""
 	)
 # def
@@ -58,7 +58,7 @@ def build_sqlite(env):
 	)
 	e.SharedLibrary(
 		target = "lib/sqlite", 
-		source = ["src/gc.cc", "src/lib/sqlite/sqlite.cc"],
+		source = ["src/gc.o", "src/lib/sqlite/sqlite.cc"],
 		SHLIBPREFIX=""
 	)
 # def
@@ -71,7 +71,7 @@ def build_gd(env):
 	)
 	e.SharedLibrary(
 		target = "lib/gd", 
-		source = ["src/common.cc", "src/lib/gd/gd.cc"],
+		source = ["src/common.o", "src/lib/gd/gd.cc"],
 		SHLIBPREFIX=""
 	)
 # def

@@ -343,7 +343,6 @@ if env["reuse_context"] == 1:
 
 # start compiling
 sources = build_sources(env, sources)
-print sources
 build_binary(env)
 
 if env["mysql"] == 1: build_mysql(env)

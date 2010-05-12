@@ -28,7 +28,7 @@ def build_mysql(env):
 	)
 	e.SharedLibrary(
 		target = "lib/mysql",
-		source = ["src/gc.o", "src/lib/mysql/mysql.cc"],
+		source = ["src/gc", "src/lib/mysql/mysql.cc"],
 		SHLIBPREFIX=""
 	)
 # def
@@ -46,7 +46,7 @@ def build_pgsql(env):
 	# if
 	e.SharedLibrary(
 		target = "lib/pgsql",
-		source = ["src/gc.o", "src/lib/pgsql/pgsql.cc"],
+		source = ["src/gc", "src/lib/pgsql/pgsql.cc"],
 		SHLIBPREFIX=""
 	)
 # def
@@ -58,7 +58,7 @@ def build_sqlite(env):
 	)
 	e.SharedLibrary(
 		target = "lib/sqlite", 
-		source = ["src/gc.o", "src/lib/sqlite/sqlite.cc"],
+		source = ["src/gc", "src/lib/sqlite/sqlite.cc"],
 		SHLIBPREFIX=""
 	)
 # def
@@ -71,7 +71,7 @@ def build_gd(env):
 	)
 	e.SharedLibrary(
 		target = "lib/gd", 
-		source = ["src/common.o", "src/lib/gd/gd.cc"],
+		source = ["src/common", "src/lib/gd/gd.cc"],
 		SHLIBPREFIX=""
 	)
 # def
@@ -174,8 +174,7 @@ def build_cgi(env, sources):
 # def
 
 # base source files
-sources = ["common.cc", "system.cc", "fs.cc", "cache.cc", 
-			"gc.cc", "app.cc", "path.cc" ]
+sources = ["common.cc", "system.cc", "fs.cc", "cache.cc", "gc.cc", "app.cc", "path.cc" ]
 sources = [ "src/%s" % s for s in sources ]
 
 version = open("VERSION", "r").read()
@@ -344,6 +343,7 @@ if env["reuse_context"] == 1:
 
 # start compiling
 sources = build_sources(env, sources)
+print sources
 build_binary(env)
 
 if env["mysql"] == 1: build_mysql(env)

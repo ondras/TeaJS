@@ -40,6 +40,8 @@
 
 namespace {
 
+v8::Persistent<v8::Function> socketFunc;
+
 typedef union sock_addr {
     struct sockaddr_in in;
 #ifndef windows
@@ -296,19 +298,19 @@ JS_METHOD(_bind) {
 	
 	v8::String::Utf8Value address(args[0]);
 	int port = args[1]->Int32Value();
-    sock_addr_t addr;
-    socklen_t len = 0;
-    int result = create_addr(*address, port, family, &addr, &len);
+	sock_addr_t addr;
+	socklen_t len = 0;
+	int result = create_addr(*address, port, family, &addr, &len);
 	if (result != 0) {
 		return JS_ERROR("Malformed address");
 	}
 
 	result = bind(sock, (sockaddr *) &addr, len);
-    if (result) {
-        return JS_ERROR(strerror(errno));
-    } else {
+	if (result) {
+		return JS_ERROR(strerror(errno));
+	} else {
 		return args.This();
-    }
+	}
 }
 
 JS_METHOD(_listen) {
@@ -316,31 +318,28 @@ JS_METHOD(_listen) {
 
 	int num = args[0]->Int32Value();
 	if (args.Length() == 0) { num = 5; }
-	
+
 	int result = listen(sock, num);
-    if (result) {
-        return JS_ERROR(strerror(errno));
-    } else {
+	if (result) {
+		return JS_ERROR(strerror(errno));
+	} else {
 		return args.This();
-    }
+	}
 }
 
 JS_METHOD(_accept) {
 	int sock = LOAD_VALUE(0)->Int32Value();
-
 	int sock2 = accept(sock, NULL, NULL);
-    if (sock2 == INVALID_SOCKET) {
-        return JS_ERROR(strerror(errno));
-    } else {
+	if (sock2 == INVALID_SOCKET) {
+		return JS_ERROR(strerror(errno));
+	} else {
 		v8::Handle<v8::Value> argv[4];
 		argv[0] = v8::External::New(&sock2); // dummy field
 		argv[1] = args.This()->Get(JS_STR("family"));
 		argv[2] = args.This()->Get(JS_STR("type"));
 		argv[3] = args.This()->Get(JS_STR("proto"));
-		v8::Handle<v8::Value> s = JS_GLOBAL->Get(JS_STR("Socket"));
-		v8::Handle<v8::Function> news = v8::Handle<v8::Function>::Cast(s);
-		return news->NewInstance(4, argv);
-    }
+		return socketFunc->NewInstance(4, argv);
+	}
 }
 
 JS_METHOD(_send) {
@@ -532,5 +531,7 @@ SHARED_INIT() {
 	pt->Set("getOption", v8::FunctionTemplate::New(_getoption));
 	pt->Set("getPeerName", v8::FunctionTemplate::New(_getpeername));
 
-	exports->Set(JS_STR("Socket"), ft->GetFunction());			
+
+	exports->Set(JS_STR("Socket"), ft->GetFunction());
+	socketFunc = v8::Persistent<v8::Function>::New(ft->GetFunction());
 }

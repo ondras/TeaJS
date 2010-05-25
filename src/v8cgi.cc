@@ -199,14 +199,14 @@ private:
 	/**
 	 * This is true only after we receive a signal to terminate
 	 */
-	bool exit_requested = false;
-	
 	void handle_sigterm(int param) {
-		exit_requested = true;
+		FCGI_SetExitStatus(0);
+		exit(0); 
  	}
 
 	void handle_sigusr1(int param) {
-		exit_requested = true;
+		FCGI_SetExitStatus(0);
+		exit(0); 
 	}
 #endif
 
@@ -224,19 +224,14 @@ int main(int argc, char ** argv) {
 	/**
 	 * FastCGI main loop
 	 */
-	while (FCGI_Accept() >= 0  && !exit_requested) {
+	while (FCGI_Accept() >= 0) {
 		cgi.fromEnvVars();
 #endif
 
 		result = cgi.execute(environ);
 
 #ifdef FASTCGI
-		if (exit_requested) { 
-			FCGI_SetExitStatus(0);
-			exit(0); 
-		} else {
-			FCGI_SetExitStatus(result);
-		}
+		FCGI_SetExitStatus(result);
 	}
 #endif
 

@@ -32,14 +32,8 @@
 JS_METHOD(_include) {
 	v8cgi_App * app = APP_PTR;
 	v8::String::Utf8Value file(args[0]);
-	v8::Handle<v8::Object> exports;
 	std::string root = *(v8::String::Utf8Value(args.Data()));
-	try {
-		exports = app->include(*file, root);
-	} catch (std::string e) {
-		return JS_ERROR(e.c_str());
-	}
-	return exports;
+	return app->include(*file, root);
 }
 
 /**
@@ -50,12 +44,7 @@ JS_METHOD(_require) {
 	v8::String::Utf8Value file(args[0]);
 	v8::Handle<v8::Object> exports;
 	std::string root = *(v8::String::Utf8Value(args.Data()));
-	try {
-		exports = app->require(*file, root);
-	} catch (std::string e) {
-		return JS_ERROR(e.c_str());
-	}
-	return exports;
+	return app->require(*file, root);
 }
 
 /**
@@ -79,7 +68,6 @@ JS_METHOD(_exit) {
 	
 	/* do something at least a bit complex so the stack guard can throw the termination exception */
 	v8::Script::Compile(JS_STR("(function(){})()"))->Run();
-
 	return v8::Undefined();
 }
 
@@ -100,7 +88,7 @@ void v8cgi_App::init() {
 /**
  * Initialize and setup the context. Executed during every request, prior to executing main request file.
  */
-void v8cgi_App::prepare(char ** envp) {
+int v8cgi_App::prepare(char ** envp) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::Object> g = JS_GLOBAL;
 
@@ -115,7 +103,10 @@ void v8cgi_App::prepare(char ** envp) {
 
 	/* config file */
 	this->include(path_normalize(this->cfgfile), path_getcwd());
-	if (!this->paths->Length()) { throw std::string("require.paths is empty, have you forgotten to push some data there?"); }
+	if (!this->paths->Length()) { 
+		this->error("require.paths is empty, have you forgotten to push some data there?", __FILE__, __LINE__);
+		return 1;
+	}
 
 	setup_v8cgi(g);
 	setup_system(g, envp, this->mainfile, this->mainfile_args);
@@ -123,6 +114,7 @@ void v8cgi_App::prepare(char ** envp) {
 	
 	/* default libraries */
 	this->autoload();
+	return 0;
 }
 
 /**
@@ -164,38 +156,28 @@ int v8cgi_App::execute(char ** envp) {
 	this->terminated = false;
 	this->mainModule = v8::Object::New();
 
-	try {
-		/* prepare JS environment: config, default libraries */
-		this->prepare(envp); 
-	} catch (std::string e) {
-		/* error with config file or default libs -> goes to stderr */
-		this->error(e.c_str(), __FILE__, __LINE__); 
-		this->finish();
-		return 1;
-	}
+	int result = this->prepare(envp);
+	if (result) { return result; } /* error with config file or default libs */
 	
 	if (this->mainfile == "") {
 		this->error("Nothing to do :)", __FILE__, __LINE__);
 		return 1;
 	}
 
-	try {
-		/* require the mainfile */
-		this->require(this->mainfile, path_getcwd()); 
-	} catch (std::string e) {
-		/* error when executing main file */
+	v8::TryCatch try_catch;
+	this->require(this->mainfile, path_getcwd()); 
+	if (try_catch.HasCaught()) { /* error when executing main file */
+		result = 1;
+		std::string error = this->format_exception(&try_catch);
 		v8::Handle<v8::Value> show = this->get_config("showErrors");
 		if (show->ToBoolean()->IsTrue()) {
-			this->js_error(e.c_str()); 
+			this->js_error(error.c_str()); 
 		} else {
-			this->error(e.c_str(), __FILE__, __LINE__);
+			this->error(error.c_str(), __FILE__, __LINE__);
 		}
-		this->finish();
-		return 1;
 	}
-	
 	this->finish();
-	return 0;
+	return result;
 }
 
 /**
@@ -254,10 +236,12 @@ v8::Handle<v8::Object> v8cgi_App::require(std::string name, std::string relative
 	modulefiles files = this->resolve_module(name, relativeRoot);
 	
 	if (!files.size()) {
-		std::string s = "Cannot find module '";
-		s += name;
-		s += "'";
-		throw s;
+		std::string error = "Cannot find module '";
+		error += name;
+		error += "'";
+		v8::Handle<v8::Object> result = v8::Object::New();
+		JS_ERROR(error.c_str());
+		return handle_scope.Close(result);
 	}
 
 #ifdef VERBOSE
@@ -284,21 +268,20 @@ v8::Handle<v8::Object> v8cgi_App::require(std::string name, std::string relative
 	v8::Handle<v8::Object> module = (name == this->mainfile ? this->mainModule : v8::Object::New());
 	module->Set(JS_STR("id"), JS_STR(modulename.c_str()));
 
-	try {
-		for (unsigned int i=0; i<files.size(); i++) {
-			std::string file = files[i];
-			std::string ext = file.substr(file.find_last_of('.')+1, std::string::npos);
-			if (ext == STRING(DSO_EXT)) {
-				this->load_dso(file, require, include, exports, module);
-			} else {
-				this->load_js(file, require, include, exports, module);
-			}
+	int status = 0;
+	for (unsigned int i=0; i<files.size(); i++) {
+		std::string file = files[i];
+		std::string ext = file.substr(file.find_last_of('.')+1, std::string::npos);
+		if (ext == STRING(DSO_EXT)) {
+			status = this->load_dso(file, require, include, exports, module);
+		} else {
+			status = this->load_js(file, require, include, exports, module);
 		}
-	} catch (std::string e) {
-		/* remove from export cache */
-		this->cache.removeExports(modulename);
-		/* rethrow */
-		throw e; 
+		
+		if (status > 0) {
+			this->cache.removeExports(modulename);
+			return handle_scope.Close(exports);
+		}
 	}
 
 	return handle_scope.Close(exports);
@@ -307,33 +290,27 @@ v8::Handle<v8::Object> v8cgi_App::require(std::string name, std::string relative
 /**
  * Include a js module
  */
-void v8cgi_App::load_js(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Function> include, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module) {
+int v8cgi_App::load_js(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Function> include, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module) {
 	v8::HandleScope handle_scope;
-	v8::TryCatch tc;
 
 	/* compiled script wrapped in anonymous function */
 	v8::Handle<v8::Script> script = this->cache.getScript(filename);
 	
-	/* compilation error? */
-	if (tc.HasCaught()) {
-		throw this->format_exception(&tc);
-	} else {
-		/* run the script, no error should happen here */
-		v8::Handle<v8::Value> result = script->Run();
+	if (script.IsEmpty()) { return 1; } /* compilation error? */
+	
+	/* run the script, no error should happen here */
+	v8::Handle<v8::Value> result = script->Run();
 
-		v8::Handle<v8::Function> fun = v8::Handle<v8::Function>::Cast(result);
-		v8::Handle<v8::Value> params[4] = {require, include, exports, module}; 
-		result = fun->Call(exports, 4, params);
-
-		/* runtime error in inner code */
-		if (tc.HasCaught() && !this->terminated) { throw this->format_exception(&tc); }
-	}
+	v8::Handle<v8::Function> fun = v8::Handle<v8::Function>::Cast(result);
+	v8::Handle<v8::Value> params[4] = {require, include, exports, module}; 
+	fun->Call(exports, 4, params);
+	return 0;
 }
 
 /**
  * Include a DSO module
  */
-void v8cgi_App::load_dso(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Function> include, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module) {
+int v8cgi_App::load_dso(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Function> include, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module) {
 	v8::HandleScope handle_scope;
 	void * handle = this->cache.getHandle(filename);
 
@@ -344,10 +321,12 @@ void v8cgi_App::load_dso(std::string filename, v8::Handle<v8::Function> require,
 		std::string error = "Cannot initialize shared library '";
 		error += filename;
 		error += "'";
-		throw error;
+		JS_ERROR(error.c_str());
+		return 1;
 	}
 	
 	func(require, exports, module);
+	return 0;
 }
 
 /**
@@ -457,17 +436,26 @@ std::string v8cgi_App::format_exception(v8::TryCatch* try_catch) {
 	std::string msgstring = "";
 	std::stringstream ss;
 
+
 	if (message.IsEmpty()) {
 		msgstring += *exception;
 	} else {
 		v8::String::Utf8Value filename(message->GetScriptResourceName());
 		int linenum = message->GetLineNumber();
+		msgstring += *exception;
+		msgstring += " (";
 		msgstring += *filename;
 		msgstring += ":";
 		ss << linenum;
 		msgstring += ss.str();
-		msgstring += ": ";
-		msgstring += *exception;
+		msgstring += ")";
+		
+		v8::Handle<v8::Value> stack = try_catch->StackTrace();
+		if (!stack.IsEmpty()) {
+			v8::String::Utf8Value sstack(stack);
+			msgstring += "\n";
+			msgstring += *sstack;
+		}
 	}
 	return msgstring;
 }

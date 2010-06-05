@@ -143,7 +143,7 @@ v8::Handle<v8::Script> Cache::getScript(std::string filename) {
 #endif
 		std::string source = this->getSource(filename);
 		/* context-independent compiled script */
-		v8::Handle<v8::Script> script = v8::Script::New(JS_STR(source.c_str()), JS_STR(filename.c_str()));		
+		v8::Handle<v8::Script> script = v8::Script::New(JS_STR(source.c_str()), JS_STR(filename.c_str()));
 		if (!script.IsEmpty()) {
 			this->mark(filename); /* mark as cached */
 			v8::Persistent<v8::Script> result = v8::Persistent<v8::Script>::New(script);

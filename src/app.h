@@ -44,7 +44,7 @@ public:
 
 protected:
 	/* env. preparation */
-	virtual void prepare(char ** envp);
+	virtual int prepare(char ** envp);
 
 	/* config file */
 	std::string cfgfile;
@@ -83,8 +83,8 @@ private:
 
 	modulefiles resolve_module(std::string name, std::string relativeRoot);
 	modulefiles resolve_extension(std::string path);
-	void load_js(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Function> include, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module);
-	void load_dso(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Function> include, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module);
+	int load_js(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Function> include, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module);
+	int load_dso(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Function> include, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module);
 	v8::Handle<v8::Value> get_config(std::string name);
 	v8::Handle<v8::Function> build_require(std::string path, v8::Handle<v8::Value> (*func) (const v8::Arguments&));
 	

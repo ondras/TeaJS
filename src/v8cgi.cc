@@ -208,6 +208,11 @@ private:
 		FCGI_SetExitStatus(0);
 		exit(0); 
 	}
+
+	void handle_sigpipe(int param) {
+		FCGI_SetExitStatus(0);
+		exit(0); 
+	}
 #endif
 
 extern char ** environ;
@@ -221,6 +226,7 @@ int main(int argc, char ** argv) {
 #ifdef FASTCGI
 	signal(SIGTERM, handle_sigterm);
 	signal(SIGUSR1, handle_sigusr1);
+	signal(SIGPIPE, handle_sigpipe);
 	/**
 	 * FastCGI main loop
 	 */

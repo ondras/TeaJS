@@ -349,11 +349,11 @@ JS_METHOD(_send) {
 		return JS_TYPE_ERROR("Bad argument count. Use 'socket.send(data, [address], [port])'");
 	}
 	
-	v8::String::Utf8Value data(args[0]);
 	
 	sock_addr_t taddr;
 	sockaddr * target = NULL;
 	socklen_t len = 0;
+	ssize_t result;
 	
 	if (args.Length() > 1) {
 		int family = args.This()->Get(JS_STR("family"))->Int32Value();
@@ -366,7 +366,21 @@ JS_METHOD(_send) {
 		target = (sockaddr *) &taddr;
 	}
 	
-	ssize_t result = sendto(sock, *data, data.length(), 0, target, len);
+	if (args[0]->IsArray()) {
+		v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(args[0]);
+		uint32_t arrlen = arr->Length();
+		char * buf = new char[arrlen];
+
+		for (unsigned int i=0;i<arrlen;i++) {
+			buf[i] = (char) arr->Get(JS_INT(i))->IntegerValue();
+		}
+		result = sendto(sock, buf, arrlen, 0, target, len);
+		delete[] buf;
+	} else {
+		v8::String::Utf8Value data(args[0]);
+		result = sendto(sock, *data, data.length(), 0, target, len);
+	}	
+	
     if (result == SOCKET_ERROR) {
         return JS_ERROR(strerror(errno));
     } else {

@@ -129,9 +129,9 @@ std::string path_getcwd() {
 /**
  * Change current directory
  */
-void path_chdir(std::string dir) {
+int path_chdir(std::string dir) {
 #ifdef VERBOSE
 	printf("[path_chdir] chdir to '%s'\n", dir.c_str()); 
 #endif	
-	chdir(dir.c_str());
+	return chdir(dir.c_str());
 }

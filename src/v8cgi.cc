@@ -23,7 +23,7 @@
  * any arguments after the v8_args but before the program_file are
  * used by v8cgi.
  */
-static const char * v8cgi_usage = "v8cgi [v8_args --] [-v] [-h] [-c path] [-d port] program_file [argument ...]";
+static const char * v8cgi_usage = "v8cgi [v8_args --] [-v] [-h] [-w] [-c path] [-d port] program_file [argument ...]";
 
 class v8cgi_CGI : public v8cgi_App {
 public:
@@ -106,6 +106,8 @@ private:
 		err += v8cgi_usage; /* see the v8cgi_usage definition for the format */
 		
 		int index = 0;
+		bool wait_for_debugger = false;
+		int debugger_port = 0;
 		
 		/* see if we have v8 options */
 		bool have_v8args = false;
@@ -146,11 +148,15 @@ private:
 					index++; /* skip the option value */
 				break;
 				
+				case 'w':
+					wait_for_debugger = true;
+				break;
+
 				case 'd':
 					if (index >= argc) { throw err; } /* missing option value */
-					v8::Debug::EnableAgent("v8cgi", atoi(argv[index]));
+					debugger_port = atoi(argv[index]);
 #ifdef VERBOSE
-					printf("port: %s\n", argv[index]);
+					printf("port: %i\n", debugger_port);
 #endif
 					index++; /* skip the option value */
 				break;
@@ -165,12 +171,17 @@ private:
 					printf("\n");
 				break;
 				
+				
 				default:
 					throw err;
 				break;
 			}
 			
 		} 
+		
+		if (debugger_port) { /* launch debugging agent */ 
+			v8::Debug::EnableAgent("v8cgi", debugger_port, wait_for_debugger);
+		}
 		
 		if (index < argc) {
 			/* argv[index] is the program file */

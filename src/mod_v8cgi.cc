@@ -56,7 +56,8 @@ public:
 	int execute(request_rec * request, char ** envp) {
 		this->request = request;
 		this->mainfile = std::string(request->filename);
-		path_chdir(path_dirname(this->mainfile));
+		int chdir_result = path_chdir(path_dirname(this->mainfile));
+		if (chdir_result == -1) { return chdir_result; }
 		return v8cgi_App::execute(envp);
 	}
 	

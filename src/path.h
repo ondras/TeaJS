@@ -25,6 +25,6 @@ bool path_dir_exists(std::string path);
 /* get current working directory */
 std::string path_getcwd();
 /* change current working directory */
-void path_chdir(std::string dir);
+int path_chdir(std::string dir);
 
 #endif

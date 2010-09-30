@@ -47,7 +47,8 @@ int mmap_write(char * name, void * data, size_t size) {
 	int f = open(name, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	if (f == -1) { return -1; }
 	lseek(f, size - 1, SEEK_SET);
-	write(f, "", 1);
+	size_t written = write(f, "", 1);
+	if (written != 1) { return -1; }
 		
 	void * dst = mmap(0, size, PROT_WRITE, MAP_SHARED, f, 0);
 	memcpy(dst, data, size);

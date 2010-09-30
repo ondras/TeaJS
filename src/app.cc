@@ -77,10 +77,10 @@ JS_METHOD(_exit) {
 void v8cgi_App::init() {
 	this->cfgfile = STRING(CONFIG_PATH);
 
+#ifdef REUSE_CONTEXT
 	/**
 	 * Reusable context is created only once, here.
  	 */
-#ifdef REUSE_CONTEXT
 	this->create_context();
 #endif
 }

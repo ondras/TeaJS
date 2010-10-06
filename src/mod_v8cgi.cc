@@ -115,7 +115,7 @@ JS_METHOD(_header) {
 
 int v8cgi_Module::prepare(char ** envp) {
 	int result = v8cgi_App::prepare(envp);
-	if (!result) { return result; }
+	if (result) { return result; }
 
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::Object> g = JS_GLOBAL;
@@ -140,28 +140,28 @@ static int mod_v8cgi_handler(request_rec *r) {
 	ap_add_common_vars(r);
 	ap_add_cgi_vars(r);
 
-    if (r->headers_in) {
+	if (r->headers_in) {
 		const char *auth;
 		auth = apr_table_get(r->headers_in, "Authorization");
 		if (auth && auth[0] != 0 && strncmp(auth, "Basic ", 6) == 0) {
 			
-		    char *user = NULL;
-		    char *pass = NULL;
-		    int length;
-		    
-	    	user = (char *)apr_palloc(r->pool, apr_base64_decode_len(auth+6) + 1);
-	    	length = apr_base64_decode(user, auth + 6);
-		
-	    	/* Null-terminate the string. */
-	    	user[length] = '\0';		    
-	    	
-		    if (user) {
+			char *user = NULL;
+			char *pass = NULL;
+			int length;
+
+			user = (char *)apr_palloc(r->pool, apr_base64_decode_len(auth+6) + 1);
+			length = apr_base64_decode(user, auth + 6);
+
+			/* Null-terminate the string. */
+			user[length] = '\0';
+			
+			if (user) {
 				pass = strchr(user, ':');
 				if (pass) {
-				    *pass++ = '\0';
+					*pass++ = '\0';
 
-				    apr_table_setn(r->subprocess_env, "AUTH_USER", user);
-				    apr_table_setn(r->subprocess_env, "AUTH_PW", pass);
+					apr_table_setn(r->subprocess_env, "AUTH_USER", user);
+					apr_table_setn(r->subprocess_env, "AUTH_PW", pass);
 				}
 		    }
 		} 
@@ -208,8 +208,11 @@ static int mod_v8cgi_handler(request_rec *r) {
 /**
  * Module initialization 
  */
-static int mod_v8cgi_init_handler(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp, server_rec *s) { 
-	ap_add_version_component(p, "mod_v8cgi");
+static int mod_v8cgi_init_handler(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp, server_rec *s) {
+	std::string version;
+	version += "mod_v8cgi/";
+	version += STRING(VERSION);
+	ap_add_version_component(p, version.c_str());
 	v8cgi_config * cfg = (v8cgi_config *) ap_get_module_config(s->module_config, &v8cgi_module);
 	app.init(cfg);
     return OK;

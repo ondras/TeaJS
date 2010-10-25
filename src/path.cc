@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <limits.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #ifdef windows
 #	include <io.h>

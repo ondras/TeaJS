@@ -23,7 +23,7 @@
  * any arguments after the v8_args but before the program_file are
  * used by v8cgi.
  */
-static const char * v8cgi_usage = "v8cgi [v8_args --] [-v] [-h] [-w] [-c path] [-d port] program_file [argument ...]";
+static const char * const v8cgi_usage = "v8cgi [v8_args --] [-v] [-h] [-w] [-c path] [-d port] program_file [argument ...]";
 
 class v8cgi_CGI : public v8cgi_App {
 public:

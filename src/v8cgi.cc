@@ -234,6 +234,11 @@ int main(int argc, char ** argv) {
 	result = cgi.init(argc, argv);
 	if (result) { exit(result); }
 
+  // It is fine to run v8 without using Locker but Locker must always be used if
+  // it is ever used. Note that grabbing the lock initializes some parts of v8
+  // so we have to do this after parsing args.
+  v8::Locker locker;
+
 #ifdef FASTCGI
 	signal(SIGTERM, handle_sigterm);
 	signal(SIGUSR1, handle_sigusr1);

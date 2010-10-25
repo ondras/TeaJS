@@ -5,6 +5,46 @@ def build_sources(env, sources):
 	return [ env.SharedObject(s) for s in sources ]
 # def
 
+def build_profiler(env):
+	e = env.Clone()
+	e.SharedLibrary(
+		target = "lib/profiler",
+		source = ["src/lib/profiler/profiler.cc"],
+		SHLIBPREFIX="")
+# def
+
+def build_fibers(env):
+	e = env.Clone()
+	e.SharedLibrary(
+		target = "lib/fibers",
+		source = ["src/lib/fibers/fibers.cc"],
+		SHLIBPREFIX=""
+	)
+# def
+
+def build_memcached(env):
+	e = env.Clone()
+	if env["os"] == "darwin":
+		e.Append(
+			LIBPATH = ["/opt/local/lib"],
+			CPPPATH = ["/opt/local/include"]
+		)
+	if env["os"] == "posix":
+	  e.Append(
+	    LIBPATH = ["/usr/local/libmemcached/lib"],
+	    CPPPATH = ["/usr/local/libmemcached/include"]
+	  )
+	# if
+	e.Append(
+		LIBS = ["libmemcached"]
+	)
+	e.SharedLibrary(
+		target = "lib/memcached",
+		source = ["src/lib/memcached/memcached.cc"],
+		SHLIBPREFIX=""
+	)
+# def
+
 def build_mysql(env):
 	e = env.Clone()
 	if env["os"] == "windows":
@@ -221,6 +261,9 @@ vars = Variables()
 
 # module switches
 vars.Add(BoolVariable("mysql", "MySQL library", 1))
+vars.Add(BoolVariable("profiler", "V8 Profiler library", 1))
+vars.Add(BoolVariable("fibers", "Fiber support", 1))
+vars.Add(BoolVariable("memcached", "Memcached library", 1))
 vars.Add(BoolVariable("pgsql", "PostgreSQL library", 0))
 vars.Add(BoolVariable("gd", "GD library", 1))
 vars.Add(BoolVariable("sqlite", "SQLite library", 1))
@@ -264,9 +307,14 @@ if conf.CheckCHeader("sys/mman.h", include_quotes = "<>"):
 if conf.CheckFunc("sleep"):
 	env.Append(CPPDEFINES = ["HAVE_SLEEP"])
 
+if env["debug"] == 1:
+  v8_lib = "v8_g"
+else:
+  v8_lib = "v8"
+
 # default built-in values
 env.Append(
-	LIBS = ["v8"],
+	LIBS = [v8_lib],
 	CCFLAGS = ["-Wall", "-O3"],
 	CPPPATH = ["src", env["v8_path"] + "/include"],
 	LIBPATH = env["v8_path"],
@@ -291,7 +339,7 @@ if env["os"] == "posix":
 # if
 
 # look for V8 - sanity check
-if (env["os"] != "windows") and not (conf.CheckLib("v8")):
+if (env["os"] != "windows") and not (conf.CheckLib(v8_lib)):
 	print("Cannot find V8 library!")
 	sys.exit(1)
 # if
@@ -341,12 +389,14 @@ if env["reuse_context"] == 1:
 	)
 # if
 
-
 # start compiling
 sources = build_sources(env, sources)
 build_binary(env)
 
+if env["fibers"] == 1: build_fibers(env)
 if env["mysql"] == 1: build_mysql(env)
+if env["memcached"] == 1: build_memcached(env)
+if env["profiler"] == 1: build_profiler(env)
 if env["pgsql"] == 1: build_pgsql(env)
 if env["sqlite"] == 1: build_sqlite(env)
 if env["gd"] == 1: build_gd(env)

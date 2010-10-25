@@ -93,6 +93,10 @@ JS_METHOD(_getcwd) {
 	return JS_STR(path_getcwd().c_str());
 }
 
+JS_METHOD(_getpid) {
+	return JS_INT(getpid());
+}
+
 /**
  * Sleep for a given number of seconds
  */
@@ -154,6 +158,7 @@ void setup_system(v8::Handle<v8::Object> global, char ** envp, std::string mainf
 	system->Set(JS_STR("stdin"), v8::FunctionTemplate::New(_stdin)->GetFunction());
 	system->Set(JS_STR("stderr"), v8::FunctionTemplate::New(_stderr)->GetFunction());
 	system->Set(JS_STR("getcwd"), v8::FunctionTemplate::New(_getcwd)->GetFunction());
+	system->Set(JS_STR("getpid"), v8::FunctionTemplate::New(_getpid)->GetFunction());
 	system->Set(JS_STR("sleep"), v8::FunctionTemplate::New(_sleep)->GetFunction());
 	system->Set(JS_STR("usleep"), v8::FunctionTemplate::New(_usleep)->GetFunction());
 	system->Set(JS_STR("getTimeInMicroseconds"), v8::FunctionTemplate::New(_getTimeInMicroseconds)->GetFunction());

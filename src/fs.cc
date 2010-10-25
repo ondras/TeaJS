@@ -146,6 +146,19 @@ JS_METHOD(_close) {
 	return args.This();
 }
 
+JS_METHOD(_flush) {
+	v8::Handle<v8::Value> file = LOAD_VALUE(1);
+
+	if (file->IsFalse()) {
+		return JS_ERROR("Cannot flush non-opened file");
+	}
+
+	FILE * f = LOAD_PTR(1, FILE *);
+
+	fflush(f);
+	return args.This();
+}
+
 JS_METHOD(_read) {
 	v8::Handle<v8::Value> file = LOAD_VALUE(1);
 	
@@ -357,6 +370,7 @@ void setup_fs(v8::Handle<v8::Object> target) {
 	pt->Set("read", v8::FunctionTemplate::New(_read));
 	pt->Set("rewind", v8::FunctionTemplate::New(_rewind));
 	pt->Set("close", v8::FunctionTemplate::New(_close));
+	pt->Set("flush", v8::FunctionTemplate::New(_flush));
 	pt->Set("write", v8::FunctionTemplate::New(_write));
 	pt->Set("remove", v8::FunctionTemplate::New(_removefile));
 	pt->Set("toString", v8::FunctionTemplate::New(_tostring));

@@ -366,16 +366,11 @@ JS_METHOD(_send) {
 		target = (sockaddr *) &taddr;
 	}
 	
-	if (args[0]->IsArray()) {
-		v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(args[0]);
-		uint32_t arrlen = arr->Length();
-		char * buf = new char[arrlen];
-
-		for (unsigned int i=0;i<arrlen;i++) {
-			buf[i] = (char) arr->Get(JS_INT(i))->IntegerValue();
-		}
-		result = sendto(sock, buf, arrlen, 0, target, len);
-		delete[] buf;
+	if (IS_BUFFER(args[0])) {
+		size_t size = 0;
+		char * data = JS_BUFFER_TO_CHAR(args[0], &size);
+		
+		result = sendto(sock, data, size, 0, target, len);
 	} else {
 		v8::String::Utf8Value data(args[0]);
 		result = sendto(sock, *data, data.length(), 0, target, len);
@@ -402,18 +397,10 @@ JS_METHOD(_receive) {
 		delete[] data;
         return JS_ERROR(strerror(errno));
     } else {
-		v8::Handle<v8::Value> output;
-		
-		if (args.Length() > 1 && args[1]->IsTrue()) {
-			output = JS_CHARARRAY((char *) data, result);
-		} else {
-			output = JS_STR(data, result);
-		}
-		
-		v8::Handle<v8::Value> text = JS_STR(data, result);
+		v8::Handle<v8::Value> buffer = JS_BUFFER(data, result);
 		delete[] data;
 		if (type == SOCK_DGRAM) { SAVE_VALUE(1, create_peer((sockaddr *) &addr)); }
-		return output;
+		return buffer;
     }
 }
 

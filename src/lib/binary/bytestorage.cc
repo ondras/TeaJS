@@ -27,7 +27,7 @@ ByteStorage::ByteStorage(size_t length) {
 /**
  * Use a given buffer + length
  */
-ByteStorage::ByteStorage(unsigned char * data, size_t length) {
+ByteStorage::ByteStorage(char * data, size_t length) {
 	this->length = length;
 	this->storage = new ByteStorageData(length);
 	this->data = this->storage->getData();
@@ -52,11 +52,11 @@ ByteStorage::~ByteStorage() {
 	this->storage = NULL;
 }
 
-void ByteStorage::fill(unsigned char fill) {
+void ByteStorage::fill(char fill) {
 	memset(this->data, fill, this->length);
 }
 
-void ByteStorage::fill(unsigned char * data, size_t length) {
+void ByteStorage::fill(char * data, size_t length) {
 	memcpy(this->data, data, length);
 }
 
@@ -68,17 +68,17 @@ size_t ByteStorage::getLength() {
 	return this->length;
 }
 
-void ByteStorage::setByte(size_t index, unsigned char byte) {
+void ByteStorage::setByte(size_t index, char byte) {
 	if (index >= this->length) { return; }
 	this->data[index] = byte;
 }
 
-unsigned char ByteStorage::getByte(size_t index) {
+char ByteStorage::getByte(size_t index) {
 	if (index >= this->length) { return NULL; }
 	return this->data[index];
 }
 
-unsigned char * ByteStorage::getData() {
+char * ByteStorage::getData() {
 	return this->data;
 }
 
@@ -174,7 +174,7 @@ ByteStorage * ByteStorage::transcode(const char * from, const char * to) {
 
 	/* this is the resulting length */
 	size_t len = outBuf - output;
-	ByteStorage * bs = new ByteStorage((unsigned char *) output, len);
+	ByteStorage * bs = new ByteStorage((char *) output, len);
 
 	free(output);
 	return bs;

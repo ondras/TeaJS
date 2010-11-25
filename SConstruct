@@ -103,6 +103,18 @@ def build_sqlite(env):
 	)
 # def
 
+def build_zlib(env):
+	e = env.Clone()
+	e.Append(
+		LIBS = ["z"]
+	)
+	e.SharedLibrary(
+		target = "lib/zlib", 
+		source = ["src/lib/zlib/zlib.cc", "src/app", "src/path", "src/cache", "src/lib/binary/bytestorage"],
+		SHLIBPREFIX=""
+	)
+# def
+
 def build_gd(env):
 	e = env.Clone()
 	libname = ("gd", "bgd")[env["os"] == "windows"]
@@ -111,7 +123,7 @@ def build_gd(env):
 	)
 	e.SharedLibrary(
 		target = "lib/gd", 
-		source = ["src/common", "src/lib/gd/gd.cc"],
+		source = ["src/common", "src/lib/gd/gd.cc", "src/app", "src/path", "src/cache", "src/lib/binary/bytestorage"],
 		SHLIBPREFIX=""
 	)
 # def
@@ -119,7 +131,15 @@ def build_gd(env):
 def build_socket(env):
 	env.SharedLibrary(
 		target = "lib/socket", 
-		source = ["src/lib/socket/socket.cc"],
+		source = ["src/lib/socket/socket.cc", "src/app", "src/path", "src/cache", "src/lib/binary/bytestorage"],
+		SHLIBPREFIX=""
+	)
+# def
+
+def build_fs(env):
+	env.SharedLibrary(
+		target = "lib/fs", 
+		source = ["src/lib/fs/fs.cc", "src/common", "src/app", "src/path", "src/cache", "src/lib/binary/bytestorage"],
 		SHLIBPREFIX=""
 	)
 # def
@@ -140,13 +160,8 @@ def build_binary(env):
 		)
 	# if
 	e.SharedLibrary(
-		target = "lib/binary-b", 
-		source = ["src/lib/binary-b/binary-b.cc", "src/lib/binary-b/bytestring.cc", "src/lib/binary-b/bytearray.cc", "src/lib/binary-b/bytestorage.cc"],
-		SHLIBPREFIX=""
-	)
-	e.SharedLibrary(
-		target = "lib/binary-f", 
-		source = ["src/lib/binary-f/binary-f.cc", "src/lib/binary-f/bytestorage.cc"],
+		target = "lib/binary", 
+		source = ["src/lib/binary/binary.cc", "src/lib/binary/bytestorage"],
 		SHLIBPREFIX=""
 	)
 # def
@@ -215,7 +230,7 @@ def build_cgi(env, sources):
 # def
 
 # base source files
-sources = ["common.cc", "system.cc", "fs.cc", "cache.cc", "gc.cc", "app.cc", "path.cc" ]
+sources = ["common.cc", "system.cc", "cache.cc", "gc.cc", "app.cc", "path.cc", "lib/binary/bytestorage.cc"]
 sources = [ "src/%s" % s for s in sources ]
 
 version = open("VERSION", "r").read()
@@ -269,8 +284,10 @@ vars.Add(BoolVariable("gd", "GD library", 1))
 vars.Add(BoolVariable("sqlite", "SQLite library", 1))
 vars.Add(BoolVariable("socket", "Socket library", 1))
 vars.Add(BoolVariable("process", "Process library", 1))
+vars.Add(BoolVariable("fs", "Filesystem I/O library", 1))
 vars.Add(BoolVariable("xdom", "DOM Level 3 library (xerces based, for XML/XHTML)", 0))
 vars.Add(BoolVariable("gl", "OpenGL library", 0))
+vars.Add(BoolVariable("zlib", "zlib library", 1))
 vars.Add(BoolVariable("module", "Build Apache module", 1))
 vars.Add(BoolVariable("cgi", "Build CGI binary", 1))
 vars.Add(BoolVariable("fcgi", "FastCGI support (for CGI binary)", 0))
@@ -311,7 +328,7 @@ if env["debug"] == 1:
   v8_lib = "v8_g"
 else:
   v8_lib = "v8"
-
+  
 # default built-in values
 env.Append(
 	LIBS = [v8_lib],
@@ -402,6 +419,8 @@ if env["sqlite"] == 1: build_sqlite(env)
 if env["gd"] == 1: build_gd(env)
 if env["socket"] == 1: build_socket(env)
 if env["process"] == 1: build_process(env)
+if env["fs"] == 1: build_fs(env)
+if env["zlib"] == 1: build_zlib(env)
 if env["xdom"] == 1: build_xdom(env)
 if env["gl"] == 1: build_gl(env)
 if env["module"] == 1: build_module(env, sources)

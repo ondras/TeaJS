@@ -23,7 +23,6 @@ namespace {
 /**
  * Read characters from stdin
  * @param {int} count How many; 0 == all
- * @param {bool} [arr=false] Return as array of bytes?
  */
 JS_METHOD(_stdin) {
 	v8cgi_App * app = APP_PTR;
@@ -52,27 +51,19 @@ JS_METHOD(_stdin) {
 		delete[] tmp;
 	}
 	
-	if (args.Length() > 1 && args[1]->IsTrue()) {
-		return JS_CHARARRAY((char *) data.data(), size);
-	} else {
-		return JS_STR(data.data(), size);
-	}
+	return JS_BUFFER((char *) data.data(), size);
 }
 
 /**
  * Dump data to stdout
- * @param {string|int[]} String or array of bytes
+ * @param {string||Buffer} String or Buffer
  */
 JS_METHOD(_stdout) {
 	v8cgi_App * app = APP_PTR;
-	if (args[0]->IsArray()) {
-		v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(args[0]);
-		uint32_t len = arr->Length();
-		std::string data;
-		for (unsigned int i=0;i<len;i++) {
-			data += (char) arr->Get(JS_INT(i))->Int32Value();
-		}
-		app->writer((char *) data.data(), len);
+	if (IS_BUFFER(args[0])) {
+		size_t size = 0;
+		char * data = JS_BUFFER_TO_CHAR(args[0], &size);
+		app->writer(data, size);
 	} else {
 		v8::String::Utf8Value str(args[0]);
 		app->writer(*str, str.length());

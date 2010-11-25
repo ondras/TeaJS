@@ -1,5 +1,7 @@
 #!../v8cgi
 
+var fs = require("fs");
+
 var TestRunner = {
 	verbosity:0,
 
@@ -11,7 +13,7 @@ var TestRunner = {
 	dir: function(name, obj) {
 		var subobj = {};
 		obj["test_" + name] = subobj;
-		var d = new Directory(name);
+		var d = new fs.Directory(name);
 		var list = d.listFiles().filter(function(f) { return f.match(/\.js$/i); });
 		for (var i=0;i<list.length;i++) {
 			var item = name + "/" + list[i];
@@ -24,7 +26,7 @@ var TestRunner = {
 		
 		for (var i=0;i<paths.length;i++) {
 			var name = paths[i];
-			var f = new File(name);
+			var f = new fs.File(name);
 			
 			if (!f.exists()) {
 				system.stdout("Skipping nonexistent '"+name+"'\n");

@@ -1,5 +1,5 @@
-include('Jst.js');
-include('session.js');
+include('Jst');
+include('session');
 
 /**
  * Concatenates the values of a variable into an easily readable string

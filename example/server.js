@@ -1,3 +1,5 @@
+#!../v8cgi
+
 var Socket = require("socket").Socket;
 
 var address = "127.0.0.1";
@@ -13,7 +15,7 @@ while (1) {
 	while (1) {
 		buffer = connection.receive(1000);
 		if (!buffer) { break; }
-		data += buffer;
+		data += buffer.toString("ascii");
 		if (data.indexOf("\n\n") == data.length-2) { break; }
 		if (data.indexOf("\r\n\r\n") == data.length-4) { break; }
 	}

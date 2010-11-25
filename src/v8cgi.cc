@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "app.h"
+#include "macros.h"
 #include "path.h"
 
 #ifdef FASTCGI

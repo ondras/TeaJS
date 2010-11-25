@@ -6,7 +6,7 @@ exports.Config = Config;
 require.paths.push("/usr/local/lib/v8cgi");
 
 // these will get loaded automatically
-Config["libraryAutoload"] = ["js", "util", "html", "http"];
+Config["libraryAutoload"] = ["js", "html", "http"];
 
 // name of session cookie
 Config["sessionCookie"] = "V8SID";

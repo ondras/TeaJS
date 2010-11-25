@@ -14,7 +14,6 @@
 
 #include "app.h"
 #include "system.h"
-#include "fs.h"
 #include "macros.h"
 #include "cache.h"
 #include "path.h"
@@ -110,7 +109,6 @@ int v8cgi_App::prepare(char ** envp) {
 
 	setup_v8cgi(g);
 	setup_system(g, envp, this->mainfile, this->mainfile_args);
-	setup_fs(g);
 	
 	/* default libraries */
 	this->autoload();
@@ -312,7 +310,17 @@ int v8cgi_App::load_js(std::string filename, v8::Handle<v8::Function> require, v
  */
 int v8cgi_App::load_dso(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Function> include, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module) {
 	v8::HandleScope handle_scope;
-	void * handle = this->cache.getHandle(filename);
+	void * handle;
+	
+	try {
+		handle = this->cache.getHandle(filename);
+	} catch (std::string e) {
+		std::string error = "Cannot open shared library '";
+		error += filename;
+		error += "'";
+		JS_ERROR(error.c_str());
+		return 1;
+	}
 
 	typedef void (*init_t)(v8::Handle<v8::Function>, v8::Handle<v8::Object>, v8::Handle<v8::Object>);
 	init_t func = (init_t) dlsym(handle, "init");
@@ -417,7 +425,12 @@ v8cgi_App::modulefiles v8cgi_App::resolve_extension(std::string path) {
 		path2 = fullPath;
 		path2 += ".";
 		path2 += suffixes[j];
-		if (path_file_exists(path2)) { result.push_back(path2); }
+		if (path_file_exists(path2)) { 
+			result.push_back(path2); 
+#ifdef VERBOSE
+			printf("[resolve_extension] extension found '%s'\n", path2.c_str()); 
+#endif	
+		}
 	}
 
 	/* if the path already exists (extension to commonjs modules 1.1), use it */

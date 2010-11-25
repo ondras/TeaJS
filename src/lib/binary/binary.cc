@@ -65,7 +65,7 @@ void Buffer_fromString(const v8::Arguments& args) {
 	v8::String::Utf8Value str(args[0]);
 	v8::String::Utf8Value charset(args[1]);
 	
-	ByteStorage bs_tmp((unsigned char *) (*str), str.length());
+	ByteStorage bs_tmp((char *) (*str), str.length());
 	ByteStorage * bs = bs_tmp.transcode("utf-8", *charset);
 	SAVE_PTR(0, bs);
 }
@@ -79,7 +79,7 @@ void Buffer_fromArray(const v8::Arguments& args) {
 	
 	size_t index = 0;
 	for (size_t i=index1; i<index2; i++) {
-		unsigned char value = arr->Get(JS_INT(i))->IntegerValue();
+		char value = arr->Get(JS_INT(i))->IntegerValue();
 		bs->setByte(index++, value);
 	}
 	SAVE_PTR(0, bs);
@@ -94,7 +94,7 @@ JS_METHOD(_Buffer) {
 			v8::Handle<v8::External> ext = v8::Handle<v8::External>::Cast(args[0]);
 			SAVE_PTR(0, ext->Value());
 		} else if (args[0]->IsNumber()) { /* length, [fill] */
-			unsigned char fill = (args.Length() > 1 ? (unsigned char) args[1]->IntegerValue() : 0);
+			char fill = (args.Length() > 1 ? (char) args[1]->IntegerValue() : 0);
 			ByteStorage * bs = new ByteStorage(args[0]->IntegerValue());
 			bs->fill(fill);
 			SAVE_PTR(0, bs);
@@ -178,7 +178,7 @@ JS_METHOD(Buffer_fill) {
 	ByteStorage * bs = BS_THIS;
 	size_t index1 = firstIndex(args[1], bs->getLength());
 	size_t index2 = lastIndex(args[2], bs->getLength());
-	unsigned char fill = (unsigned char) args[0]->IntegerValue();
+	char fill = (char) args[0]->IntegerValue();
 	
 	for (size_t i = index1; i<index2; i++) {
 		bs->setByte(i, fill);
@@ -210,38 +210,36 @@ v8::Handle<v8::Value> Buffer_copy_impl(const v8::Arguments& args, bool source) {
 		length = bs2->getLength();
 	} else { return JS_TYPE_ERROR(errmsg); }
 	
-	size_t index1source, index1target;
+	size_t offsetSource, offsetTarget, amount;
 	if (source) {
-		index1target = firstIndex(args[1], length);
-		index1source = firstIndex(args[2], bs->getLength());
+		offsetSource = firstIndex(args[2], bs->getLength());
+		offsetTarget = firstIndex(args[1], length);
+		amount = MIN(length - offsetTarget, lastIndex(args[3], bs->getLength()) - offsetSource);
 	} else {
-		index1source = firstIndex(args[1], length);
-		index1target = firstIndex(args[2], bs->getLength());
+		offsetSource = firstIndex(args[1], length);
+		offsetTarget = firstIndex(args[2], bs->getLength());
+		amount = MIN(length - offsetSource, lastIndex(args[3], bs->getLength()) - offsetTarget);
 	}
-	size_t index2 = MIN(length, lastIndex(args[3], bs->getLength()));
 
-	unsigned char byte;
-	size_t index;
+	char byte;
 
 	if (source) {
-		for (size_t i=index1source; i<index2; i++) {
-			index = index1target + (i-index1source);
-			byte = bs->getByte(i);
+		for (size_t i=0; i<amount; i++) {
+			byte = bs->getByte(i + offsetSource);
 			if (bs2) {
-				bs2->setByte(index, byte);
+				bs2->setByte(i + offsetTarget, byte);
 			} else {
-				arr->Set(JS_INT(index), JS_INT(byte));
+				arr->Set(JS_INT(i + offsetTarget), JS_INT(byte));
 			}
 		}
 	} else {
-		for (size_t i=index1source; i<index2; i++) {
-			index = index1target + (i-index1source);
+		for (size_t i=0; i<amount; i++) {
 			if (bs2) {
-				byte = bs2->getByte(i);
+				byte = bs2->getByte(i + offsetSource);
 			} else {
-				byte = arr->Get(JS_INT(i))->IntegerValue();
+				byte = arr->Get(JS_INT(i + offsetSource))->IntegerValue();
 			}
-			bs->setByte(index, byte);
+			bs->setByte(i + offsetTarget, byte);
 		}
 	}
 	
@@ -256,8 +254,12 @@ JS_METHOD(Buffer_copyFrom) {
 	return Buffer_copy_impl(args, false);
 }
 
-JS_METHOD(Buffer_copyFromString) {
-	return JS_ERROR("Buffer::copyFromString not yet implemented");
+JS_METHOD(Buffer_read) {
+	return JS_ERROR("Buffer::read not yet implemented");
+}
+
+JS_METHOD(Buffer_write) {
+	return JS_ERROR("Buffer::write not yet implemented");
 }
 
 v8::Handle<v8::Value> Buffer_length(v8::Local<v8::String> property, const v8::AccessorInfo &info) {
@@ -270,17 +272,15 @@ v8::Handle<v8::Value> Buffer_get(uint32_t index, const v8::AccessorInfo &info) {
 	size_t len = bs->getLength();
 	if (index < 0 || index >= len) { return JS_RANGE_ERROR("Non-existent index"); }
 	
-	return JS_INT(bs->getByte(index));
+	return JS_INT((unsigned char) bs->getByte(index));
 }
 
 v8::Handle<v8::Value> Buffer_set(uint32_t index, v8::Local<v8::Value> value, const v8::AccessorInfo &info) {
 	ByteStorage * bs = BS_OTHER(info.This());
 	size_t len = bs->getLength();
 	if (index < 0 || index >= len) { return JS_RANGE_ERROR("Non-existent index"); }
-	
-	size_t number = value->IntegerValue();
-	bs->setByte(index, (unsigned char) number);
 
+	bs->setByte(index, (unsigned char) value->IntegerValue());
 	return value;
 }
 
@@ -299,7 +299,8 @@ SHARED_INIT() {
 	bufferPrototype->Set(JS_STR("fill"), v8::FunctionTemplate::New(Buffer_fill));
 	bufferPrototype->Set(JS_STR("copy"), v8::FunctionTemplate::New(Buffer_copy));
 	bufferPrototype->Set(JS_STR("copyFrom"), v8::FunctionTemplate::New(Buffer_copyFrom));
-	bufferPrototype->Set(JS_STR("copyFromString"), v8::FunctionTemplate::New(Buffer_copyFrom));
+	bufferPrototype->Set(JS_STR("read"), v8::FunctionTemplate::New(Buffer_read));
+	bufferPrototype->Set(JS_STR("write"), v8::FunctionTemplate::New(Buffer_write));
 
 	v8::Handle<v8::ObjectTemplate> bufferObject = bufferTemplate->InstanceTemplate();
 	bufferObject->SetInternalFieldCount(1);	

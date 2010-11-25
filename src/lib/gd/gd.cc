@@ -92,7 +92,7 @@ JS_METHOD(_image) {
 
 /**
  * @param {int} type Image.JPEG|PNG|GIF
- * @param {string} [file] File name. If not present, image data is returned as array of byte numers.
+ * @param {string} [file] File name. If not present, image data is returned as a Buffer
  */
 JS_METHOD(_save) {
 	GD_PTR;
@@ -133,9 +133,9 @@ JS_METHOD(_save) {
 		if (result == -1) { return JS_ERROR("Cannot open file"); }
 		return v8::Undefined();
 	} else {
-		v8::Handle<v8::Array> arr = JS_CHARARRAY((char *)data, size);
+		v8::Handle<v8::Value> buffer = JS_BUFFER((char *)data, size);
 		gdFree(data);
-		return arr;
+		return buffer;
 	}
 }
 

@@ -10,7 +10,7 @@ public:
 	ByteStorageData(size_t length) {
 		this->instances = 1;
 		if (length) {
-			this->data = (unsigned char *) malloc(length);
+			this->data = (char *) malloc(length);
 			if (!this->data) { throw std::string("Cannot allocate enough memory"); }
 		} else {
 			this->data = NULL;
@@ -29,12 +29,12 @@ public:
 		this->instances = instances;
 	}
 	
-	unsigned char * getData() {
+	char * getData() {
 		return this->data;
 	}
 
 private:
-	unsigned char * data;
+	char * data;
 	size_t instances;
 };
 
@@ -44,26 +44,26 @@ private:
 class ByteStorage {
 public:
 	ByteStorage(size_t length); /* empty */
-	ByteStorage(unsigned char * data, size_t length); /* with contents (copied) */
+	ByteStorage(char * data, size_t length); /* with contents (copied) */
 	ByteStorage(ByteStorage * master, size_t index1, size_t index2); /* new view */
 	~ByteStorage();
 	
 	ByteStorageData * getStorage();
 	
-	unsigned char * getData();
+	char * getData();
 	size_t getLength();
-	unsigned char getByte(size_t index);
-	void setByte(size_t index, unsigned char byte);
+	char getByte(size_t index);
+	void setByte(size_t index, char byte);
 	
-	void fill(unsigned char fill);
-	void fill(unsigned char * data, size_t length);
+	void fill(char fill);
+	void fill(char * data, size_t length);
 	
 	ByteStorage * transcode(const char * from, const char * to);
 
 protected:
 
 private:
-	unsigned char * data;
+	char * data;
 	size_t length;
 	ByteStorageData * storage;
 };

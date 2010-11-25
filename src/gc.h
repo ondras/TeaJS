@@ -8,7 +8,6 @@
 
 #include <list>
 #include "v8.h"
-#include "macros.h"
 
 class GC {
 public:

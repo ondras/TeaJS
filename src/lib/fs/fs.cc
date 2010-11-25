@@ -27,6 +27,8 @@
 
 namespace {
 
+v8::Persistent<v8::Function> file;
+
 /**
  * Generic directory lister
  * @param {char *} name Directory name
@@ -190,11 +192,7 @@ JS_METHOD(_read) {
 		delete[] tmp;
 	}
 	
-	if (args.Length() > 1 && args[1]->IsTrue()) {
-		return JS_CHARARRAY((char *) data.data(), size);
-	} else {
-		return JS_STR(data.data(), size);
-	}
+	return JS_BUFFER((char *) data.data(), size);
 }
 
 JS_METHOD(_rewind) {
@@ -217,27 +215,15 @@ JS_METHOD(_write) {
 	}
 	
 	FILE * f = LOAD_PTR(1, FILE *);
-	
-	if (args[0]->IsArray()) {
-		v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(args[0]);
-		uint32_t len = arr->Length();
-		
-		int max = 4096;
-		int current = 0;
-		char * buf = new char[max];
-		for (unsigned int i=0;i<len;i++) {
-			buf[current++] = (char) arr->Get(JS_INT(i))->IntegerValue();
-			if (current == max) {
-				fwrite(buf, sizeof(char), current, f);
-				current = 0;
-			}
-		}
-		if (current) { fwrite(buf, sizeof(char), current, f); }
-		delete[] buf;
+	if (IS_BUFFER(args[0])) {
+		size_t size = 0;
+		char * data = JS_BUFFER_TO_CHAR(args[0], &size);
+		fwrite(data, sizeof(char), size, f);
 	} else {
 		v8::String::Utf8Value data(args[0]);
 		fwrite(*data, sizeof(char), args[0]->ToString()->Utf8Length(), f);
 	}
+
 		
 	return args.This();
 }
@@ -326,10 +312,7 @@ JS_METHOD(_copyfile) {
 	v8::Handle<v8::Value> result = _copy(*name, *newname);
 	if (result->IsTrue()) {
 		v8::Handle<v8::Value> fargs[] = { args[0] };
-		
-		v8::Handle<v8::Value> f = JS_GLOBAL->Get(JS_STR("File"));
-		v8::Handle<v8::Function> newf = v8::Handle<v8::Function>::Cast(f);
-		return newf->NewInstance(1, fargs);
+		return file->NewInstance(1, fargs);
 	} else {
 		return result;
 	}
@@ -353,7 +336,7 @@ JS_METHOD(_isfile) {
 
 }
 
-void setup_fs(v8::Handle<v8::Object> target) {
+SHARED_INIT() {
 	v8::HandleScope handle_scope;
 	
 	v8::Handle<v8::FunctionTemplate> ft = v8::FunctionTemplate::New(_file);
@@ -380,7 +363,8 @@ void setup_fs(v8::Handle<v8::Object> target) {
 	pt->Set("stat", v8::FunctionTemplate::New(_stat));
 	pt->Set("isFile", v8::FunctionTemplate::New(_isfile));
 
-	target->Set(JS_STR("File"), ft->GetFunction());			
+	exports->Set(JS_STR("File"), ft->GetFunction());			
+	file = v8::Persistent<v8::Function>::New(ft->GetFunction());
 	
 	v8::Handle<v8::FunctionTemplate> dt = v8::FunctionTemplate::New(_directory);
 	dt->SetClassName(JS_STR("Directory"));
@@ -402,5 +386,5 @@ void setup_fs(v8::Handle<v8::Object> target) {
 	pt->Set("stat", v8::FunctionTemplate::New(_stat));
 	pt->Set("isDirectory", v8::FunctionTemplate::New(_isdirectory));
 
-	target->Set(JS_STR("Directory"), dt->GetFunction());
+	exports->Set(JS_STR("Directory"), dt->GetFunction());
 }

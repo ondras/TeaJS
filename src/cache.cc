@@ -3,6 +3,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include "macros.h"
+#include "cache.h"
+#include "common.h"
+
 #ifndef windows
 #   include <dlfcn.h>
 #else
@@ -10,10 +14,6 @@
 #   define dlopen(x,y) (void*)LoadLibrary(x)
 #   define dlclose(x) FreeLibrary((HMODULE)x)
 #endif
-
-#include "macros.h"
-#include "cache.h"
-#include "common.h"
 
 /**
  * Is this file already cached?

@@ -14,6 +14,7 @@
 
 #ifndef HAVE_SLEEP
 #	include <windows.h>
+#	include <process.h>
 #	define sleep(num) { Sleep(num * 1000); }
 #	define usleep(num) { Sleep(num / 1000); }
 #endif

@@ -1,6 +1,20 @@
 import sys
 import os
 
+def build_with_binary(env, target = "", source = []):
+	e = env.Clone()
+	support = ["src/app", "src/path", "src/cache", "src/lib/binary/bytestorage"]
+	if e["os"] == "windows":
+		e.Append(LIBS = ["iconv"])
+		support += ["src/system", "src/gc"]
+	# if
+	e.SharedLibrary(
+		target = target, 
+		source = source + support,
+		SHLIBPREFIX=""
+	)
+# def 
+
 def build_sources(env, sources):
 	return [ env.SharedObject(s) for s in sources ]
 # def
@@ -121,26 +135,26 @@ def build_gd(env):
 	e.Append(
 		LIBS = [libname]
 	)
-	e.SharedLibrary(
+	build_with_binary(
+		e,
 		target = "lib/gd", 
-		source = ["src/common", "src/lib/gd/gd.cc", "src/app", "src/path", "src/cache", "src/lib/binary/bytestorage"],
-		SHLIBPREFIX=""
+		source = ["src/common", "src/lib/gd/gd.cc"],
 	)
 # def
 
 def build_socket(env):
-	env.SharedLibrary(
+	build_with_binary(
+		env, 
 		target = "lib/socket", 
-		source = ["src/lib/socket/socket.cc", "src/app", "src/path", "src/cache", "src/lib/binary/bytestorage"],
-		SHLIBPREFIX=""
+		source = ["src/lib/socket/socket.cc"]
 	)
 # def
 
 def build_fs(env):
-	env.SharedLibrary(
+	build_with_binary(
+		env, 
 		target = "lib/fs", 
-		source = ["src/lib/fs/fs.cc", "src/common", "src/app", "src/path", "src/cache", "src/lib/binary/bytestorage"],
-		SHLIBPREFIX=""
+		source = ["src/lib/fs/fs.cc", "src/common"],
 	)
 # def
 
@@ -204,7 +218,7 @@ def build_module(env, sources):
 		e["SHLINKFLAGS"] = e["LINKFLAGS"]
 	if e["os"] == "windows":
 		e.Append(
-			LIBS = ["apr-1", "httpd", "aprutil-1"]
+			LIBS = ["apr-1", "httpd", "aprutil-1", "iconv"]
 		)
 	# if
 	
@@ -221,6 +235,11 @@ def build_cgi(env, sources):
 			LIBS = ["fcgi"],
 			CPPPATH = ["src/fcgi/include"],
 			CPPDEFINES = ["FASTCGI"]
+		)
+	# if
+	if env["os"] == "windows":
+		env.Append(
+			LIBS = ["iconv"]
 		)
 	# if
 	env.Program(

@@ -128,7 +128,7 @@ JS_METHOD(Buffer_toString) {
 		std::string result = "[Buffer ";
 		char * tmp = (char *) malloc(tmpSize);
 		if (tmp) {
-			size_t size = snprintf(tmp, tmpSize, "%zu", bs->getLength());
+			size_t size = snprintf(tmp, tmpSize, "%lu", (unsigned long) bs->getLength());
 			if (size < tmpSize) { result += tmp; }
 			free(tmp);
 		}

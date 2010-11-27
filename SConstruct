@@ -241,7 +241,7 @@ def build_cgi(env, sources):
 	# if
 	if (env["os"] == "windows" or bsd):
 		env.Append(
-			LIBS = ["iconv", "v8"]
+			LIBS = ["iconv"]
 		)
 	# if
 	env.Program(
@@ -352,7 +352,7 @@ else:
   
 # default built-in values
 env.Append(
-	LIBS = [v8_lib, "execinfo"],
+	LIBS = [v8_lib],
 	CCFLAGS = ["-Wall", "-O3"],
 	CPPPATH = ["src", env["v8_path"] + "/include"],
 	LIBPATH = env["v8_path"],

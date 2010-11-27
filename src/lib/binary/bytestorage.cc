@@ -9,7 +9,7 @@
 
 #define ALLOC_ERROR throw std::string("Cannot allocate enough memory")
 
-#ifdef windows
+#if defined windows || bsd
 #	define ICONV_INPUT_T const char * 
 #else
 #	define ICONV_INPUT_T char *

@@ -1,6 +1,8 @@
 import sys
 import os
 
+bsd = sys.platform.find("bsd") != -1
+
 def build_with_binary(env, target = "", source = []):
 	e = env.Clone()
 	support = ["src/app", "src/path", "src/cache", "src/lib/binary/bytestorage"]
@@ -237,9 +239,9 @@ def build_cgi(env, sources):
 			CPPDEFINES = ["FASTCGI"]
 		)
 	# if
-	if env["os"] == "windows":
+	if (env["os"] == "windows" or bsd):
 		env.Append(
-			LIBS = ["iconv"]
+			LIBS = ["iconv", "v8"]
 		)
 	# if
 	env.Program(
@@ -344,13 +346,13 @@ if conf.CheckFunc("sleep"):
 	env.Append(CPPDEFINES = ["HAVE_SLEEP"])
 
 if env["debug"] == 1:
-  v8_lib = "v8_g"
+	v8_lib = "v8_g"
 else:
-  v8_lib = "v8"
+	v8_lib = "v8"
   
 # default built-in values
 env.Append(
-	LIBS = [v8_lib],
+	LIBS = [v8_lib, "execinfo"],
 	CCFLAGS = ["-Wall", "-O3"],
 	CPPPATH = ["src", env["v8_path"] + "/include"],
 	LIBPATH = env["v8_path"],
@@ -372,6 +374,14 @@ if env["os"] == "posix":
 	env.Append(
 		LIBS = ["pthread", "rt"]
 	)
+	if (bsd):
+		env.Append(
+			LIBS = ["execinfo"],
+			LIBPATH = ["/usr/local/lib"],
+			CPPPATH = ["/usr/local/include"],
+			CPPDEFINES = ["bsd"]
+		)
+	# if
 # if
 
 # look for V8 - sanity check
@@ -386,9 +396,13 @@ env = conf.Finish()
 # add posix-specific values
 if env["os"] == "posix":
 	env.Append(
-		LIBS = ["dl"],
 		CPPDEFINES = ["DSO_EXT=so"]
 	)
+	if (bsd == 0):
+		env.Append(
+			LIBS = ["dl"]
+		)
+	# if
 # if
 
 # add macos-specific values

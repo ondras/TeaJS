@@ -31,8 +31,18 @@
 JS_METHOD(_include) {
 	v8cgi_App * app = APP_PTR;
 	v8::String::Utf8Value file(args[0]);
+	v8::Handle<v8::Object> exports;
 	std::string root = *(v8::String::Utf8Value(args.Data()));
-	return app->include(*file, root);
+	exports = app->include(*file, root);
+
+	if (exports.IsEmpty()) {
+		std::string error = "Cannot find module '";
+		error += *file;
+		error += "'";
+		return JS_ERROR(error.c_str());
+	} 
+	
+	return exports;
 }
 
 /**
@@ -43,7 +53,16 @@ JS_METHOD(_require) {
 	v8::String::Utf8Value file(args[0]);
 	v8::Handle<v8::Object> exports;
 	std::string root = *(v8::String::Utf8Value(args.Data()));
-	return app->require(*file, root);
+	exports = app->require(*file, root);
+	
+	if (exports.IsEmpty()) {
+		std::string error = "Cannot find module '";
+		error += *file;
+		error += "'";
+		return JS_ERROR(error.c_str());
+	} 
+	
+	return exports;
 }
 
 /**
@@ -209,16 +228,18 @@ void v8cgi_App::finish() {
  * @param {std::string} name
  */
 v8::Handle<v8::Object> v8cgi_App::include(std::string name, std::string relativeRoot) {
-	v8::HandleScope handle_scope;
+	v8::HandleScope hs;
 
 	v8::Handle<v8::Object> exports = this->require(name, relativeRoot);
+	if (exports.IsEmpty()) { return hs.Close(exports); }
+	
 	v8::Handle<v8::Array> names = exports->GetPropertyNames();
 	for (unsigned i=0;i<names->Length();i++) {
 		v8::Handle<v8::Value> name = names->Get(JS_INT(i));
 		JS_GLOBAL->Set(name, exports->Get(name));		
 	}
 
-	return handle_scope.Close(exports);
+	return hs.Close(exports);
 }
 
 /**
@@ -227,21 +248,13 @@ v8::Handle<v8::Object> v8cgi_App::include(std::string name, std::string relative
  * @param {std::string} relativeRoot module root for relative includes
  */
 v8::Handle<v8::Object> v8cgi_App::require(std::string name, std::string relativeRoot) {
-	v8::HandleScope handle_scope;
+	v8::HandleScope hs;
 #ifdef VERBOSE
 	printf("[require] looking for '%s'\n", name.c_str()); 
 #endif	
 	modulefiles files = this->resolve_module(name, relativeRoot);
 	
-	if (!files.size()) {
-		std::string error = "Cannot find module '";
-		error += name;
-		error += "'";
-		v8::Handle<v8::Object> result = v8::Object::New();
-		JS_ERROR(error.c_str());
-		return handle_scope.Close(result);
-	}
-
+	if (!files.size()) { return hs.Close(v8::Handle<v8::Object>()); }
 #ifdef VERBOSE
 	printf("[require] resolved as '%s' (%d files)\n", files[0].c_str(), files.size()); 
 #endif	
@@ -278,11 +291,11 @@ v8::Handle<v8::Object> v8cgi_App::require(std::string name, std::string relative
 		
 		if (status > 0) {
 			this->cache.removeExports(modulename);
-			return handle_scope.Close(exports);
+			return hs.Close(exports);
 		}
 	}
 
-	return handle_scope.Close(exports);
+	return hs.Close(exports);
 }
 
 /**

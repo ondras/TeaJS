@@ -12,6 +12,9 @@
 #ifndef windows
 #  include <sys/wait.h>
 #  include <paths.h>  // for _PATH_BSHELL
+#else
+#  include <process.h>
+#  define _PATH_BSHELL "sh"
 #endif
 
 namespace {
@@ -88,11 +91,6 @@ void _executecommand(
 				_PATH_BSHELL, "sh", "-c", *command, (char*)NULL, &env_pointers.front());
 	} else {
 			execl(_PATH_BSHELL, "sh", "-c", *command, (char*)NULL);
-		#if defined(__CYGWIN__) || defined(__MSYS__)
-			// On cygwin or msys, we may not have /bin/sh.  In that case,
-			// try to find sh on PATH.
-			execlp("sh", "sh", "-c", *command, NULL);
-		#endif
 	}
 	exit(127);  // "command not found"
 }

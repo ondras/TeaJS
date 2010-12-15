@@ -124,10 +124,10 @@ def build_zlib(env):
 	e.Append(
 		LIBS = ["z"]
 	)
-	e.SharedLibrary(
-		target = "lib/zlib", 
-		source = ["src/lib/zlib/zlib.cc", "src/app", "src/path", "src/cache", "src/lib/binary/bytestorage"],
-		SHLIBPREFIX=""
+	build_with_binary(
+		e,
+		target = "lib/zlib",
+		source = ["src/lib/zlib/zlib.cc"]
 	)
 # def
 
@@ -295,22 +295,24 @@ else:
 # command line options
 vars = Variables()
 
-# module switches
+# module switches, on by default
 vars.Add(BoolVariable("mysql", "MySQL library", 1))
 vars.Add(BoolVariable("profiler", "V8 Profiler library", 1))
 vars.Add(BoolVariable("fibers", "Fiber support", 1))
 vars.Add(BoolVariable("memcached", "Memcached library", 1))
-vars.Add(BoolVariable("pgsql", "PostgreSQL library", 0))
 vars.Add(BoolVariable("gd", "GD library", 1))
 vars.Add(BoolVariable("sqlite", "SQLite library", 1))
 vars.Add(BoolVariable("socket", "Socket library", 1))
 vars.Add(BoolVariable("process", "Process library", 1))
 vars.Add(BoolVariable("fs", "Filesystem I/O library", 1))
-vars.Add(BoolVariable("xdom", "DOM Level 3 library (xerces based, for XML/XHTML)", 0))
-vars.Add(BoolVariable("gl", "OpenGL library", 0))
 vars.Add(BoolVariable("zlib", "zlib library", 1))
 vars.Add(BoolVariable("module", "Build Apache module", 1))
 vars.Add(BoolVariable("cgi", "Build CGI binary", 1))
+
+# off by default
+vars.Add(BoolVariable("xdom", "DOM Level 3 library (xerces based, for XML/XHTML)", 0))
+vars.Add(BoolVariable("pgsql", "PostgreSQL library", 0))
+vars.Add(BoolVariable("gl", "OpenGL library", 0))
 vars.Add(BoolVariable("fcgi", "FastCGI support (for CGI binary)", 0))
 vars.Add(BoolVariable("debug", "Debugging support", 0))
 vars.Add(BoolVariable("verbose", "Verbose debugging messages", 0))

@@ -80,7 +80,10 @@ inline char * JS_BUFFER_TO_CHAR(v8::Handle<v8::Value> value, size_t * size) {
 inline bool IS_BUFFER(v8::Handle<v8::Value> value) {
 	if (!value->IsObject()) { return false; }
 	v8::Handle<v8::Value> proto = value->ToObject()->GetPrototype();
-	v8::Handle<v8::Value> prototype = (APP_PTR)->require("binary", "")->Get(JS_STR("Buffer"))->ToObject()->Get(JS_STR("prototype"));
+	v8::Handle<v8::Object> binary = (APP_PTR)->require("binary", "");
+	if (binary.IsEmpty()) { return false; } /* for some reasons, the binary module is not available */
+
+	v8::Handle<v8::Value> prototype = binary->Get(JS_STR("Buffer"))->ToObject()->Get(JS_STR("prototype"));
 	return proto->Equals(prototype);
 }
 

@@ -94,13 +94,6 @@ JS_METHOD(_exit) {
  */
 void v8cgi_App::init() {
 	this->cfgfile = STRING(CONFIG_PATH);
-
-#ifdef REUSE_CONTEXT
-	/**
-	 * Reusable context is created only once, here.
- 	 */
-	this->create_context();
-#endif
 }
 
 /**
@@ -158,17 +151,7 @@ void v8cgi_App::autoload() {
 int v8cgi_App::execute(char ** envp) {
 	v8::HandleScope handle_scope;
 	
-	/**
-	 * Context must be clened before reusing
-	 */
-#ifdef REUSE_CONTEXT
-	this->clear_global();
-#else
-	/**
-	 * No reusing -> new context 
-	 */
 	this->create_context();
-#endif
 
 	this->terminated = false;
 	this->mainModule = v8::Object::New();
@@ -215,12 +198,7 @@ void v8cgi_App::finish() {
 	/* export cache */
 	this->cache.clearExports();
 	
-#ifndef REUSE_CONTEXT
-	/**
-	 * Delete current context
-	 */
 	this->delete_context();
-#endif
 }
 
 /**
@@ -491,22 +469,39 @@ std::string v8cgi_App::format_exception(v8::TryCatch* try_catch) {
  */
 void v8cgi_App::create_context() {
 	v8::HandleScope handle_scope;
-	v8::Handle<v8::ObjectTemplate> globaltemplate = v8::ObjectTemplate::New();
-	globaltemplate->SetInternalFieldCount(2);
-	this->context = v8::Context::New(NULL, globaltemplate);
-	this->context->Enter();
+	
+	if (this->global.IsEmpty()) {
+		this->globalt = v8::Persistent<v8::ObjectTemplate>::New(v8::ObjectTemplate::New());
+		this->globalt->SetInternalFieldCount(2);
+		this->context = v8::Context::New(NULL, this->globalt);
+		this->context->Enter();
+		this->global = v8::Persistent<v8::Value>::New(JS_GLOBAL);
+		GLOBAL_PROTO->SetInternalField(0, v8::External::New((void *) this)); 
+		GLOBAL_PROTO->SetInternalField(1, v8::External::New((void *) &(this->gc))); 
+	} else {
+		
+#ifdef REUSE_CONTEXT
+		this->clear_global(); /* znovupouziti - jen vycisteni */
+#else
+		this->context = v8::Context::New(NULL, this->globalt, this->global);
+		this->context->Enter();
+		GLOBAL_PROTO->SetInternalField(0, v8::External::New((void *) this)); 
+		GLOBAL_PROTO->SetInternalField(1, v8::External::New((void *) &(this->gc))); 
+#endif
+	}
 
-	GLOBAL_PROTO->SetInternalField(0, v8::External::New((void *) this)); 
-	GLOBAL_PROTO->SetInternalField(1, v8::External::New((void *) &(this->gc))); 
 }
 
 /**
  * Deletes the existing context
  */
 void v8cgi_App::delete_context() {
+#ifndef REUSE_CONTEXT
+	this->context->DetachGlobal();
 	this->context->Exit();
 	this->context.Dispose();
 	this->context.Clear();
+#endif
 }
 
 /**

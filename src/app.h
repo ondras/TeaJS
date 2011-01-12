@@ -62,6 +62,10 @@ protected:
 private:
 	/* current active context */
 	v8::Persistent<v8::Context> context; 
+	
+	v8::Persistent<v8::Value> global;
+	v8::Persistent<v8::ObjectTemplate> globalt;
+	
 	/* cache */
 	Cache cache;
 	/* GC notification engine */

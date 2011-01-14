@@ -252,7 +252,6 @@ int main(int argc, char ** argv) {
 #endif
 
 		result = cgi.execute(environ);
-		result = cgi.execute(environ);
 
 #ifdef FASTCGI
 		FCGI_SetExitStatus(result);

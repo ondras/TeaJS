@@ -22,9 +22,9 @@ public:
 	void removeExports(std::string filename);
 
 private:
-	typedef std::map<std::string,time_t> TimeValue;
-	typedef std::map<std::string,void*> HandleValue;
-	typedef std::map<std::string,v8::Persistent<v8::Script> > ScriptValue;
+	typedef std::map<std::string, time_t> TimeValue;
+	typedef std::map<std::string, void*> HandleValue;
+	typedef std::map<std::string, v8::Persistent<v8::Script> > ScriptValue;
 	typedef std::map<std::string, v8::Persistent<v8::Object> > ExportsValue;
 
 	/* mtimes */

@@ -91,7 +91,7 @@ public:
 	}
 
 protected:
-	int prepare(char ** envp);
+	void prepare(char ** envp);
 
 private:
 	request_rec * request;
@@ -113,16 +113,14 @@ JS_METHOD(_header) {
 	return v8::Undefined();
 }
 
-int v8cgi_Module::prepare(char ** envp) {
-	int result = v8cgi_App::prepare(envp);
-	if (result) { return result; }
+void v8cgi_Module::prepare(char ** envp) {
+	v8cgi_App::prepare(envp);
 
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::Object> g = JS_GLOBAL;
 	v8::Handle<v8::Object> apache = v8::Object::New();
 	g->Set(JS_STR("apache"), apache);
 	apache->Set(JS_STR("header"), v8::FunctionTemplate::New(_header)->GetFunction());
-	return result;
 }
 
 static v8cgi_Module app;

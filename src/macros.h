@@ -65,7 +65,6 @@ inline ByteStorage * JS_TO_BYTESTORAGE(v8::Handle<v8::Value> value) {
 	return reinterpret_cast<ByteStorage *>(object->GetPointerFromInternalField(0));
 }
 
-
 inline v8::Handle<v8::Value> JS_BUFFER(char * data, size_t length) {
 	ByteStorage * bs = new ByteStorage(data, length);
 	return BYTESTORAGE_TO_JS(bs);
@@ -80,11 +79,13 @@ inline char * JS_BUFFER_TO_CHAR(v8::Handle<v8::Value> value, size_t * size) {
 inline bool IS_BUFFER(v8::Handle<v8::Value> value) {
 	if (!value->IsObject()) { return false; }
 	v8::Handle<v8::Value> proto = value->ToObject()->GetPrototype();
-	v8::Handle<v8::Object> binary = (APP_PTR)->require("binary", "");
-	if (binary.IsEmpty()) { return false; } /* for some reasons, the binary module is not available */
-
-	v8::Handle<v8::Value> prototype = binary->Get(JS_STR("Buffer"))->ToObject()->Get(JS_STR("prototype"));
-	return proto->Equals(prototype);
+	try {
+		v8::Handle<v8::Object> binary = (APP_PTR)->require("binary", "");
+		v8::Handle<v8::Value> prototype = binary->Get(JS_STR("Buffer"))->ToObject()->Get(JS_STR("prototype"));
+		return proto->Equals(prototype);
+	} catch (std::string e) { /* for some reasons, the binary module is not available */
+		return false;
+	} 
 }
 
 #endif

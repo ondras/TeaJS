@@ -9,7 +9,7 @@
 #include <v8.h>
 
 #ifdef FASTCGI
-#  include <fcgi_stdio.h>
+#	include <fcgi_stdio.h>
 #endif
 
 #include "app.h"
@@ -19,9 +19,9 @@
 #include "path.h"
 
 #ifndef windows
-#   include <dlfcn.h>
+#	include <dlfcn.h>
 #else
-#   include <windows.h>
+#	include <windows.h>
 #	define dlsym(x, y) GetProcAddress((HMODULE)x, y)
 #endif
 

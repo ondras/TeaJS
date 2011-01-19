@@ -6,7 +6,7 @@ bsd = sys.platform.find("bsd") != -1
 def build_with_binary(env, target = "", source = []):
 	e = env.Clone()
 	support = ["src/app", "src/path", "src/cache", "src/lib/binary/bytestorage"]
-	if e["os"] == "windows":
+	if e["os"] == "windows" or e["os"] == "darwin":
 		e.Append(LIBS = ["iconv"])
 		support += ["src/system", "src/gc"]
 	# if

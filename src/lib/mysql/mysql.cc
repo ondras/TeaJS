@@ -90,7 +90,7 @@ JS_METHOD(_connect) {
 		mysql_query(conn, "SET NAMES 'utf8'");
 		SAVE_PTR(0, conn);
 		return args.This();
-	}	
+	}
 }
 
 /**

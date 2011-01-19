@@ -94,7 +94,10 @@ JS_METHOD(_getpid) {
  */
 JS_METHOD(_sleep) {
 	int num = args[0]->Int32Value();
-	sleep(num);
+	{
+		v8::Unlocker unlocker;
+		sleep(num);
+	}
 	return v8::Undefined();
 }
 

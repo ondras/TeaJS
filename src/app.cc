@@ -137,6 +137,7 @@ void v8cgi_App::autoload() {
  * @param {char**} envp Environment
  */
 int v8cgi_App::execute(char ** envp) {
+	v8::Locker locker;
 	v8::HandleScope handle_scope;
 
 	int result = 0;

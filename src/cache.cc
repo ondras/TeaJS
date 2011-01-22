@@ -168,7 +168,7 @@ v8::Handle<v8::Object> Cache::getExports(std::string filename) {
 #ifdef VERBOSE
 		printf("[getExports] '%s' has no cached exports\n", filename.c_str()); 
 #endif	
-		return v8::Handle<v8::Object>::Handle();
+		return v8::Handle<v8::Object>();
 	}
 }
 

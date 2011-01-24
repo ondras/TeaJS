@@ -80,6 +80,9 @@ sudo vi /etc/hosts
 * the first line in mine looks like this:
 127.0.0.1	localhost freewill v8cgi
 
+- enable the site
+sudo a2ensite v8cgi
+
 - restart apache:
 sudo /etc/init.d/apache2 restart
 

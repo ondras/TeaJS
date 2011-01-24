@@ -330,15 +330,24 @@ JS_METHOD(_query) {
     v8::Handle<v8::Array> tarray = v8::Handle<v8::Array>::Cast(args[1]->ToObject());
     v8::Handle<v8::Object> parray = args[1]->ToObject();
     int nparams = tarray->Length();
-    char ** params = (char **)malloc(nparams);
-    size_t n = 0;
+    char ** params = (char **)malloc(nparams * sizeof(char*));
     for(int i = 0; i < nparams; i++) {
-	n = tarray->Get(JS_INT(i))->ToString()->Utf8Length();
-	v8::String::Utf8Value tval(tarray->Get(JS_INT(i))->ToString());
-	params[i] = new char[n + 1];
-	params[i] = strdup(*tval);
+		v8::Local<v8::Value> val=tarray->Get(JS_INT(i));
+		if (val->IsUndefined()) {
+			params[i]=NULL;
+		} else if (val->IsNull()) {
+			params[i]=NULL;
+		} else {
+			v8::String::Utf8Value tval(val->ToString());
+			if (tval.length()) params[i] = strdup(*tval); else params[i]=NULL;
+		}
     }
     res = pq::PQexecParams(conn, *q, nparams, NULL, params, NULL, NULL, 0);
+ 
+    for(int i = 0; i < nparams; i++)
+        if (params[i]) free(params[i]);
+    free(params);
+
     int code = -1;
     if (!(!res))
       code = pq::PQresultStatus(res);

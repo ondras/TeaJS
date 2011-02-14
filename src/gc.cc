@@ -17,9 +17,7 @@ void GC::handler(v8::Persistent<v8::Value> object, void * ptr) {
 	while (it != end && it->first != object) { it++; }
 	
 	/* only if we have this one */
-	if (it != end) { 
-		gc->go(it);
-	}
+	if (it != end) { gc->go(it); }
 }
 
 /**
@@ -37,10 +35,9 @@ void GC::add(v8::Handle<v8::Value> object, GC::dtor_t dtor) {
  * Execute ongarbagecollection callback
  */
 void GC::go(objlist::iterator it) {
-	v8::HandleScope handle_scope;
-	v8::Handle<v8::Object> obj = it->first->ToObject();
 	dtor_t dtor = it->second;
-	dtor(obj);
+	dtor(it->first->ToObject());
+	it->first.Dispose();
 	this->data.erase(it);
 }
 

@@ -236,9 +236,14 @@ int main(int argc, char ** argv) {
 	if (result) { exit(result); }
 
 #ifdef FASTCGI
+
 	signal(SIGTERM, handle_sigterm);
-	signal(SIGUSR1, handle_sigusr1);
+#  ifdef SIGPIPE
 	signal(SIGPIPE, handle_sigpipe);
+#  endif
+#  ifdef SIGUSR1
+	signal(SIGUSR1, handle_sigusr1);
+#  endif
 	/**
 	 * FastCGI main loop
 	 */

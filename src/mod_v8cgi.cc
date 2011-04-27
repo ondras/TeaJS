@@ -32,7 +32,13 @@ extern "C" module AP_MODULE_DECLARE_DATA v8cgi_module;
 class v8cgi_Module : public v8cgi_App {
 public:
 	size_t reader(char * destination, size_t amount) {
-		return (size_t) ap_get_client_block(this->request, destination, amount);
+		size_t read = 0;
+		size_t part = 0;
+		do {
+			part = ap_get_client_block(this->request, destination+read, amount-read);
+			read += part;
+		} while (part);
+		return read;
 	}
 
 	size_t writer(const char * data, size_t amount) {

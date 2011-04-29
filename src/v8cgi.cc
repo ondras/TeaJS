@@ -15,6 +15,11 @@
 #  include <signal.h>
 #endif
 
+#ifdef windows
+#  include <fcntl.h> /*  _O_BINARY */
+   unsigned int _CRT_fmode = _O_BINARY; 
+#endif
+
 /**
  * Format for command line arguments
  *

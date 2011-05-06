@@ -8,6 +8,8 @@
 #define BS_OTHER(object) reinterpret_cast<ByteStorage *>(object->GetPointerFromInternalField(0))
 #define BS_THIS BS_OTHER(args.This())
 #define WRONG_CTOR JS_TYPE_ERROR("Buffer() called with wrong arguments.")
+#define WRONG_START_STOP JS_RANGE_ERROR("Buffer() Invalid start/stop numbers")
+#define WRONG_SIZE JS_RANGE_ERROR("Buffer() Invalid size")
 
 namespace {
 
@@ -39,12 +41,13 @@ void Buffer_destroy(v8::Handle<v8::Object> instance) {
 	delete bs;
 }
 
-void Buffer_fromBuffer(const v8::Arguments& args, v8::Handle<v8::Object> obj) {
+v8::Handle<v8::Value> Buffer_fromBuffer(const v8::Arguments& args, v8::Handle<v8::Object> obj) {
 	ByteStorage * bs2 = BS_OTHER(obj);
 
 	int index1 = firstIndex(args[1], bs2->getLength());
 	int index2 = lastIndex(args[2], bs2->getLength());
-	
+	if (index1>index2) { return WRONG_START_STOP; }
+
 	bool copy = true;
 	if (!args[3]->IsUndefined()) { copy = args[3]->ToBoolean()->Value(); }
 	
@@ -58,23 +61,25 @@ void Buffer_fromBuffer(const v8::Arguments& args, v8::Handle<v8::Object> obj) {
 	}
 	
 	SAVE_PTR(0, bs);
+	return v8::Handle<v8::Value>();
 }
 
-void Buffer_fromString(const v8::Arguments& args) {
-	if (args.Length() < 2) { WRONG_CTOR; }
+v8::Handle<v8::Value> Buffer_fromString(const v8::Arguments& args) {
+	if (args.Length() < 2) { return WRONG_CTOR; }
 	v8::String::Utf8Value str(args[0]);
 	v8::String::Utf8Value charset(args[1]);
 	
 	ByteStorage bs_tmp((char *) (*str), str.length());
 	ByteStorage * bs = bs_tmp.transcode("utf-8", *charset);
 	SAVE_PTR(0, bs);
+	return v8::Handle<v8::Value>();
 }
 
-void Buffer_fromArray(const v8::Arguments& args) {
+v8::Handle<v8::Value> Buffer_fromArray(const v8::Arguments& args) {
 	v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(args[0]);
-
 	size_t index1 = firstIndex(args[1], arr->Length());
 	size_t index2 = lastIndex(args[2], arr->Length());
+	if (index1>index2) { return WRONG_START_STOP; }
 	ByteStorage * bs = new ByteStorage(index2 - index1);
 	
 	size_t index = 0;
@@ -83,11 +88,13 @@ void Buffer_fromArray(const v8::Arguments& args) {
 		bs->setByte(index++, value);
 	}
 	SAVE_PTR(0, bs);
+	return v8::Handle<v8::Value>();
 }
 
 JS_METHOD(_Buffer) {
 	if (!args.IsConstructCall()) { RETURN_CONSTRUCT_CALL; }
-	if (args.Length() == 0) { WRONG_CTOR; }
+	if (args.Length() == 0) { return WRONG_CTOR; }
+	v8::Handle<v8::Value> failed(NULL);
 	
 	try {
 		if (args[0]->IsExternal()) { /* from a bytestorage */
@@ -95,20 +102,24 @@ JS_METHOD(_Buffer) {
 			SAVE_PTR(0, ext->Value());
 		} else if (args[0]->IsNumber()) { /* length, [fill] */
 			char fill = (args.Length() > 1 ? (char) args[1]->IntegerValue() : 0);
-			ByteStorage * bs = new ByteStorage(args[0]->IntegerValue());
+			int len=args[0]->IntegerValue();
+			if(len<0) {
+				return WRONG_SIZE;
+			}
+			ByteStorage * bs = new ByteStorage(len);
 			bs->fill(fill);
 			SAVE_PTR(0, bs);
 		} else if (args[0]->IsArray()) { /* array of numbers */
-			Buffer_fromArray(args);
+			failed=Buffer_fromArray(args);
 		} else if (args[0]->IsObject()) { /* copy */
 			v8::Handle<v8::Object> obj = v8::Handle<v8::Object>::Cast(args[0]);
 			if (INSTANCEOF(obj, bufferTemplate)) {
-				Buffer_fromBuffer(args, obj);
-			} else { WRONG_CTOR; }
+				failed=Buffer_fromBuffer(args, obj);
+			} else { return WRONG_CTOR; }
 		} else if (args[0]->IsString()) { /* string */
-			Buffer_fromString(args);
+			failed=Buffer_fromString(args);
 		} else {
-			WRONG_CTOR;
+			return WRONG_CTOR;
 		}
 	} catch (std::string e) {
 		return JS_ERROR(e.c_str());
@@ -116,6 +127,7 @@ JS_METHOD(_Buffer) {
 	
 	GC * gc = GC_PTR;
 	gc->add(args.This(), Buffer_destroy);
+	if(!failed.IsEmpty()) return failed;
 
 	return args.This();
 }
@@ -139,6 +151,7 @@ JS_METHOD(Buffer_toString) {
 	v8::String::Utf8Value charset(args[0]);
 	size_t index1 = firstIndex(args[1], bs->getLength());
 	size_t index2 = lastIndex(args[2], bs->getLength());
+	if (index1>index2) { return WRONG_START_STOP; }
 	ByteStorage view(bs, index1, index2);
 	
 	try {
@@ -155,6 +168,7 @@ JS_METHOD(Buffer_range) {
 	ByteStorage * bs = BS_THIS;
 	size_t index1 = firstIndex(args[0], bs->getLength());
 	size_t index2 = lastIndex(args[1], bs->getLength());
+	if (index1>index2) { return WRONG_START_STOP; }
 
 	ByteStorage * bs2 = new ByteStorage(bs, index1, index2);
 	v8::Handle<v8::Value> newargs[] = { v8::External::New((void*)bs2) };
@@ -165,6 +179,7 @@ JS_METHOD(Buffer_slice) {
 	ByteStorage * bs = BS_THIS;
 	size_t index1 = firstIndex(args[0], bs->getLength());
 	size_t index2 = lastIndex(args[1], bs->getLength());
+	if (index1>index2) { return WRONG_START_STOP; }
 
 	size_t length = index2-index1;
 	ByteStorage * bs2 = new ByteStorage(bs->getData() + index1, length);
@@ -178,8 +193,9 @@ JS_METHOD(Buffer_fill) {
 	ByteStorage * bs = BS_THIS;
 	size_t index1 = firstIndex(args[1], bs->getLength());
 	size_t index2 = lastIndex(args[2], bs->getLength());
+	if (index1>index2) { return WRONG_START_STOP; }
 	char fill = (char) args[0]->IntegerValue();
-	
+
 	for (size_t i = index1; i<index2; i++) {
 		bs->setByte(i, fill);
 	}

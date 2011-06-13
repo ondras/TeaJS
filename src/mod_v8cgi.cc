@@ -33,11 +33,12 @@ class v8cgi_Module : public v8cgi_App {
 public:
 	size_t reader(char * destination, size_t amount) {
 		size_t read = 0;
-		size_t part = 0;
+		long part = 0;
 		do {
 			part = ap_get_client_block(this->request, destination+read, amount-read);
+			if(part<0) { break; }
 			read += part;
-		} while (part);
+		} while (part>0 && read<amount);
 		return read;
 	}
 

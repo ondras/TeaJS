@@ -239,7 +239,7 @@ def build_cgi(env, sources):
 			CPPDEFINES = ["FASTCGI"]
 		)
 	# if
-	if (env["os"] == "windows" or bsd):
+	if (env["os"] == "windows" or env["os"] == "darwin" or bsd):
 		env.Append(
 			LIBS = ["iconv"]
 		)

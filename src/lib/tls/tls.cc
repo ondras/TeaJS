@@ -25,7 +25,6 @@ std::string formatError(SSL * ssl, int ret) {
 }
 
 void finalize(v8::Handle<v8::Object> obj) {
-	obj->SetInternalField(0, v8::Handle<v8::Value>());
 	SSL * ssl = reinterpret_cast<SSL *>(obj->GetPointerFromInternalField(1));
 	SSL_free(ssl);
 }

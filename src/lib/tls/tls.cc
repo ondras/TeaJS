@@ -25,7 +25,7 @@ std::string formatError(SSL * ssl, int ret) {
 }
 
 void finalize(v8::Handle<v8::Object> obj) {
-	/* FIXME somehow release the persistent handle to socket? */
+	obj->SetInternalField(0, v8::Handle<v8::Value>());
 	SSL * ssl = reinterpret_cast<SSL *>(obj->GetPointerFromInternalField(1));
 	SSL_free(ssl);
 }
@@ -48,9 +48,8 @@ JS_METHOD(_tls) {
 	} catch (std::string e) { /* for some reasons, the socket module is not available */
 		return JS_ERROR("Socket module not available");
 	}
-	
-	v8::Persistent<v8::Object> s = v8::Persistent<v8::Object>::New(socket->ToObject());
-	SAVE_VALUE(0, s);
+
+	SAVE_VALUE(0, socket);
 
 	SSL * ssl = SSL_new(ctx);
 	SSL_set_fd(ssl, LOAD_SOCKET);

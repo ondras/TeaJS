@@ -91,8 +91,10 @@ void v8cgi_App::prepare(char ** envp) {
 	v8::Handle<v8::Object> g = JS_GLOBAL;
 
 	std::string root = path_getcwd();
+	/* FIXME it might be better NOT to expose these two to global
 	g->Set(JS_STR("include"), v8::FunctionTemplate::New(_include, JS_STR(root.c_str()))->GetFunction());
 	g->Set(JS_STR("require"), v8::FunctionTemplate::New(_require, JS_STR(root.c_str()))->GetFunction());
+	*/
 	g->Set(JS_STR("onexit"), v8::FunctionTemplate::New(_onexit)->GetFunction());
 	g->Set(JS_STR("exit"), v8::FunctionTemplate::New(_exit)->GetFunction());
 	g->Set(JS_STR("global"), g);

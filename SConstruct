@@ -152,6 +152,18 @@ def build_socket(env):
 	)
 # def
 
+def build_tls(env):
+	e = env.Clone()
+	e.Append(
+		LIBS = ["ssl"]
+	)
+	build_with_binary(
+		e, 
+		target = "lib/tls", 
+		source = ["src/lib/tls/tls.cc"]
+	)
+# def
+
 def build_fs(env):
 	build_with_binary(
 		env, 
@@ -306,6 +318,7 @@ vars.Add(BoolVariable("socket", "Socket library", 1))
 vars.Add(BoolVariable("process", "Process library", 1))
 vars.Add(BoolVariable("fs", "Filesystem I/O library", 1))
 vars.Add(BoolVariable("zlib", "zlib library", 1))
+vars.Add(BoolVariable("tls", "SSL/TLS library", 1))
 vars.Add(BoolVariable("module", "Build Apache module", 1))
 vars.Add(BoolVariable("cgi", "Build CGI binary", 1))
 
@@ -456,6 +469,7 @@ if env["socket"] == 1: build_socket(env)
 if env["process"] == 1: build_process(env)
 if env["fs"] == 1: build_fs(env)
 if env["zlib"] == 1: build_zlib(env)
+if env["tls"] == 1: build_tls(env)
 if env["xdom"] == 1: build_xdom(env)
 if env["gl"] == 1: build_gl(env)
 if env["module"] == 1: build_module(env, sources)

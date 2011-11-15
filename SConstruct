@@ -360,6 +360,12 @@ if conf.CheckCHeader("sys/mman.h", include_quotes = "<>"):
 if conf.CheckFunc("sleep"):
 	env.Append(CPPDEFINES = ["HAVE_SLEEP"])
 
+if conf.CheckFunc("inet_pton"):
+	env.Append(CPPDEFINES = ["HAVE_PTON"])
+
+if conf.CheckFunc("inet_ntop"):
+	env.Append(CPPDEFINES = ["HAVE_NTOP"])
+
 if env["debug"] == 1:
 	v8_lib = "v8_g"
 else:

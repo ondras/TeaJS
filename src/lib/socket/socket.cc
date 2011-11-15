@@ -37,8 +37,50 @@
 #  define SOCKET_ERROR -1
 #endif
 
-
 namespace {
+
+#ifndef HAVE_PTON
+int inet_pton(int family, const char *src, void *dst) {
+	struct addrinfo hints, *res, *ressave;
+
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = family;
+	if (getaddrinfo(src, NULL, &hints, &res) != 0) { return 0; }
+	
+	if (family == PF_INET) {
+		memcpy(dst, &((sockaddr_in *) res->ai_addr)->sin_addr.s_addr, sizeof(struct in_addr));
+	} else {
+		memcpy(dst, &((sockaddr_in6 *) res->ai_addr)->sin6_addr.s6_addr, sizeof(struct in6_addr));
+	}
+
+	freeaddrinfo(ressave);
+	return 1;
+}
+#endif
+
+#ifndef HAVE_NTOP
+const char * inet_ntop(int family, const void *src, char *dst, socklen_t cnt) {
+    switch (family) {
+		case AF_INET: {
+			struct sockaddr_in in;
+			memset(&in, 0, sizeof(in));
+			in.sin_family = AF_INET;
+			memcpy(&in.sin_addr, src, sizeof(struct in_addr));
+			getnameinfo((struct sockaddr *)&in, sizeof(struct sockaddr_in), dst, cnt, NULL, 0, NI_NUMERICHOST);
+			return dst;
+		}
+		case AF_INET6: {
+			struct sockaddr_in6 in;
+			memset(&in, 0, sizeof(in));
+			in.sin6_family = AF_INET6;
+			memcpy(&in.sin6_addr, src, sizeof(struct in_addr6));
+			getnameinfo((struct sockaddr *)&in, sizeof(struct sockaddr_in6), dst, cnt, NULL, 0, NI_NUMERICHOST);
+			return dst;
+		}
+	}
+	return NULL;
+}
+#endif
 
 v8::Persistent<v8::Function> socketFunc;
 
@@ -66,10 +108,7 @@ inline int create_addr(char * address, int port, int family, sock_addr_t * resul
 			struct sockaddr_un *addr = (struct sockaddr_un*) result;
 			memset(addr, 0, sizeof(sockaddr_un));
 
-			if (length >= sizeof(addr->sun_path)) {
-				JS_ERROR("Unix socket path too long");
-				return 1;
-			}
+			if (length >= sizeof(addr->sun_path)) { return 1; }
 			addr->sun_family = AF_UNIX;
 			memcpy(addr->sun_path, address, length);
 			addr->sun_path[length] = '\0';
@@ -80,16 +119,8 @@ inline int create_addr(char * address, int port, int family, sock_addr_t * resul
 			struct sockaddr_in *addr = (struct sockaddr_in*) result;
 			memset(addr, 0, sizeof(*addr)); 
 			addr->sin_family = AF_INET;
-
-#ifdef windows
-			int size = sizeof(struct sockaddr_in);
-			int pton_ret = WSAStringToAddress(address, AF_INET, NULL, (sockaddr *) result, &size);
-			if (pton_ret != 0) { return 1; }
-#else 
 			int pton_ret = inet_pton(AF_INET, address, & addr->sin_addr.s_addr);
 			if (pton_ret == 0) { return 1; }
-#endif
-
 			addr->sin_port = htons((short)port);
 			*len = sizeof(*addr);
 		} break;
@@ -97,16 +128,8 @@ inline int create_addr(char * address, int port, int family, sock_addr_t * resul
 			struct sockaddr_in6 *addr = (struct sockaddr_in6*) result;
 			memset(addr, 0, sizeof(*addr));
 			addr->sin6_family = AF_INET6;
-
-#ifdef windows
-			int size = sizeof(struct sockaddr_in6);
-			int pton_ret = WSAStringToAddress(address, AF_INET6, NULL, (sockaddr *) result, &size);
-			if (pton_ret != 0) { return 1; }
-#else 
 			int pton_ret = inet_pton(AF_INET6, address, addr->sin6_addr.s6_addr);
 			if (pton_ret == 0) { return 1; }
-#endif			
-			
 			addr->sin6_port = htons((short)port);
 			*len = sizeof(*addr);
 		} break;
@@ -133,14 +156,7 @@ inline v8::Handle<v8::Value> create_peer(sockaddr * addr) {
 			v8::Handle<v8::Array> result = v8::Array::New(2);
 			char * buf = new char[INET6_ADDRSTRLEN];
 			sockaddr_in6 * addr_in6 = (sockaddr_in6 *) addr;
-
-#ifdef windows
-			DWORD len = INET6_ADDRSTRLEN;
-			WSAAddressToString(addr, sizeof(struct sockaddr), NULL, buf, &len);
-#else			
 			inet_ntop(AF_INET6, addr_in6->sin6_addr.s6_addr, buf, INET6_ADDRSTRLEN);
-#endif
-			
 			result->Set(JS_INT(0), JS_STR(buf));
 			result->Set(JS_INT(1), JS_INT(ntohs(addr_in6->sin6_port)));
 			delete[] buf;
@@ -150,13 +166,7 @@ inline v8::Handle<v8::Value> create_peer(sockaddr * addr) {
 			v8::Handle<v8::Array> result = v8::Array::New(2);
 			char * buf = new char[INET_ADDRSTRLEN];
 			sockaddr_in * addr_in = (sockaddr_in *) addr;
-
-#ifdef windows
-			DWORD len = INET_ADDRSTRLEN;
-			WSAAddressToString(addr, sizeof(struct sockaddr), NULL, buf, &len);
-#else			
 			inet_ntop(AF_INET, & addr_in->sin_addr.s_addr, buf, INET_ADDRSTRLEN);
-#endif
 			result->Set(JS_INT(0), JS_STR(buf));
 			result->Set(JS_INT(1), JS_INT(ntohs(addr_in->sin_port)));
 			delete[] buf;
@@ -276,7 +286,7 @@ JS_METHOD(_connect) {
     sock_addr_t addr;
     socklen_t len = 0;
     
-	int result = create_addr(* address, port, family, &addr, &len);
+	int result = create_addr(*address, port, family, &addr, &len);
 	if (result != 0) {
         return JS_ERROR("Malformed address");
 	}

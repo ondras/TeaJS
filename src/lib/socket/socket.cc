@@ -192,7 +192,7 @@ JS_METHOD(_socket) {
 	SAVE_VALUE(1, JS_BOOL(false));
 	args.This()->Set(JS_STR("family"), JS_INT(family));
 	args.This()->Set(JS_STR("type"), JS_INT(type));
-	args.This()->Set(JS_STR("proto"), JS_INT(proto));									
+	args.This()->Set(JS_STR("proto"), JS_INT(proto));
 	
 	if (s == INVALID_SOCKET) {
 		return JS_ERROR(strerror(errno));
@@ -214,6 +214,7 @@ JS_METHOD(_getprotobyname) {
 JS_METHOD(_getaddrinfo) {
 	v8::String::Utf8Value name(args[0]);
 	int family = args[1]->IntegerValue();
+	if (family == 0) { family = PF_INET; }
 	
 	struct addrinfo hints, * servinfo;
 	memset(&hints, 0, sizeof(hints));

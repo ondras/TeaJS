@@ -83,6 +83,7 @@ const char * inet_ntop(int family, const void *src, char *dst, socklen_t cnt) {
 #endif
 
 v8::Persistent<v8::Function> socketFunc;
+v8::Persistent<v8::FunctionTemplate> socketTemplate;
 
 typedef union sock_addr {
     struct sockaddr_in in;
@@ -269,6 +270,59 @@ JS_METHOD(_gethostname) {
 	v8::Handle<v8::Value> result = JS_STR(buf);
 	delete[] buf;
 	return result;
+}
+
+JS_METHOD(_select) {
+	if (args.Length() != 4) {
+		return JS_TYPE_ERROR("Bad argument count. Socket.select must be called with 4 arguments.");
+	}
+	
+	int max = 0;
+	fd_set fds[3];
+
+	/* fill descriptors */
+	for (int i=0;i<3;i++) {
+		FD_ZERO(&fds[i]);
+		
+		if (!args[i]->IsArray()) { continue; }
+		v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(args[i]);
+		int len = arr->Length();
+		for (int j=0;j<len;j++) {
+			v8::Handle<v8::Value> member = arr->Get(JS_INT(j));
+			if (!INSTANCEOF(member, socketTemplate)) { return JS_ERROR("Arguments must be arrays of Socket instances"); }
+			int fd = member->ToObject()->GetInternalField(0)->IntegerValue();
+			if (fd > max) { max = fd; }
+			FD_SET(fd, &fds[i]);
+		}
+	}
+	
+	/* prepare time info */
+	timeval * tv = NULL;
+	if (!args[3]->IsNull()) {
+		int time = args[3]->IntegerValue();
+		tv = new timeval;
+		tv->tv_sec = time / 1000;
+		tv->tv_usec = time % 1000;
+	}
+	
+	
+	int ret = select(max+1, &fds[0], &fds[1], &fds[2], tv);
+	if (tv != NULL) { delete tv; } /* clean up time */
+	if (ret == SOCKET_ERROR) { return JS_ERROR(strerror(errno)); }
+	
+	/* delete unused sockets */
+	for (int i=0;i<3;i++) {
+		if (!args[i]->IsArray()) { continue; }
+		v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(args[i]);
+		int len = arr->Length();
+		for (int j=0;j<len;j++) {
+			v8::Handle<v8::Value> member = arr->Get(JS_INT(j));
+			int fd = member->ToObject()->GetInternalField(0)->IntegerValue();
+			if (!FD_ISSET(fd, &fds[i])) { arr->ForceDelete(JS_INT(j)); }
+		}
+	}
+
+	return JS_INT(ret);
 }
 
 JS_METHOD(_connect) {
@@ -501,33 +555,34 @@ SHARED_INIT() {
     WSAStartup(wVersionRequested, &wsaData);
 #endif
 
-	v8::Handle<v8::FunctionTemplate> ft = v8::FunctionTemplate::New(_socket);
-	ft->SetClassName(JS_STR("Socket"));
+	socketTemplate = v8::Persistent<v8::FunctionTemplate>::New(v8::FunctionTemplate::New(_socket)); 
+	socketTemplate->SetClassName(JS_STR("Socket"));
 	
 	/**
 	 * Constants (Socket.*)
 	 */
-	ft->Set(JS_STR("PF_INET"), JS_INT(PF_INET)); 
-	ft->Set(JS_STR("PF_INET6"), JS_INT(PF_INET6)); 
-	ft->Set(JS_STR("PF_UNIX"), JS_INT(PF_UNIX)); 
-	ft->Set(JS_STR("IPPROTO_TCP"), JS_INT(IPPROTO_TCP)); 
-	ft->Set(JS_STR("IPPROTO_UDP"), JS_INT(IPPROTO_UDP)); 
-	ft->Set(JS_STR("SOCK_STREAM"), JS_INT(SOCK_STREAM)); 
-	ft->Set(JS_STR("SOCK_DGRAM"), JS_INT(SOCK_DGRAM)); 
-	ft->Set(JS_STR("SOCK_RAW"), JS_INT(SOCK_RAW)); 
-	ft->Set(JS_STR("SO_REUSEADDR"), JS_INT(SO_REUSEADDR)); 
-	ft->Set(JS_STR("SO_BROADCAST"), JS_INT(SO_BROADCAST)); 
-	ft->Set(JS_STR("SO_KEEPALIVE"), JS_INT(SO_KEEPALIVE)); 
+	socketTemplate->Set(JS_STR("PF_INET"), JS_INT(PF_INET)); 
+	socketTemplate->Set(JS_STR("PF_INET6"), JS_INT(PF_INET6)); 
+	socketTemplate->Set(JS_STR("PF_UNIX"), JS_INT(PF_UNIX)); 
+	socketTemplate->Set(JS_STR("IPPROTO_TCP"), JS_INT(IPPROTO_TCP)); 
+	socketTemplate->Set(JS_STR("IPPROTO_UDP"), JS_INT(IPPROTO_UDP)); 
+	socketTemplate->Set(JS_STR("SOCK_STREAM"), JS_INT(SOCK_STREAM)); 
+	socketTemplate->Set(JS_STR("SOCK_DGRAM"), JS_INT(SOCK_DGRAM)); 
+	socketTemplate->Set(JS_STR("SOCK_RAW"), JS_INT(SOCK_RAW)); 
+	socketTemplate->Set(JS_STR("SO_REUSEADDR"), JS_INT(SO_REUSEADDR)); 
+	socketTemplate->Set(JS_STR("SO_BROADCAST"), JS_INT(SO_BROADCAST)); 
+	socketTemplate->Set(JS_STR("SO_KEEPALIVE"), JS_INT(SO_KEEPALIVE)); 
 	
-	ft->Set(JS_STR("getProtoByName"), v8::FunctionTemplate::New(_getprotobyname)->GetFunction()); 
-	ft->Set(JS_STR("getAddrInfo"), v8::FunctionTemplate::New(_getaddrinfo)->GetFunction()); 
-	ft->Set(JS_STR("getNameInfo"), v8::FunctionTemplate::New(_getnameinfo)->GetFunction()); 
-	ft->Set(JS_STR("getHostName"), v8::FunctionTemplate::New(_gethostname)->GetFunction()); 
+	socketTemplate->Set(JS_STR("getProtoByName"), v8::FunctionTemplate::New(_getprotobyname)->GetFunction()); 
+	socketTemplate->Set(JS_STR("getAddrInfo"), v8::FunctionTemplate::New(_getaddrinfo)->GetFunction()); 
+	socketTemplate->Set(JS_STR("getNameInfo"), v8::FunctionTemplate::New(_getnameinfo)->GetFunction()); 
+	socketTemplate->Set(JS_STR("getHostName"), v8::FunctionTemplate::New(_gethostname)->GetFunction()); 
+	socketTemplate->Set(JS_STR("select"), v8::FunctionTemplate::New(_select)->GetFunction()); 
 	
-	v8::Handle<v8::ObjectTemplate> it = ft->InstanceTemplate();
+	v8::Handle<v8::ObjectTemplate> it = socketTemplate->InstanceTemplate();
 	it->SetInternalFieldCount(2); /* sock, peername */
 
-	v8::Handle<v8::ObjectTemplate> pt = ft->PrototypeTemplate();
+	v8::Handle<v8::ObjectTemplate> pt = socketTemplate->PrototypeTemplate();
 	
 	/**
 	 * Prototype methods (new Socket().*)
@@ -543,7 +598,6 @@ SHARED_INIT() {
 	pt->Set("getOption", v8::FunctionTemplate::New(_getoption));
 	pt->Set("getPeerName", v8::FunctionTemplate::New(_getpeername));
 
-
-	exports->Set(JS_STR("Socket"), ft->GetFunction());
-	socketFunc = v8::Persistent<v8::Function>::New(ft->GetFunction());
+	exports->Set(JS_STR("Socket"), socketTemplate->GetFunction());
+	socketFunc = v8::Persistent<v8::Function>::New(socketTemplate->GetFunction());
 }

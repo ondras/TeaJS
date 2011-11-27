@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <fcntl.h>
 
 #ifdef windows
 #  include <winsock2.h>
@@ -21,6 +22,7 @@
 #  include <sys/param.h>
 #  include <arpa/inet.h>
 #  include <netinet/in.h>
+#  include <netinet/tcp.h>
 #  include <netdb.h>
 #endif 
 
@@ -337,20 +339,19 @@ JS_METHOD(_connect) {
 	
 	v8::String::Utf8Value address(args[0]);
 	int port = args[1]->Int32Value();
-    sock_addr_t addr;
-    socklen_t len = 0;
-    
+	sock_addr_t addr;
+	socklen_t len = 0;
+
 	int result = create_addr(*address, port, family, &addr, &len);
 	if (result != 0) {
         return JS_ERROR("Malformed address");
 	}
 	
 	result = connect(sock, (sockaddr *) &addr, len);
-    if (result) {
-        return JS_ERROR(strerror(errno));
-    } else {
-		return args.This();
-    }
+	
+	if (!result) { return JS_BOOL(true); }
+	if (errno == EINPROGRESS) { return JS_BOOL(false); }
+	return JS_ERROR(strerror(errno));
 }
 
 JS_METHOD(_bind) {
@@ -395,9 +396,7 @@ JS_METHOD(_listen) {
 JS_METHOD(_accept) {
 	int sock = LOAD_VALUE(0)->Int32Value();
 	int sock2 = accept(sock, NULL, NULL);
-	if (sock2 == INVALID_SOCKET) {
-		return JS_ERROR(strerror(errno));
-	} else {
+	if (sock2 != INVALID_SOCKET) { 
 		v8::Handle<v8::Value> argv[4];
 		argv[0] = v8::External::New(&sock2); // dummy field
 		argv[1] = args.This()->Get(JS_STR("family"));
@@ -405,6 +404,8 @@ JS_METHOD(_accept) {
 		argv[3] = args.This()->Get(JS_STR("proto"));
 		return socketFunc->NewInstance(4, argv);
 	}
+	if (errno == EAGAIN || errno == EWOULDBLOCK) { return JS_BOOL(false); }
+	return JS_ERROR(strerror(errno));
 }
 
 JS_METHOD(_send) {
@@ -425,27 +426,22 @@ JS_METHOD(_send) {
 		v8::String::Utf8Value address(args[1]);
 		int port = args[2]->Int32Value();
 		int r = create_addr(*address, port, family, &taddr, &len);
-		if (r != 0) {
-			return JS_ERROR("Malformed address");
-		}
+		if (r != 0) { return JS_ERROR("Malformed address"); }
 		target = (sockaddr *) &taddr;
 	}
 	
 	if (IS_BUFFER(args[0])) {
 		size_t size = 0;
 		char * data = JS_BUFFER_TO_CHAR(args[0], &size);
-		
 		result = sendto(sock, data, size, 0, target, len);
 	} else {
 		v8::String::Utf8Value data(args[0]);
 		result = sendto(sock, *data, data.length(), 0, target, len);
-	}	
+	}
 	
-    if (result == SOCKET_ERROR) {
-        return JS_ERROR(strerror(errno));
-    } else {
-		return args.This();
-    }
+	if (result != SOCKET_ERROR) { return JS_BOOL(true); }
+	if (errno == EAGAIN || errno == EWOULDBLOCK) { return JS_BOOL(false); }
+	return JS_ERROR(strerror(errno));
 }
 
 JS_METHOD(_receive) {
@@ -454,30 +450,31 @@ JS_METHOD(_receive) {
 	int type = args.This()->Get(JS_STR("type"))->Int32Value();
 	
 	char * data = new char[count];
-    sock_addr_t addr;
-    socklen_t len = 0;
+	sock_addr_t addr;
+	socklen_t len = 0;
 
 	ssize_t result = recvfrom(sock, data, count, 0, (sockaddr *) &addr, &len);
-    if (result == SOCKET_ERROR) {
-		delete[] data;
-        return JS_ERROR(strerror(errno));
-    } else {
+	if (result != SOCKET_ERROR) {
 		v8::Handle<v8::Value> buffer = JS_BUFFER(data, result);
 		delete[] data;
 		if (type == SOCK_DGRAM) { SAVE_VALUE(1, create_peer((sockaddr *) &addr)); }
 		return buffer;
-    }
+	}
+	
+	delete[] data;
+	if (errno == EAGAIN || errno == EWOULDBLOCK) { return JS_BOOL(false); }
+	return JS_ERROR(strerror(errno));
 }
 
 JS_METHOD(_socketclose) {
 	int sock = LOAD_VALUE(0)->Int32Value();
 	
 	int result = close(sock);
-    if (result == SOCKET_ERROR) {
-        return JS_ERROR(strerror(errno));
-    } else {
+	if (result == SOCKET_ERROR) {
+		return JS_ERROR(strerror(errno));
+	} else {
 		return v8::Undefined();
-    }
+	}
 }
 
 JS_METHOD(_setoption) {
@@ -488,12 +485,22 @@ JS_METHOD(_setoption) {
 	int name = args[0]->Int32Value();
 	int value = args[1]->Int32Value();
 
-    int result = setsockopt(sock, SOL_SOCKET, name, (char *) &value, sizeof(int));
+	int level;
+	switch (name) {
+		case TCP_NODELAY:
+			level = IPPROTO_TCP;
+		break;
+		default:
+			level = SOL_SOCKET;
+		break;
+	}
+	
+	int result = setsockopt(sock, level, name, (char *) &value, sizeof(int));
 	if (result == 0) {
-        return args.This();
-    } else {
-        return JS_ERROR(strerror(errno));
-    }
+		return args.This();
+	} else {
+		return JS_ERROR(strerror(errno));
+	}
 }
 
 JS_METHOD(_getoption) {
@@ -527,6 +534,29 @@ JS_METHOD(_getoption) {
     }
 }
 
+JS_METHOD(_setblocking) {
+	if (args.Length() < 1) {
+		return JS_TYPE_ERROR("Bad argument count. Use 'socket.setBlocking(true/false)'");
+	}
+	
+	int sock = LOAD_VALUE(0)->Int32Value();
+	int flags = fcntl(sock, F_GETFL);
+	
+	int flag = O_NONBLOCK;
+	if (args[0]->ToBoolean()->Value()) {
+		flags &= ~flag;
+	} else {
+		flags |= flag;
+	}
+	
+	if (fcntl(sock, F_SETFL, flags) == -1) {
+		return JS_ERROR(strerror(errno));
+	} else {
+		return v8::Undefined();
+	}
+
+}
+
 JS_METHOD(_getpeername) {
 	int sock = LOAD_VALUE(0)->Int32Value();
 
@@ -550,14 +580,14 @@ SHARED_INIT() {
 	v8::HandleScope handle_scope;
 
 #ifdef windows
-    WSADATA wsaData;
-    WORD wVersionRequested = MAKEWORD(2, 0);
-    WSAStartup(wVersionRequested, &wsaData);
+	WSADATA wsaData;
+	WORD wVersionRequested = MAKEWORD(2, 0);
+	WSAStartup(wVersionRequested, &wsaData);
 #endif
 
 	socketTemplate = v8::Persistent<v8::FunctionTemplate>::New(v8::FunctionTemplate::New(_socket)); 
 	socketTemplate->SetClassName(JS_STR("Socket"));
-	
+
 	/**
 	 * Constants (Socket.*)
 	 */
@@ -572,6 +602,8 @@ SHARED_INIT() {
 	socketTemplate->Set(JS_STR("SO_REUSEADDR"), JS_INT(SO_REUSEADDR)); 
 	socketTemplate->Set(JS_STR("SO_BROADCAST"), JS_INT(SO_BROADCAST)); 
 	socketTemplate->Set(JS_STR("SO_KEEPALIVE"), JS_INT(SO_KEEPALIVE)); 
+	socketTemplate->Set(JS_STR("SO_ERROR"), JS_INT(SO_ERROR)); 
+	socketTemplate->Set(JS_STR("TCP_NODELAY"), JS_INT(TCP_NODELAY)); 
 	
 	socketTemplate->Set(JS_STR("getProtoByName"), v8::FunctionTemplate::New(_getprotobyname)->GetFunction()); 
 	socketTemplate->Set(JS_STR("getAddrInfo"), v8::FunctionTemplate::New(_getaddrinfo)->GetFunction()); 
@@ -596,6 +628,7 @@ SHARED_INIT() {
 	pt->Set("close", v8::FunctionTemplate::New(_socketclose));
 	pt->Set("setOption", v8::FunctionTemplate::New(_setoption));
 	pt->Set("getOption", v8::FunctionTemplate::New(_getoption));
+	pt->Set("setBlocking", v8::FunctionTemplate::New(_setblocking));
 	pt->Set("getPeerName", v8::FunctionTemplate::New(_getpeername));
 
 	exports->Set(JS_STR("Socket"), socketTemplate->GetFunction());

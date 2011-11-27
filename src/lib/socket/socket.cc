@@ -495,7 +495,7 @@ JS_METHOD(_setoption) {
 		break;
 	}
 	
-	int result = setsockopt(sock, level, name, (char *) &value, sizeof(int));
+	int result = setsockopt(sock, level, name, (void *) &value, sizeof(int));
 	if (result == 0) {
 		return args.This();
 	} else {

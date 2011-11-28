@@ -122,7 +122,6 @@ void v8cgi_App::prepare(char ** envp) {
  */
 void v8cgi_App::autoload() {
 	v8::HandleScope handle_scope;
-	v8::Handle<v8::Value> config = JS_GLOBAL->Get(JS_STR("Config"));
 	v8::Handle<v8::Array> list = v8::Handle<v8::Array>::Cast(this->get_config("libraryAutoload"));
 	int cnt = list->Length();
 	
@@ -157,7 +156,6 @@ int v8cgi_App::execute(char ** envp) {
 		if (tc.HasCaught()) { throw this->format_exception(&tc); } /* uncaught exception when executing main file */
 
 	} catch (std::string e) {
-
 		result = 1;
 
 		v8::Handle<v8::Value> show = this->get_config("showErrors");

@@ -128,7 +128,6 @@ JS_METHOD(_numfields) {
 
 JS_METHOD(_fetchnames) {
 	v8::Handle<v8::Array> data = v8::Handle<v8::Array>::Cast(LOAD_VALUE(0));
-	v8::Handle<v8::Value> rows = LOAD_VALUE(1);
 	v8::Handle<v8::Value> cols = LOAD_VALUE(2);
 	
 	int c = cols->ToInteger()->Int32Value();

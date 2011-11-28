@@ -26,6 +26,13 @@
 #  include <netdb.h>
 #endif 
 
+#ifndef EWOULDBLOCK
+#  define EWOULDBLOCK EAGAIN
+#endif
+
+#ifndef EINPROGRESS
+#  define EINPROGRESS WSAEINPROGRESS
+#endif
 
 #ifndef MAXHOSTNAMELEN
 #  define MAXHOSTNAMELEN 64
@@ -38,6 +45,18 @@
 #ifndef SOCKET_ERROR
 #  define SOCKET_ERROR -1
 #endif
+
+v8::Handle<v8::Value> FormatError() {
+#ifdef windows
+	int size = 0xFF;
+	char buf[size];
+	buf[size-1] = '\0';
+	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, WSAGetLastError(), 0, buf, size-1, NULL);
+	return JS_ERROR(buf);
+#else
+	return JS_ERROR(strerror(errno));
+#endif
+}
 
 namespace {
 
@@ -63,18 +82,18 @@ int inet_pton(int family, const char *src, void *dst) {
 #ifndef HAVE_NTOP
 const char * inet_ntop(int family, const void *src, char *dst, socklen_t cnt) {
     switch (family) {
-		case AF_INET: {
+		case PF_INET: {
 			struct sockaddr_in in;
 			memset(&in, 0, sizeof(in));
-			in.sin_family = AF_INET;
+			in.sin_family = PF_INET;
 			memcpy(&in.sin_addr, src, sizeof(struct in_addr));
 			getnameinfo((struct sockaddr *)&in, sizeof(struct sockaddr_in), dst, cnt, NULL, 0, NI_NUMERICHOST);
 			return dst;
 		}
-		case AF_INET6: {
+		case PF_INET6: {
 			struct sockaddr_in6 in;
 			memset(&in, 0, sizeof(in));
-			in.sin6_family = AF_INET6;
+			in.sin6_family = PF_INET6;
 			memcpy(&in.sin6_addr, src, sizeof(struct in_addr6));
 			getnameinfo((struct sockaddr *)&in, sizeof(struct sockaddr_in6), dst, cnt, NULL, 0, NI_NUMERICHOST);
 			return dst;
@@ -104,15 +123,15 @@ typedef union sock_addr {
  * @param {socklen_t *} len Result length
  */
 inline int create_addr(char * address, int port, int family, sock_addr_t * result, socklen_t * len) {
-	unsigned int length = strlen(address);
-    switch (family) {
+   switch (family) {
 #ifndef windows
 		case PF_UNIX: {
-			struct sockaddr_un *addr = (struct sockaddr_un*) result;
+			unsigned int length = strlen(address);
+ 			struct sockaddr_un *addr = (struct sockaddr_un*) result;
 			memset(addr, 0, sizeof(sockaddr_un));
 
 			if (length >= sizeof(addr->sun_path)) { return 1; }
-			addr->sun_family = AF_UNIX;
+			addr->sun_family = PF_UNIX;
 			memcpy(addr->sun_path, address, length);
 			addr->sun_path[length] = '\0';
 			*len = length + (sizeof(*addr) - sizeof(addr->sun_path));
@@ -121,8 +140,8 @@ inline int create_addr(char * address, int port, int family, sock_addr_t * resul
 		case PF_INET: {
 			struct sockaddr_in *addr = (struct sockaddr_in*) result;
 			memset(addr, 0, sizeof(*addr)); 
-			addr->sin_family = AF_INET;
-			int pton_ret = inet_pton(AF_INET, address, & addr->sin_addr.s_addr);
+			addr->sin_family = PF_INET;
+			int pton_ret = inet_pton(PF_INET, address, & addr->sin_addr.s_addr);
 			if (pton_ret == 0) { return 1; }
 			addr->sin_port = htons((short)port);
 			*len = sizeof(*addr);
@@ -130,8 +149,8 @@ inline int create_addr(char * address, int port, int family, sock_addr_t * resul
 		case PF_INET6: {
 			struct sockaddr_in6 *addr = (struct sockaddr_in6*) result;
 			memset(addr, 0, sizeof(*addr));
-			addr->sin6_family = AF_INET6;
-			int pton_ret = inet_pton(AF_INET6, address, addr->sin6_addr.s6_addr);
+			addr->sin6_family = PF_INET6;
+			int pton_ret = inet_pton(PF_INET6, address, & addr->sin6_addr.s6_addr);
 			if (pton_ret == 0) { return 1; }
 			addr->sin6_port = htons((short)port);
 			*len = sizeof(*addr);
@@ -142,34 +161,34 @@ inline int create_addr(char * address, int port, int family, sock_addr_t * resul
 
 /**
  * Returns JS array with values describing remote address.
- * For UNIX socket, only one item is present. For AF_INET and
- * AF_INET6, array contains [address, port].
+ * For UNIX socket, only one item is present. For PF_INET and
+ * PF_INET6, array contains [address, port].
  */
 inline v8::Handle<v8::Value> create_peer(sockaddr * addr) {
     switch (addr->sa_family) {
 #ifndef windows
-		case AF_UNIX: {
+		case PF_UNIX: {
 			v8::Handle<v8::Array> result = v8::Array::New(1);
 			sockaddr_un * addr_un = (sockaddr_un *) addr;
 			result->Set(JS_INT(0), JS_STR(addr_un->sun_path));
 			return result;
 		} break;
 #endif
-		case AF_INET6: {
+		case PF_INET6: {
 			v8::Handle<v8::Array> result = v8::Array::New(2);
 			char * buf = new char[INET6_ADDRSTRLEN];
 			sockaddr_in6 * addr_in6 = (sockaddr_in6 *) addr;
-			inet_ntop(AF_INET6, addr_in6->sin6_addr.s6_addr, buf, INET6_ADDRSTRLEN);
+			inet_ntop(PF_INET6, addr_in6->sin6_addr.s6_addr, buf, INET6_ADDRSTRLEN);
 			result->Set(JS_INT(0), JS_STR(buf));
 			result->Set(JS_INT(1), JS_INT(ntohs(addr_in6->sin6_port)));
 			delete[] buf;
 			return result;
 		} break;
-		case AF_INET: {
+		case PF_INET: {
 			v8::Handle<v8::Array> result = v8::Array::New(2);
 			char * buf = new char[INET_ADDRSTRLEN];
 			sockaddr_in * addr_in = (sockaddr_in *) addr;
-			inet_ntop(AF_INET, & addr_in->sin_addr.s_addr, buf, INET_ADDRSTRLEN);
+			inet_ntop(PF_INET, & addr_in->sin_addr.s_addr, buf, INET_ADDRSTRLEN);
 			result->Set(JS_INT(0), JS_STR(buf));
 			result->Set(JS_INT(1), JS_INT(ntohs(addr_in->sin_port)));
 			delete[] buf;
@@ -208,7 +227,7 @@ JS_METHOD(_socket) {
 	args.This()->Set(JS_STR("proto"), JS_INT(proto));
 	
 	if (s == INVALID_SOCKET) {
-		return JS_ERROR(strerror(errno));
+		return FormatError();
 	} else {
 		return args.This();
 	}
@@ -310,7 +329,7 @@ JS_METHOD(_select) {
 	
 	int ret = select(max+1, &fds[0], &fds[1], &fds[2], tv);
 	if (tv != NULL) { delete tv; } /* clean up time */
-	if (ret == SOCKET_ERROR) { return JS_ERROR(strerror(errno)); }
+	if (ret == SOCKET_ERROR) { return FormatError(); }
 	
 	/* delete unused sockets */
 	for (int i=0;i<3;i++) {
@@ -351,7 +370,7 @@ JS_METHOD(_connect) {
 	
 	if (!result) { return JS_BOOL(true); }
 	if (errno == EINPROGRESS) { return JS_BOOL(false); }
-	return JS_ERROR(strerror(errno));
+	return FormatError();
 }
 
 JS_METHOD(_bind) {
@@ -373,7 +392,7 @@ JS_METHOD(_bind) {
 
 	result = bind(sock, (sockaddr *) &addr, len);
 	if (result) {
-		return JS_ERROR(strerror(errno));
+		return FormatError();
 	} else {
 		return args.This();
 	}
@@ -387,7 +406,7 @@ JS_METHOD(_listen) {
 
 	int result = listen(sock, num);
 	if (result) {
-		return JS_ERROR(strerror(errno));
+		return FormatError();
 	} else {
 		return args.This();
 	}
@@ -405,7 +424,7 @@ JS_METHOD(_accept) {
 		return socketFunc->NewInstance(4, argv);
 	}
 	if (errno == EAGAIN || errno == EWOULDBLOCK) { return JS_BOOL(false); }
-	return JS_ERROR(strerror(errno));
+	return FormatError();
 }
 
 JS_METHOD(_send) {
@@ -441,7 +460,7 @@ JS_METHOD(_send) {
 	
 	if (result != SOCKET_ERROR) { return JS_BOOL(true); }
 	if (errno == EAGAIN || errno == EWOULDBLOCK) { return JS_BOOL(false); }
-	return JS_ERROR(strerror(errno));
+	return FormatError();
 }
 
 JS_METHOD(_receive) {
@@ -463,7 +482,7 @@ JS_METHOD(_receive) {
 	
 	delete[] data;
 	if (errno == EAGAIN || errno == EWOULDBLOCK) { return JS_BOOL(false); }
-	return JS_ERROR(strerror(errno));
+	return FormatError();
 }
 
 JS_METHOD(_socketclose) {
@@ -471,7 +490,7 @@ JS_METHOD(_socketclose) {
 	
 	int result = close(sock);
 	if (result == SOCKET_ERROR) {
-		return JS_ERROR(strerror(errno));
+		return FormatError();
 	} else {
 		return v8::Undefined();
 	}
@@ -495,11 +514,11 @@ JS_METHOD(_setoption) {
 		break;
 	}
 	
-	int result = setsockopt(sock, level, name, (void *) &value, sizeof(int));
+	int result = setsockopt(sock, level, name, (char *) &value, sizeof(int));
 	if (result == 0) {
 		return args.This();
 	} else {
-		return JS_ERROR(strerror(errno));
+		return FormatError();
 	}
 }
 
@@ -520,7 +539,7 @@ JS_METHOD(_getoption) {
             return response;
         } else {
 			delete[] buf;
-			return JS_ERROR(strerror(errno));
+			return FormatError();
         }
     } else {
         unsigned int buf;
@@ -529,7 +548,7 @@ JS_METHOD(_getoption) {
 		if (result == 0) {
             return JS_INT(buf);
         } else {
-			return JS_ERROR(strerror(errno));
+			return FormatError();
         }
     }
 }
@@ -540,20 +559,30 @@ JS_METHOD(_setblocking) {
 	}
 	
 	int sock = LOAD_VALUE(0)->Int32Value();
-	int flags = fcntl(sock, F_GETFL);
 	
-	int flag = O_NONBLOCK;
-	if (args[0]->ToBoolean()->Value()) {
-		flags &= ~flag;
-	} else {
-		flags |= flag;
-	}
-	
-	if (fcntl(sock, F_SETFL, flags) == -1) {
-		return JS_ERROR(strerror(errno));
+#ifdef windows
+	unsigned long flag = !args[0]->ToBoolean()->Value(); /* with ioctlsocket, a non-zero sets nonblocking, a zero sets blocking */
+	if (ioctlsocket(sock, FIONBIO, &flag) == SOCKET_ERROR) {
+		return FormatError();
 	} else {
 		return v8::Undefined();
 	}
+
+#else 
+	int flags = fcntl(sock, F_GETFL);
+
+	if (args[0]->ToBoolean()->Value()) {
+		flags &= ~O_NONBLOCK;
+	} else {
+		flags |= O_NONBLOCK;
+	}
+	
+	if (fcntl(sock, F_SETFL, flags) == -1) {
+		return FormatError();
+	} else {
+		return v8::Undefined();
+	}
+#endif
 
 }
 
@@ -567,7 +596,7 @@ JS_METHOD(_getpeername) {
 		if (result == 0) {
 			SAVE_VALUE(1, create_peer((sockaddr *) &addr));
 		} else {
-			return JS_ERROR(strerror(errno));
+			return FormatError();
 		}
 	}
 	

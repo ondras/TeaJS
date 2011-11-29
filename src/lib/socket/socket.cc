@@ -524,33 +524,27 @@ JS_METHOD(_setoption) {
 
 JS_METHOD(_getoption) {
 	if (args.Length() < 1) {
-		return JS_TYPE_ERROR("Bad argument count. Use 'socket.getOption(name, [length])'");
+		return JS_TYPE_ERROR("Bad argument count. Use 'socket.getOption(name)'");
 	}
 	int sock = LOAD_VALUE(0)->Int32Value();
 	int name = args[0]->Int32Value();
+	int level;
+	switch (name) {
+		case TCP_NODELAY:
+			level = IPPROTO_TCP;
+		break;
+		default:
+			level = SOL_SOCKET;
+		break;
+	}
+	
+	int value;
+	socklen_t len = sizeof(value);
+	int result = getsockopt(sock, level, name, &value, &len);
 
-    if (args.Length() == 2) {
-		int length = args[1]->Int32Value();
-        char * buf = new char[length];
-		int result = getsockopt(sock, SOL_SOCKET, name, buf, (socklen_t *) &length);
-		if (result == 0) {
-			v8::Handle<v8::Value> response = JS_STR(buf, length);
-			delete[] buf;
-            return response;
-        } else {
-			delete[] buf;
-			return FormatError();
-        }
-    } else {
-        unsigned int buf;
-        int length = sizeof(buf);
-		int result = getsockopt(sock, SOL_SOCKET, name, (char *) &buf, (socklen_t *) &length);
-		if (result == 0) {
-            return JS_INT(buf);
-        } else {
-			return FormatError();
-        }
-    }
+	if (result != 0) { return FormatError(); }
+	if (len != sizeof(value)) { return JS_ERROR("getsockopt returned truncated value"); }
+	return JS_INT(value);
 }
 
 JS_METHOD(_setblocking) {

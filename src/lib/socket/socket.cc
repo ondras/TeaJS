@@ -434,7 +434,6 @@ JS_METHOD(_send) {
 		return JS_TYPE_ERROR("Bad argument count. Use 'socket.send(data, [address], [port])'");
 	}
 	
-	
 	sock_addr_t taddr;
 	sockaddr * target = NULL;
 	socklen_t len = 0;
@@ -458,7 +457,7 @@ JS_METHOD(_send) {
 		result = sendto(sock, *data, data.length(), 0, target, len);
 	}
 	
-	if (result != SOCKET_ERROR) { return JS_BOOL(true); }
+	if (result != SOCKET_ERROR) { return JS_INT(result); }
 	if (errno == EAGAIN || errno == EWOULDBLOCK) { return JS_BOOL(false); }
 	return FormatError();
 }

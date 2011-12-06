@@ -1,4 +1,6 @@
-#!../v8cgi
+#!v8cgi
+
+/* simple interactive js shell */
 
 while (1) {
 	system.stdout("> ");

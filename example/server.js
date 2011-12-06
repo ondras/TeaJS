@@ -1,4 +1,6 @@
-#!../v8cgi
+#!v8cgi
+
+/* simple HTTP server; listens on 127.0.0.1:10001 and returns HTTP/200 OK */
 
 var Socket = require("socket").Socket;
 

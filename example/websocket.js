@@ -1,3 +1,7 @@
+#!v8cgi
+
+/* simple websocket echo server: repeats received message to all clients */
+
 var Server = require("websocket").Server;
 var ws = new Server("0.0.0.0", 8888);
 

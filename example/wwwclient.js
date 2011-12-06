@@ -1,4 +1,6 @@
-#!../v8cgi
+#!v8cgi
+
+/* simple http client application - downloads an URL and outputs its contents */
 
 var http = require("http");
 var client = new http.ClientRequest("http://www.seznam.cz/");

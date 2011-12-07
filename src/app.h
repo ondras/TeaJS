@@ -24,7 +24,6 @@ public:
 	virtual void init(); 
 	/* once per request */
 	int execute(char ** envp); 
-	v8::Handle<v8::Object> include(std::string name, std::string moduleId);
 	v8::Handle<v8::Object> require(std::string name, std::string moduleId);
 	
 	/* list of "onexit" functions */
@@ -37,7 +36,7 @@ public:
 	/* stderr */
 	virtual void error(const char * data, const char * file, int line) = 0;
 	/* stdout flush */
-	virtual bool flush() = 0;	
+	virtual bool flush() = 0;
 
 protected:
 	/* env. preparation */
@@ -73,19 +72,16 @@ private:
 	void finish();
 	bool http();
 	void js_error(std::string message);
-	void autoload();
 	void clear_global();
 	
 	/* instance type info */
 	virtual const char * instanceType() = 0;
-
-	/* instance type info */
 	virtual const char * executableName() = 0;
 
 	modulefiles resolve_module(std::string name, std::string relativeRoot);
 	modulefiles resolve_extension(std::string path);
-	int load_js(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Function> include, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module);
-	void load_dso(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Function> include, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module);
+	int load_js(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module);
+	void load_dso(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module);
 	v8::Handle<v8::Value> get_config(std::string name);
 	v8::Handle<v8::Function> build_require(std::string path, v8::Handle<v8::Value> (*func) (const v8::Arguments&));
 	

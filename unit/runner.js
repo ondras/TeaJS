@@ -1,4 +1,4 @@
-#!../v8cgi
+#!v8cgi
 
 var fs = require("fs");
 

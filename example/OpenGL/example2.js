@@ -1,3 +1,5 @@
+#!/usr/bin/env v8cgi
+
 include('GL');
 
 //Add array iteration method

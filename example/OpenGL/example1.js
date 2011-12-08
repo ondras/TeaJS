@@ -1,3 +1,5 @@
+#!/usr/bin/env v8cgi
+
 var tmp = include("GL");
 
 //Initializes 3D rendering

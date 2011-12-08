@@ -1,4 +1,4 @@
-#!v8cgi
+#!/usr/bin/env v8cgi
 
 /**
  * More info on http://www.activerecordjs.org/record.html

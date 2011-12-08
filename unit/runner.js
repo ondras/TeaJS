@@ -1,4 +1,4 @@
-#!v8cgi
+#!/usr/bin/env v8cgi
 
 var fs = require("fs");
 

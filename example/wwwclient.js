@@ -1,4 +1,4 @@
-#!v8cgi
+#!/usr/bin/env v8cgi
 
 /* simple http client application - downloads an URL and outputs its contents */
 

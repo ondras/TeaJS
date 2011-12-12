@@ -111,11 +111,33 @@ void * Cache::getHandle(std::string filename) {
 #ifdef VERBOSE
 		printf("cache miss\n"); 
 #endif	
+
+#ifdef windows
+		SetErrorMode(SEM_FAILCRITICALERRORS);
+#endif
 		void * handle = dlopen(filename.c_str(), RTLD_LAZY);
 		if (!handle) { 
 			std::string error = "Error opening shared library '";
 			error += filename;
-			error += "'";
+			error += "' (";
+			
+#ifdef windows
+			int size = 0xFF;
+			char buf[size];
+			buf[size-1] = '\0';
+			int e = GetLastError();
+			FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, e, 0, buf, size-1, NULL);
+			char estr[100];
+			snprintf(estr, sizeof(estr), "%i", e);
+
+			error += "code ";
+			error += estr;
+			error += ", ";
+			error += buf;	
+#else
+			error += dlerror();
+#endif
+			error += ")";
 			throw error;
 		}
 		this->mark(filename); /* mark as cached */

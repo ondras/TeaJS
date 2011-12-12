@@ -539,7 +539,7 @@ JS_METHOD(_getoption) {
 	
 	int value;
 	socklen_t len = sizeof(value);
-	int result = getsockopt(sock, level, name, &value, &len);
+	int result = getsockopt(sock, level, name, (char *)&value, &len);
 
 	if (result != 0) { return FormatError(); }
 	if (len != sizeof(value)) { return JS_ERROR("getsockopt returned truncated value"); }

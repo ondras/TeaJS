@@ -30,4 +30,4 @@ Config["smtpPort"] = 25;
 Config["smtpFrom"] = "";
 
 // Uncaught exceptions go to stdout (true) or stderr (false)
-Config["showErrors"] = true;
+Config["showErrors"] = false;

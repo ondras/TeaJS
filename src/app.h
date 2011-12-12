@@ -66,7 +66,6 @@ private:
 
 	std::string format_exception(v8::TryCatch* try_catch);
 	void findmain();
-	bool http();
 	void js_error(std::string message);
 	void finish();
 	void clear_global();

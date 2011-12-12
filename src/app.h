@@ -29,8 +29,8 @@ public:
 	/* list of "onexit" functions */
 	funcvector onexit;
 
-	/* get configuration option */
-	v8::Handle<v8::Value> get_config(std::string name);
+	
+	bool show_errors;
 
 protected:
 	/* env. preparation */
@@ -56,6 +56,9 @@ private:
 	v8::Persistent<v8::Value> global;
 	v8::Persistent<v8::ObjectTemplate> globalt;
 	
+	/* get configuration option */
+	v8::Handle<v8::Value> get_config(std::string name);
+
 	/* cache */
 	Cache cache;
 	/* GC notification engine */
@@ -63,9 +66,9 @@ private:
 
 	std::string format_exception(v8::TryCatch* try_catch);
 	void findmain();
-	void finish();
 	bool http();
 	void js_error(std::string message);
+	void finish();
 	void clear_global();
 	
 	/* instance type info */

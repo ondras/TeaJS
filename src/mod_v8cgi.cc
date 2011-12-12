@@ -230,8 +230,7 @@ static int mod_v8cgi_handler(request_rec *r) {
 	try {
 		app.execute(r, envp);
 	} catch (std::string e) {
-		v8::Handle<v8::Value> show = app.get_config("showErrors");
-		if (show->ToBoolean()->IsTrue()) {
+		if (app.show_errors) {
 			app.write(e.c_str(), e.length());
 		} else {
 			app.error(e.c_str());

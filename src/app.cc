@@ -66,6 +66,7 @@ JS_METHOD(_exit) {
  */
 void v8cgi_App::init() {
 	this->cfgfile = STRING(CONFIG_PATH);
+	this->show_errors = false;
 }
 
 /**
@@ -135,6 +136,9 @@ void v8cgi_App::execute(char ** envp) {
  * End request
  */
 void v8cgi_App::finish() {
+	v8::Handle<v8::Value> show = this->get_config("showErrors");
+	this->show_errors = show->ToBoolean()->IsTrue();
+
 	/* user callbacks */
 	for (unsigned int i=0; i<this->onexit.size(); i++) {
 		this->onexit[i]->Call(JS_GLOBAL, 0, NULL);

@@ -229,8 +229,7 @@ int main(int argc, char ** argv) {
 		try {
 			cgi.execute(environ);
 		} catch (std::string e) {
-			v8::Handle<v8::Value> show = cgi.get_config("showErrors");
-			if (show->ToBoolean()->IsTrue()) {
+			if (cgi.show_errors) {
 				fwrite((void *) e.c_str(), sizeof(char), e.length(), stdout);
 			} else {
 				fwrite((void *) e.c_str(), sizeof(char), e.length(), stderr);

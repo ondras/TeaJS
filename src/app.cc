@@ -103,11 +103,11 @@ void v8cgi_App::prepare(char ** envp) {
  * Process a request.
  * @param {char**} envp Environment
  */
-int v8cgi_App::execute(char ** envp) {
+void v8cgi_App::execute(char ** envp) {
 	v8::Locker locker;
 	v8::HandleScope handle_scope;
 
-	int result = 0;
+	std::string caught;
 	this->create_context();
 	this->mainModule = v8::Object::New();
 
@@ -118,22 +118,17 @@ int v8cgi_App::execute(char ** envp) {
 		if (tc.HasCaught()) { throw this->format_exception(&tc); } /* uncaught exception when loading config file */
 		
 		if (this->mainfile == "") { throw std::string("Nothing to do :)"); }
+
 		this->require(this->mainfile, path_getcwd()); 
 		if (tc.HasCaught()) { throw this->format_exception(&tc); } /* uncaught exception when executing main file */
 
 	} catch (std::string e) {
-		result = 1;
-
-		v8::Handle<v8::Value> show = this->get_config("showErrors");
-		if (show->ToBoolean()->IsTrue()) {
-			this->js_error(e.c_str()); 
-		} else {
-			this->error(e.c_str(), __FILE__, __LINE__);
-		}
+		caught = e;
 	}
 	
 	this->finish();
-	return result;
+	
+	if (caught.length()) { throw caught; } /* rethrow */
 }
 
 /**
@@ -256,34 +251,6 @@ void v8cgi_App::load_dso(std::string filename, v8::Handle<v8::Function> require,
 	}
 	
 	func(require, exports, module);
-}
-
-/**
- * Try to report error via JS means, instead of stderr 
- */
-void v8cgi_App::js_error(std::string message) {
-	int cgi = 0;
-	v8::Local<v8::Function> fun;
-	v8::Local<v8::Value> context = JS_GLOBAL->Get(JS_STR("response"));
-	if (context->IsObject()) {
-		v8::Local<v8::Value> print = context->ToObject()->Get(JS_STR("write"));
-		if (print->IsFunction()) {
-			fun = v8::Local<v8::Function>::Cast(print);
-			cgi = 1;
-		}
-	}
-	if (!cgi) {
-		context = JS_GLOBAL->Get(JS_STR("system"));
-		if (context->IsUndefined()) {
-			this->error(message.c_str(), __FILE__, __LINE__);
-			return;
-		} else {
-			fun = v8::Local<v8::Function>::Cast(context->ToObject()->Get(JS_STR("stdout")));
-		}
-	}
-	
-	v8::Handle<v8::Value> data[1] = { JS_STR(message.c_str()) };
-	fun->Call(context->ToObject(), 1, data);
 }
 
 /**

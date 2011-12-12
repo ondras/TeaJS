@@ -31,41 +31,25 @@ extern "C" module AP_MODULE_DECLARE_DATA v8cgi_module;
 
 class v8cgi_Module : public v8cgi_App {
 public:
-	size_t reader(char * destination, size_t amount) {
-		size_t read = 0;
-		long part = 0;
-		do {
-			part = ap_get_client_block(this->request, destination+read, amount-read);
-			if(part<0) { break; }
-			read += part;
-		} while (part>0 && read<amount);
-		return read;
-	}
-
-	size_t writer(const char * data, size_t amount) {
-		return (size_t) ap_rwrite(data, amount, this->request);
-	}
-
-	/**
-	 * We log errors to apache errorlog
-	 */
-	void error(const char * data, const char * file, int line) {
-		ap_log_rerror(file, line, APLOG_ERR, 0, this->request, "%s", data);
+	request_rec * request;
+	
+	size_t write(const char * data, size_t size) {
+		return ap_rwrite(data, size, this->request);
 	}
 	
-	bool flush() {
-		return true; /* FIXME? */
+	void error(const char * data) {
+		ap_log_rerror(__FILE__, __LINE__, APLOG_ERR, 0, this->request, "%s", data);
 	}
 
 	/** 
 	 * Remember apache request structure and continue as usually
 	 */
-	int execute(request_rec * request, char ** envp) {
+	void execute(request_rec * request, char ** envp) {
 		this->request = request;
 		this->mainfile = std::string(request->filename);
 		int chdir_result = path_chdir(path_dirname(this->mainfile));
-		if (chdir_result == -1) { return chdir_result; }
-		return v8cgi_App::execute(envp);
+		if (chdir_result == -1) { return; }
+		v8cgi_App::execute(envp);
 	}
 	
 	void init(v8cgi_config * cfg) { 
@@ -101,7 +85,6 @@ protected:
 	void prepare(char ** envp);
 
 private:
-	request_rec * request;
 
 	const char * instanceType() {
 		return "module";
@@ -111,6 +94,50 @@ private:
 		return "?";
 	}
 };
+
+JS_METHOD(_read) {
+	v8cgi_Module * app = (v8cgi_Module *) APP_PTR;
+	if (args.Length() < 1) { return JS_TYPE_ERROR("Invalid call format. Use 'apache.read(amount)'"); }
+	size_t count = args[0]->IntegerValue();
+	
+	char * destination = new char[count];
+	
+	size_t read = 0;
+	long part = 0;
+	do {
+		part = ap_get_client_block(app->request, destination+read, count-read);
+		if (part<0) { break; }
+		read += part;
+	} while (part>0 && read<count);
+	
+	v8::Handle<v8::Value> result = JS_BUFFER(destination, read);
+	delete[] destination;
+	
+	return result;
+}
+
+JS_METHOD(_write) {
+	v8cgi_Module * app = (v8cgi_Module *) APP_PTR;
+	if (args.Length() < 1) { return JS_TYPE_ERROR("Invalid call format. Use 'apache.write(data)'"); }
+
+	size_t result;
+	if (IS_BUFFER(args[0])) {
+		size_t size = 0;
+		char * data = JS_BUFFER_TO_CHAR(args[0], &size);
+		result = app->write(data, size);
+	} else {
+		v8::String::Utf8Value str(args[0]);
+		result = app->write(*str, str.length());
+	}
+	return JS_INT(result);
+}
+
+JS_METHOD(_error) {
+	v8cgi_Module * app = (v8cgi_Module *) APP_PTR;
+	v8::String::Utf8Value error(args[0]);
+	app->error(*error);
+	return v8::Undefined();
+}
 
 JS_METHOD(_header) {
 	v8cgi_Module * app = (v8cgi_Module *) APP_PTR;
@@ -128,6 +155,9 @@ void v8cgi_Module::prepare(char ** envp) {
 	v8::Handle<v8::Object> apache = v8::Object::New();
 	g->Set(JS_STR("apache"), apache);
 	apache->Set(JS_STR("header"), v8::FunctionTemplate::New(_header)->GetFunction());
+	apache->Set(JS_STR("read"), v8::FunctionTemplate::New(_read)->GetFunction());
+	apache->Set(JS_STR("write"), v8::FunctionTemplate::New(_write)->GetFunction());
+	apache->Set(JS_STR("error"), v8::FunctionTemplate::New(_error)->GetFunction());
 }
 
 /**
@@ -196,7 +226,17 @@ static int mod_v8cgi_handler(request_rec *r) {
 	v8cgi_config * cfg = (v8cgi_config *) ap_get_module_config(r->server->module_config, &v8cgi_module);
 	v8cgi_Module app;
 	app.init(cfg);
-	app.execute(r, envp);
+	
+	try {
+		app.execute(r, envp);
+	} catch (std::string e) {
+		v8::Handle<v8::Value> show = app.get_config("showErrors");
+		if (show->ToBoolean()->IsTrue()) {
+			app.write(e.c_str(), e.length());
+		} else {
+			app.error(e.c_str());
+		}
+	}
 	
 	for (int i=0;i<arr->nelts;i++) {
 		delete[] envp[i];

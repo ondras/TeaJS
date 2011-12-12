@@ -26,8 +26,6 @@ namespace {
  * @param {int} count How many; 0 == all
  */
 JS_METHOD(_stdin) {
-	v8cgi_App * app = APP_PTR;
-
 	size_t count = 0;
 	if (args.Length() && args[0]->IsNumber()) {
 		count = args[0]->IntegerValue();
@@ -40,14 +38,14 @@ JS_METHOD(_stdin) {
 		size_t tmp;
 		char * buf = new char[1024];
 		do {
-			tmp = app->reader(buf, sizeof(buf));
+			tmp = fread((void *) buf, sizeof(char), sizeof(buf), stdin);
 			size += tmp;
 			data.insert(data.length(), buf, tmp);
 		} while (tmp == sizeof(buf));
 		delete[] buf;
 	} else {
 		char * tmp = new char[count];
-		size = app->reader(tmp, count);
+		size = fread((void *) tmp, sizeof(char), count, stdin);
 		data.insert(0, tmp, size);
 		delete[] tmp;
 	}
@@ -60,24 +58,21 @@ JS_METHOD(_stdin) {
  * @param {string||Buffer} String or Buffer
  */
 JS_METHOD(_stdout) {
-	v8cgi_App * app = APP_PTR;
+	size_t result;
 	if (IS_BUFFER(args[0])) {
 		size_t size = 0;
 		char * data = JS_BUFFER_TO_CHAR(args[0], &size);
-		app->writer(data, size);
+		result = fwrite((void *) data, sizeof(char), size, stdout);
 	} else {
 		v8::String::Utf8Value str(args[0]);
-		app->writer(*str, str.length());
+		result = fwrite((void *) *str, sizeof(char), str.length(), stdout);
 	}
-	return v8::Undefined();
+	return JS_INT(result);
 }
 
 JS_METHOD(_stderr) {
-	v8cgi_App * app = APP_PTR;
 	v8::String::Utf8Value str(args[0]);
-	v8::String::Utf8Value f(args[1]);
-	int line = args[2]->Int32Value();
-	app->error(*str, *f, line);
+	fwrite((void *) *str, sizeof(char), str.length(), stderr);
 	return v8::Undefined();
 }
 
@@ -123,8 +118,7 @@ JS_METHOD(_getTimeInMicroseconds) {
 }
 
 JS_METHOD(_flush) {
-	v8cgi_App * app = APP_PTR;
-	if (!app->flush()) { return JS_ERROR("Can not flush stdout"); }
+	if (fflush(stdout)) { return JS_ERROR("Can not flush stdout"); }
 	return v8::Undefined();
 }
 

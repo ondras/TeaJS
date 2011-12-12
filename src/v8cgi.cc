@@ -49,41 +49,12 @@ public:
 		try {
 			this->process_args(argc, argv);
 		} catch (std::string e) {
-			this->error(e.c_str(), __FILE__, __LINE__); 
+			fwrite((void *) e.c_str(), sizeof(char), e.length(), stderr);
+			fwrite((void *) "\n", sizeof(char), 1, stderr);
 			return 1;
 		}
 		
 		return 0;
-	}
-	
-	/**
-	 * STDIN reader
-	 */
-	size_t reader(char * destination, size_t amount) {
-		return fread((void *) destination, sizeof(char), amount, stdin);
-	}
-
-	/**
-	 * STDOUT writer
-	 */
-	size_t writer(const char * data, size_t amount) {
-		return fwrite((void *) data, sizeof(char), amount, stdout);
-	}
-
-	/**
-	 * STDERR error
-	 */
-	void error(const char * data, const char * file, int line) {
-		fwrite((void *) data, sizeof(char), strlen(data), stderr);
-		fwrite((void *) "\n", sizeof(char), 1, stderr);
-	}
-	
-	/**
-	 * STDOUT flush
-	 * @return whether successful
-	 */
-	bool flush() {
-		return (fflush(stdout) == 0);
 	}
 
 	void fromEnvVars() {
@@ -241,7 +212,6 @@ int main(int argc, char ** argv) {
 	if (result) { exit(result); }
 
 #ifdef FASTCGI
-
 	signal(SIGTERM, handle_sigterm);
 #  ifdef SIGPIPE
 	signal(SIGPIPE, handle_sigpipe);
@@ -256,8 +226,17 @@ int main(int argc, char ** argv) {
 		cgi.fromEnvVars();
 #endif
 
-		result = cgi.execute(environ);
-
+		try {
+			cgi.execute(environ);
+		} catch (std::string e) {
+			v8::Handle<v8::Value> show = cgi.get_config("showErrors");
+			if (show->ToBoolean()->IsTrue()) {
+				fwrite((void *) e.c_str(), sizeof(char), e.length(), stdout);
+			} else {
+				fwrite((void *) e.c_str(), sizeof(char), e.length(), stderr);
+			}
+		}
+		
 #ifdef FASTCGI
 		FCGI_SetExitStatus(result);
 	}

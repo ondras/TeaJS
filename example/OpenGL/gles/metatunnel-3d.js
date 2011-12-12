@@ -1,4 +1,7 @@
-include("GL");
+#!/usr/bin/env v8cgi
+
+var exports = require("GL");
+for (var p in exports) { global[p] = exports[p]; }
 
 // This is a hacked up version of vlad's port of FRequency's metatunnel.
 //   http://people.mozilla.com/~vladimir/misc/metatunnel-3d.html

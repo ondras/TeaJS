@@ -1,6 +1,7 @@
-#!/usr/local/bin/v8cgi
+#!/usr/bin/env v8cgi
 
-include("GL");
+var exports = require("GL");
+for (var p in exports) { global[p] = exports[p]; }
 
 // an object we'll use to store shaders, textures, etc. on as we create them
 var userData = { };

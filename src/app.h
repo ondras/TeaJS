@@ -23,20 +23,14 @@ public:
 	/* once per app lifetime */
 	virtual void init(); 
 	/* once per request */
-	int execute(char ** envp); 
+	void execute(char ** envp); 
 	v8::Handle<v8::Object> require(std::string name, std::string moduleId);
 	
 	/* list of "onexit" functions */
 	funcvector onexit;
 
-	/* stdin */
-	virtual size_t reader (char * destination, size_t size) = 0;
-	/* stdout */
-	virtual size_t writer (const char * source, size_t size) = 0;
-	/* stderr */
-	virtual void error(const char * data, const char * file, int line) = 0;
-	/* stdout flush */
-	virtual bool flush() = 0;
+	/* get configuration option */
+	v8::Handle<v8::Value> get_config(std::string name);
 
 protected:
 	/* env. preparation */
@@ -82,7 +76,6 @@ private:
 	modulefiles resolve_extension(std::string path);
 	int load_js(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module);
 	void load_dso(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module);
-	v8::Handle<v8::Value> get_config(std::string name);
 	v8::Handle<v8::Function> build_require(std::string path, v8::Handle<v8::Value> (*func) (const v8::Arguments&));
 	
 	v8::Persistent<v8::Array> paths; /* require.paths */

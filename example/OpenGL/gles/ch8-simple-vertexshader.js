@@ -1,4 +1,7 @@
-include("GL");
+#!/usr/bin/env v8cgi
+
+var exports = require("GL");
+for (var p in exports) { global[p] = exports[p]; }
 
 //adding matrix 4x4 library
 /*

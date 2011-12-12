@@ -1,6 +1,7 @@
 #!/usr/bin/env v8cgi
 
-var tmp = include("GL");
+var exports = require("GL");
+for (var p in exports) { global[p] = exports[p]; }
 
 //Initializes 3D rendering
 function initRendering() {

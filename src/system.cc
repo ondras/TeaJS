@@ -31,44 +31,13 @@ JS_METHOD(_read) {
 		count = args[0]->IntegerValue();
 	}
 	
-	std::string data;
-	size_t size = 0;
-
-   if (count == 0) { /* all */
-		size_t tmp;
-		char * buf = new char[1024];
-		do {
-			tmp = fread((void *) buf, sizeof(char), sizeof(buf), stdin);
-			size += tmp;
-			data.insert(data.length(), buf, tmp);
-		} while (tmp == sizeof(buf));
-		delete[] buf;
-	} else {
-		char * tmp = new char[count];
-		size = fread((void *) tmp, sizeof(char), count, stdin);
-		data.insert(0, tmp, size);
-		delete[] tmp;
-	}
-	
-	return JS_BUFFER((char *) data.data(), size);
+	return READ(stdin, count);
 }
 
 JS_METHOD(_readline) {
 	int size = args[1]->IntegerValue();
 	if (size < 1) { size = 0xFFFF; }
-	
-	char * buf = new char[size];
-	v8::Handle<v8::Value> result;
-	
-	char * r = fgets(buf, size, stdin);
-	if (r) {
-		result = JS_STR(r);
-	} else {
-		result = JS_ERROR("Cannot read enough bytes");
-	}
-	delete[] buf;
-	
-	return result;
+	return READ_LINE(stdin, size);
 }
 
 /**
@@ -76,22 +45,19 @@ JS_METHOD(_readline) {
  * @param {string||Buffer} String or Buffer
  */
 JS_METHOD(_write_stdout) {
-	size_t result;
-	if (IS_BUFFER(args[0])) {
-		size_t size = 0;
-		char * data = JS_BUFFER_TO_CHAR(args[0], &size);
-		result = fwrite((void *) data, sizeof(char), size, stdout);
-	} else {
-		v8::String::Utf8Value str(args[0]);
-		result = fwrite((void *) *str, sizeof(char), str.length(), stdout);
-	}
-	return JS_INT(result);
+	return JS_INT(WRITE(stdout, args[0]));
 }
 
 JS_METHOD(_write_stderr) {
-	v8::String::Utf8Value str(args[0]);
-	fwrite((void *) *str, sizeof(char), str.length(), stderr);
-	return v8::Undefined();
+	return JS_INT(WRITE(stderr, args[0]));
+}
+
+JS_METHOD(_writeline_stdout) {
+	return JS_INT(WRITE_LINE(stdout, args[0]));
+}
+
+JS_METHOD(_writeline_stderr) {
+	return JS_INT(WRITE_LINE(stdout, args[0]));
 }
 
 JS_METHOD(_getcwd) {
@@ -163,19 +129,21 @@ void setup_system(v8::Handle<v8::Object> global, char ** envp, std::string mainf
 	}
 	system->Set(JS_STR("args"), arr);
 
-	v8::Handle<v8::Function> js_stdout = v8::FunctionTemplate::New(_write_stdout)->GetFunction();
-	system->Set(JS_STR("stdout"), js_stdout);
-	js_stdout->Set(JS_STR("write"), js_stdout);
-	js_stdout->Set(JS_STR("flush"), v8::FunctionTemplate::New(_flush_stdout)->GetFunction());
-
 	v8::Handle<v8::Function> js_stdin = v8::FunctionTemplate::New(_read)->GetFunction();
 	system->Set(JS_STR("stdin"), js_stdin);
 	js_stdin->Set(JS_STR("read"), js_stdin);
 	js_stdin->Set(JS_STR("readLine"), v8::FunctionTemplate::New(_readline)->GetFunction());
-	
+
+	v8::Handle<v8::Function> js_stdout = v8::FunctionTemplate::New(_write_stdout)->GetFunction();
+	system->Set(JS_STR("stdout"), js_stdout);
+	js_stdout->Set(JS_STR("write"), js_stdout);
+	js_stdout->Set(JS_STR("writeLine"), v8::FunctionTemplate::New(_writeline_stdout)->GetFunction());
+	js_stdout->Set(JS_STR("flush"), v8::FunctionTemplate::New(_flush_stdout)->GetFunction());
+
 	v8::Handle<v8::Function> js_stderr = v8::FunctionTemplate::New(_write_stderr)->GetFunction();
 	system->Set(JS_STR("stderr"), js_stderr);
 	js_stderr->Set(JS_STR("write"), js_stderr);
+	js_stderr->Set(JS_STR("writeLine"), v8::FunctionTemplate::New(_writeline_stderr)->GetFunction());
 	js_stderr->Set(JS_STR("flush"), v8::FunctionTemplate::New(_flush_stderr)->GetFunction());
 	
 	system->Set(JS_STR("getcwd"), v8::FunctionTemplate::New(_getcwd)->GetFunction());

@@ -6,6 +6,7 @@
 #ifndef _JS_MACROS_H
 #define _JS_MACROS_H
 
+#include <string.h>
 #include "app.h"
 #include "lib/binary/bytestorage.h"
 
@@ -86,6 +87,71 @@ inline bool IS_BUFFER(v8::Handle<v8::Value> value) {
 	} catch (std::string e) { /* for some reasons, the binary module is not available */
 		return false;
 	} 
+}
+
+inline v8::Handle<v8::Value> READ(FILE * stream, size_t amount) {
+	std::string data;
+	size_t size = 0;
+
+   if (amount == 0) { /* all */
+		size_t tmp;
+		char * buf = new char[1024];
+		do {
+			tmp = fread((void *) buf, sizeof(char), sizeof(buf), stream);
+			size += tmp;
+			data.insert(data.length(), buf, tmp);
+		} while (tmp == sizeof(buf));
+		delete[] buf;
+	} else {
+		char * tmp = new char[amount];
+		size = fread((void *) tmp, sizeof(char), amount, stream);
+		data.insert(0, tmp, size);
+		delete[] tmp;
+	}
+	
+	return JS_BUFFER((char *) data.data(), size);
+}
+
+inline v8::Handle<v8::Value> READ_LINE(FILE * stream, size_t amount) {
+	char * buf = new char[amount];
+	v8::Handle<v8::Value> result;
+	
+	char * r = fgets(buf, amount, stream);
+	if (r) {
+		result = JS_BUFFER(buf, strlen(buf));
+	} else {
+		result = JS_ERROR("Cannot read enough bytes");
+	}
+	delete[] buf;
+	
+	return result;
+}
+
+inline size_t WRITE(FILE * stream, v8::Handle<v8::Value> data) {
+	if (IS_BUFFER(data)) {
+		size_t size = 0;
+		char * cdata = JS_BUFFER_TO_CHAR(data, &size);
+		return fwrite(cdata, sizeof(char), size, stream);
+	} else {
+		v8::String::Utf8Value utfdata(data);
+		return fwrite(*utfdata, sizeof(char), utfdata.length(), stream);
+	}
+}
+
+inline int WRITE_LINE(FILE * stream, v8::Handle<v8::Value> data) {
+	if (IS_BUFFER(data)) {
+		ByteStorage * bs = JS_TO_BYTESTORAGE(data);
+		size_t size = bs->getLength()+1;
+		char * buffer = new char[size];
+		buffer[size-1] = '\0';
+		memcpy(buffer, bs->getData(), size-1);
+		int result = fputs(buffer, stream);
+		delete[] buffer;
+		return result;
+	} else {
+		v8::String::Utf8Value utfdata(data);
+		return fputs(*utfdata, stream);
+	}
 }
 
 #endif

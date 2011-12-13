@@ -174,25 +174,21 @@ JS_METHOD(_read) {
 		count = args[0]->IntegerValue();
 	}
 	
-	std::string data;
-	size_t size = 0;
-	if (count == 0) { /* all */
-		size_t tmp;
-		char * buf = new char[1024];
-		do {
-			tmp = fread(buf, sizeof(char), sizeof(buf), f);
-			size += tmp;
-			data.insert(data.length(), buf, tmp);
-		} while (tmp == sizeof(buf));
-		delete[] buf;
-	} else {
-		char * tmp = new char[count];
-		size = fread(tmp, sizeof(char), count, f);
-		data.insert(0, tmp, size);
-		delete[] tmp;
-	}
+	return READ(f, count);
+}
+
+JS_METHOD(_readline) {
+	v8::Handle<v8::Value> file = LOAD_VALUE(1);
 	
-	return JS_BUFFER((char *) data.data(), size);
+	if (file->IsFalse()) {
+		return JS_ERROR("File must be opened before reading");
+	}
+	FILE * f = LOAD_PTR(1, FILE *);
+	
+	int size = args[1]->IntegerValue();
+	if (size < 1) { size = 0xFFFF; }
+	
+	return READ_LINE(f, size);
 }
 
 JS_METHOD(_rewind) {
@@ -215,16 +211,21 @@ JS_METHOD(_write) {
 	}
 	
 	FILE * f = LOAD_PTR(1, FILE *);
-	if (IS_BUFFER(args[0])) {
-		size_t size = 0;
-		char * data = JS_BUFFER_TO_CHAR(args[0], &size);
-		fwrite(data, sizeof(char), size, f);
-	} else {
-		v8::String::Utf8Value data(args[0]);
-		fwrite(*data, sizeof(char), args[0]->ToString()->Utf8Length(), f);
-	}
+	
+	WRITE(f, args[0]);
+	return args.This();
+}
 
-		
+JS_METHOD(_writeline) {
+	v8::Handle<v8::Value> file = LOAD_VALUE(1);
+	
+	if (file->IsFalse()) {
+		return JS_ERROR("File must be opened before writing");
+	}
+	
+	FILE * f = LOAD_PTR(1, FILE *);
+	
+	WRITE_LINE(f, args[0]);
 	return args.This();
 }
 
@@ -351,10 +352,12 @@ SHARED_INIT() {
 	 */
 	pt->Set("open", v8::FunctionTemplate::New(_open));
 	pt->Set("read", v8::FunctionTemplate::New(_read));
+	pt->Set("readLine", v8::FunctionTemplate::New(_readline));
 	pt->Set("rewind", v8::FunctionTemplate::New(_rewind));
 	pt->Set("close", v8::FunctionTemplate::New(_close));
 	pt->Set("flush", v8::FunctionTemplate::New(_flush));
 	pt->Set("write", v8::FunctionTemplate::New(_write));
+	pt->Set("writeLine", v8::FunctionTemplate::New(_writeline));
 	pt->Set("remove", v8::FunctionTemplate::New(_removefile));
 	pt->Set("toString", v8::FunctionTemplate::New(_tostring));
 	pt->Set("exists", v8::FunctionTemplate::New(_exists));

@@ -23,6 +23,11 @@ def build_sources(env, sources):
 
 def build_binary_b(env):
 	e = env.Clone()
+	if env["os"] == "windows" or env["os"] == "darwin":
+		e.Append(
+			LIBS = ["iconv"]
+		)
+	# if
 	e.SharedLibrary(
 		target = "lib/binary-b",
 		source = ["src/lib/binary-b/binary-b.cc", "src/lib/binary-b/bytearray.cc", "src/lib/binary-b/bytestring.cc", "src/lib/binary-b/bytestorage-b.cc" ],
@@ -242,7 +247,7 @@ def build_module(env, sources):
 	if e["os"] == "darwin":
 		e.Append(
 			LINKFLAGS = "-bundle -bundle_loader /usr/sbin/httpd",
-			LIBS = ["apr-1", "aprutil-1"]
+			LIBS = ["apr-1", "aprutil-1", "iconv"]
 		)
 		e["SHLINKFLAGS"] = e["LINKFLAGS"]
 	if e["os"] == "windows":

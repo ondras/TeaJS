@@ -21,12 +21,22 @@ def build_sources(env, sources):
 	return [ env.SharedObject(s) for s in sources ]
 # def
 
+def build_binary_b(env):
+	e = env.Clone()
+	e.SharedLibrary(
+		target = "lib/binary-b",
+		source = ["src/lib/binary-b/binary-b.cc", "src/lib/binary-b/bytearray.cc", "src/lib/binary-b/bytestring.cc", "src/lib/binary-b/bytestorage-b.cc" ],
+		SHLIBPREFIX=""
+	)
+# def
+
 def build_profiler(env):
 	e = env.Clone()
 	e.SharedLibrary(
 		target = "lib/profiler",
 		source = ["src/lib/profiler/profiler.cc"],
-		SHLIBPREFIX="")
+		SHLIBPREFIX=""
+	)
 # def
 
 def build_fibers(env):
@@ -323,6 +333,7 @@ vars.Add(BoolVariable("module", "Build Apache module", 1))
 vars.Add(BoolVariable("cgi", "Build CGI binary", 1))
 
 # off by default
+vars.Add(BoolVariable("binary_b", "Build Binary/B module", 0))
 vars.Add(BoolVariable("xdom", "DOM Level 3 library (xerces based, for XML/XHTML)", 0))
 vars.Add(BoolVariable("pgsql", "PostgreSQL library", 0))
 vars.Add(BoolVariable("gl", "OpenGL library", 0))
@@ -478,5 +489,6 @@ if env["zlib"] == 1: build_zlib(env)
 if env["tls"] == 1: build_tls(env)
 if env["xdom"] == 1: build_xdom(env)
 if env["gl"] == 1: build_gl(env)
+if env["binary_b"] == 1: build_binary_b(env)
 if env["module"] == 1: build_module(env, sources)
 if env["cgi"] == 1: build_cgi(env, sources)

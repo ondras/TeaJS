@@ -5,10 +5,10 @@
 #include "binary-b.h"
 #include "bytestring.h"
 #include "bytearray.h"
-#include "bytestorage.h"
+#include "bytestorage-b.h"
 
 v8::Handle<v8::Value> commonIndexOf(const v8::Arguments& args, int direction) {
-	ByteStorage * bs = BS_THIS;
+	ByteStorageB * bs = BS_THIS;
 	int len = args.Length();
 
 	unsigned char value = (unsigned char) args[0]->IntegerValue();
@@ -21,7 +21,7 @@ v8::Handle<v8::Value> commonIndexOf(const v8::Arguments& args, int direction) {
 }
 
 v8::Handle<v8::Value> Binary_length(v8::Local<v8::String> property, const v8::AccessorInfo &info) {
-	ByteStorage * bs = BS_OTHER(info.This());
+	ByteStorageB * bs = BS_OTHER(info.This());
 	return JS_INT(bs->getLength());
 }
 
@@ -35,11 +35,11 @@ v8::Handle<v8::Value> Binary_convertTo(const v8::Arguments &args, v8::Handle<v8:
 		v8::Handle<v8::Value> newargs[]= { args.This() };
 		return ctor->NewInstance(1, newargs);
 	} else {
-		ByteStorage * bs = BS_THIS;
+		ByteStorageB * bs = BS_THIS;
 		v8::String::Utf8Value from(args[0]);
 		v8::String::Utf8Value to(args[1]);
 		try {		
-			ByteStorage * bs2 = bs->transcode(*from, *to);
+			ByteStorageB * bs2 = bs->transcode(*from, *to);
 			v8::Handle<v8::Value> newargs[]= { v8::External::New((void*) bs2) };
 			return ctor->NewInstance(1, newargs);
 		} catch (std::string e) {
@@ -58,7 +58,7 @@ JS_METHOD(Binary_lastIndexOf) {
 }
 
 JS_METHOD(Binary_codeAt) {
-	ByteStorage * bs = BS_THIS;
+	ByteStorageB * bs = BS_THIS;
 	size_t len = bs->getLength();
 	size_t index = args[0]->IntegerValue();
 	if (index < 0 || index >= len) { return v8::Undefined(); }
@@ -67,10 +67,10 @@ JS_METHOD(Binary_codeAt) {
 }
 
 JS_METHOD(Binary_decodeToString) {
-	ByteStorage * bs = BS_THIS;
+	ByteStorageB * bs = BS_THIS;
 	v8::String::Utf8Value charset(args[0]);
 	try {
-		ByteStorage bs_tmp(bs->transcode(*charset, "utf-8"));
+		ByteStorageB bs_tmp(bs->transcode(*charset, "utf-8"));
 		return bs_tmp.toString();
 	} catch (std::string e) {
 		return JS_ERROR(e.c_str());
@@ -90,23 +90,23 @@ JS_METHOD(Binary_concat) {
 }
 
 void Binary_destroy(v8::Handle<v8::Object> instance) {
-	ByteStorage * bs = BS_OTHER(instance);
+	ByteStorageB * bs = BS_OTHER(instance);
 	delete bs;
 }
 
 v8::Handle<v8::Value> Binary_concat(v8::Handle<v8::Object> obj, const v8::Arguments& args, bool right) {
-	ByteStorage * bs = BS_OTHER(obj);
+	ByteStorageB * bs = BS_OTHER(obj);
 	
 	v8::Handle<v8::Value> arg;
 	for (int i=0;i<args.Length();i++) {
 		arg = args[i];
 		
 		if (arg->IsObject() && IS_BINARY(arg->ToObject())) {
-			ByteStorage * bs2 = BS_OTHER(arg->ToObject());
+			ByteStorageB * bs2 = BS_OTHER(arg->ToObject());
 			(right ? bs->push(bs2) : bs->unshift(bs2));
 		} else if (arg->IsArray()) {
 			v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(arg);
-			ByteStorage bs_tmp(arr);
+			ByteStorageB bs_tmp(arr);
 			(right ? bs->push(&bs_tmp) : bs->unshift(&bs_tmp));
 		} else {
 			unsigned char byte = (unsigned char) arg->IntegerValue();

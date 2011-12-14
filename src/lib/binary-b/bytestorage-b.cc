@@ -4,7 +4,7 @@
 #include <string>
 #include <iconv.h>
 #include <stdlib.h>
-#include "bytestorage.h"
+#include "bytestorage-b.h"
 #include "macros.h"
 
 #define ALLOC_ERROR throw std::string("Cannot allocate enough memory")
@@ -15,7 +15,7 @@
 #	define ICONV_INPUT_T char *
 #endif
 
-ByteStorage::ByteStorage() {
+ByteStorageB::ByteStorageB() {
 	this->length = 0;
 	this->data = NULL;
 }
@@ -23,7 +23,7 @@ ByteStorage::ByteStorage() {
 /**
  * Create blank with a given length
  */
-ByteStorage::ByteStorage(size_t len) {
+ByteStorageB::ByteStorageB(size_t len) {
 	this->length = 0;
 	this->data = NULL;
 
@@ -33,7 +33,7 @@ ByteStorage::ByteStorage(size_t len) {
 /**
  * Create from an array of numbers
  */
-ByteStorage::ByteStorage(v8::Handle<v8::Array> arr) {
+ByteStorageB::ByteStorageB(v8::Handle<v8::Array> arr) {
 	this->length = 0;
 	this->data = NULL;
 	v8::Handle<v8::Object> arrobj = v8::Handle<v8::Object>::Cast(arr);
@@ -49,7 +49,7 @@ ByteStorage::ByteStorage(v8::Handle<v8::Array> arr) {
 /**
  * Copy constructor
  */
-ByteStorage::ByteStorage(ByteStorage * bs) {
+ByteStorageB::ByteStorageB(ByteStorageB * bs) {
 	this->length = 0;
 	this->data = NULL;
 	
@@ -60,7 +60,7 @@ ByteStorage::ByteStorage(ByteStorage * bs) {
 /**
  * Use a given buffer + length
  */
-ByteStorage::ByteStorage(unsigned char * data, size_t len) {
+ByteStorageB::ByteStorageB(unsigned char * data, size_t len) {
 	this->length = 0;
 	this->data = NULL;
 	
@@ -74,7 +74,7 @@ ByteStorage::ByteStorage(unsigned char * data, size_t len) {
  * @param {size_t} index1 where to start
  * @param {size_t} index2 end pointer (this will NOT be copied)
  */
-ByteStorage::ByteStorage(ByteStorage * bs, size_t index1, size_t index2) {
+ByteStorageB::ByteStorageB(ByteStorageB * bs, size_t index1, size_t index2) {
 	this->length = 0;
 	this->data = NULL;
 	
@@ -86,28 +86,28 @@ ByteStorage::ByteStorage(ByteStorage * bs, size_t index1, size_t index2) {
 	}
 }
 
-ByteStorage::~ByteStorage() {
+ByteStorageB::~ByteStorageB() {
 	if (this->length) { free(this->data); }
 }
 
-size_t ByteStorage::getLength() {
+size_t ByteStorageB::getLength() {
 	return this->length;
 }
 
-void ByteStorage::setByte(size_t index, unsigned char byte) {
+void ByteStorageB::setByte(size_t index, unsigned char byte) {
 	this->data[index] = byte;
 }
 
-unsigned char ByteStorage::getByte(size_t index) {
+unsigned char ByteStorageB::getByte(size_t index) {
 	if (index >= this->length) { return NULL; }
 	return this->data[index];
 }
 
-unsigned char * ByteStorage::getData() {
+unsigned char * ByteStorageB::getData() {
 	return this->data;
 }
 
-int ByteStorage::indexOf(unsigned char value, size_t index1, size_t index2, int direction) {
+int ByteStorageB::indexOf(unsigned char value, size_t index1, size_t index2, int direction) {
 	size_t from = index1;
 	size_t to = index2;
 	
@@ -124,11 +124,11 @@ int ByteStorage::indexOf(unsigned char value, size_t index1, size_t index2, int 
 	return -1;
 }
 
-v8::Handle<v8::String> ByteStorage::toString() {
+v8::Handle<v8::String> ByteStorageB::toString() {
 	return JS_STR((const char *)this->data, this->length);
 }
 
-void ByteStorage::resize(size_t newLength, bool zeroFill) {
+void ByteStorageB::resize(size_t newLength, bool zeroFill) {
 	if (!newLength) {
 		if (this->length) { free(this->data); }
 		this->data = NULL;
@@ -140,12 +140,12 @@ void ByteStorage::resize(size_t newLength, bool zeroFill) {
 	this->length = newLength;
 }
 	
-void ByteStorage::push(unsigned char byte) {
+void ByteStorageB::push(unsigned char byte) {
 	this->resize(this->length+1, false);
 	this->data[this->length-1] = byte;
 }
 
-void ByteStorage::push(ByteStorage * bs) {
+void ByteStorageB::push(ByteStorageB * bs) {
 	size_t len = bs->getLength();
 	if (!len) { return; }
 	
@@ -153,20 +153,20 @@ void ByteStorage::push(ByteStorage * bs) {
 	memcpy(this->data + (this->length-len), bs->getData(), len);
 }	
 
-unsigned char ByteStorage::pop() {
+unsigned char ByteStorageB::pop() {
 	if (!this->length) { return 0; }
 	unsigned char byte = this->data[this->length-1];
 	this->resize(this->length-1, false);
 	return byte;
 }
 
-void ByteStorage::unshift(unsigned char byte) {
+void ByteStorageB::unshift(unsigned char byte) {
 	this->resize(this->length+1, false);
 	memmove(this->data + 1, this->data, this->length-1);
 	this->data[0] = byte;
 }
 
-void ByteStorage::unshift(ByteStorage * bs) {
+void ByteStorageB::unshift(ByteStorageB * bs) {
 	size_t len = bs->getLength();
 	if (!len) { return; }
 	
@@ -174,7 +174,7 @@ void ByteStorage::unshift(ByteStorage * bs) {
 	memcpy(this->data, bs->getData(), len);
 }
 
-unsigned char ByteStorage::shift() {
+unsigned char ByteStorageB::shift() {
 	if (!this->length) { return 0; }
 	unsigned char byte = this->data[0];
 	
@@ -183,7 +183,7 @@ unsigned char ByteStorage::shift() {
 	return byte;
 }
 
-void ByteStorage::reverse() {
+void ByteStorageB::reverse() {
 	if (!this->length) { return; }
 	size_t b = this->length;
 	unsigned char byte;
@@ -195,7 +195,7 @@ void ByteStorage::reverse() {
 	}
 }
 
-void ByteStorage::splice(size_t start, size_t howMany, const v8::Arguments &args) {
+void ByteStorageB::splice(size_t start, size_t howMany, const v8::Arguments &args) {
 	if (start >= this->length) { return; }
 	size_t end = start+howMany;
 	if (end > this->length) { end = this->length; }
@@ -220,13 +220,13 @@ void ByteStorage::splice(size_t start, size_t howMany, const v8::Arguments &args
 	
 }
 
-ByteStorage * ByteStorage::transcode(const char * from, const char * to) {
+ByteStorageB * ByteStorageB::transcode(const char * from, const char * to) {
 	/* no data */
-	if (!this->length) { return new ByteStorage(); }
+	if (!this->length) { return new ByteStorageB(); }
 
 	/* source and target are the same -> copy */
 	if ((from == to) || (from && to && (strcasecmp(from, to) == 0))) {
-		return new ByteStorage(this);
+		return new ByteStorageB(this);
 	}
 
 	iconv_t cd = iconv_open(to, from);
@@ -310,7 +310,7 @@ ByteStorage * ByteStorage::transcode(const char * from, const char * to) {
 
 	/* this is the resulting length */
 	size_t len = outBuf - output;
-	ByteStorage * bs = new ByteStorage((unsigned char *) output, len);
+	ByteStorageB * bs = new ByteStorageB((unsigned char *) output, len);
 
 	free(output);
 	return bs;

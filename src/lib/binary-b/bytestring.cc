@@ -5,7 +5,7 @@
 #include "gc.h"
 #include "binary-b.h"
 #include "bytestring.h"
-#include "bytestorage.h"
+#include "bytestorage-b.h"
 
 #define WRONG_CTOR JS_TYPE_ERROR("ByteString called with wrong arguments.")
 
@@ -24,18 +24,18 @@ JS_METHOD(_ByteString) {
 		int arglen = args.Length();
 		switch (arglen) {
 			case 0: /* empty */
-				SAVE_PTR(0, new ByteStorage());
+				SAVE_PTR(0, new ByteStorageB());
 			break;
 			case 1: {
 				if (args[0]->IsExternal()) { /* from a bytestorage */
 					SAVE_VALUE(0, args[0]);
 				} else if (args[0]->IsArray()) { /* array of numbers */
 					v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(args[0]);
-					SAVE_PTR(0, new ByteStorage(arr));
+					SAVE_PTR(0, new ByteStorageB(arr));
 				} else if (args[0]->IsObject()) { /* copy constructor */
 					v8::Handle<v8::Object> obj = v8::Handle<v8::Object>::Cast(args[0]);
 					if (IS_BINARY(obj)) {
-						SAVE_PTR(0, new ByteStorage(BS_OTHER(obj)));
+						SAVE_PTR(0, new ByteStorageB(BS_OTHER(obj)));
 					} else {
 						return WRONG_CTOR;
 					}
@@ -47,8 +47,8 @@ JS_METHOD(_ByteString) {
 				/* string, charset */
 				v8::String::Utf8Value str(args[0]);
 				v8::String::Utf8Value charset(args[1]);
-				ByteStorage bs_tmp((unsigned char *) (*str), str.length());
-				ByteStorage * bs = bs_tmp.transcode("utf-8", *charset);
+				ByteStorageB bs_tmp((unsigned char *) (*str), str.length());
+				ByteStorageB * bs = bs_tmp.transcode("utf-8", *charset);
 				SAVE_PTR(0, bs);
 			} break;
 			default:
@@ -66,7 +66,7 @@ JS_METHOD(_ByteString) {
 }
 
 JS_METHOD(_slice) {
-	ByteStorage * bs = BS_THIS;
+	ByteStorageB * bs = BS_THIS;
 	size_t len = args.Length();
 	
 	size_t start = (len > 0 ? args[0]->IntegerValue() : 0);
@@ -74,7 +74,7 @@ JS_METHOD(_slice) {
 	if (end_ < 0) { end_ += bs->getLength(); }
 	size_t end = (end_ < 0 ? 0 : end_);
 	
-	ByteStorage * bs2 = new ByteStorage(bs, start, end);
+	ByteStorageB * bs2 = new ByteStorageB(bs, start, end);
 	v8::Handle<v8::Value> newargs[] = { v8::External::New((void*)bs2) };
 
 	return byteString->NewInstance(1, newargs);
@@ -88,11 +88,11 @@ JS_METHOD(_concat) {
 }
 
 v8::Handle<v8::Value> _get(uint32_t index, const v8::AccessorInfo &info) {
-	ByteStorage * bs = BS_OTHER(info.This());
+	ByteStorageB * bs = BS_OTHER(info.This());
 	size_t len = bs->getLength();
 	if (index < 0 || index >= len) { return v8::Undefined(); }
 	
-	ByteStorage * bs2 = new ByteStorage(bs, index, index+1);
+	ByteStorageB * bs2 = new ByteStorageB(bs, index, index+1);
 	v8::Handle<v8::Value> newargs[] = { v8::External::New((void*)bs2) };
 	
 	return byteString->NewInstance(1, newargs);

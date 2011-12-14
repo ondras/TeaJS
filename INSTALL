@@ -1,9 +1,9 @@
-Most of v8cgi docs are available online, see http://code.google.com/p/v8cgi/wiki/Manual. This file is slowly getting obsolete.
+Most of v8cgi docs are available online, see http://code.google.com/p/v8cgi/wiki/Manual. 
+This file is slowly getting obsolete.
 
-For Ubuntu Jaunty: (http://code.google.com/p/v8cgi/wiki/InstallationUbuntu)
+---------------------------------------------------------------------------
 
 NOTE: replace ~/src with the path where you checkout and build v8 and v8cgi!
-
 NOTE: If you don't like to use vi to edit files, use gedit instead.
 
 ---------------------------------------------------------------------------

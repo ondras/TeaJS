@@ -21,6 +21,10 @@
 
 namespace {
 
+v8::Persistent<v8::Function> js_stdin;
+v8::Persistent<v8::Function> js_stdout;
+v8::Persistent<v8::Function> js_stderr;
+
 /**
  * Read characters from stdin
  * @param {int} count How many; 0 == all
@@ -45,19 +49,23 @@ JS_METHOD(_readline) {
  * @param {string||Buffer} String or Buffer
  */
 JS_METHOD(_write_stdout) {
-	return JS_INT(WRITE(stdout, args[0]));
+	WRITE(stdout, args[0]);
+	return js_stdout;
 }
 
 JS_METHOD(_write_stderr) {
-	return JS_INT(WRITE(stderr, args[0]));
+	WRITE(stderr, args[0]);
+	return js_stderr;
 }
 
 JS_METHOD(_writeline_stdout) {
-	return JS_INT(WRITE_LINE(stdout, args[0]));
+	WRITE_LINE(stdout, args[0]);
+	return js_stdout;
 }
 
 JS_METHOD(_writeline_stderr) {
-	return JS_INT(WRITE_LINE(stdout, args[0]));
+	WRITE_LINE(stderr, args[0]);
+	return js_stderr;
 }
 
 JS_METHOD(_getcwd) {
@@ -129,18 +137,18 @@ void setup_system(v8::Handle<v8::Object> global, char ** envp, std::string mainf
 	}
 	system->Set(JS_STR("args"), arr);
 
-	v8::Handle<v8::Function> js_stdin = v8::FunctionTemplate::New(_read)->GetFunction();
+	js_stdin = v8::Persistent<v8::Function>::New(v8::FunctionTemplate::New(_read)->GetFunction());
 	system->Set(JS_STR("stdin"), js_stdin);
 	js_stdin->Set(JS_STR("read"), js_stdin);
 	js_stdin->Set(JS_STR("readLine"), v8::FunctionTemplate::New(_readline)->GetFunction());
 
-	v8::Handle<v8::Function> js_stdout = v8::FunctionTemplate::New(_write_stdout)->GetFunction();
+	js_stdout = v8::Persistent<v8::Function>::New(v8::FunctionTemplate::New(_write_stdout)->GetFunction());
 	system->Set(JS_STR("stdout"), js_stdout);
 	js_stdout->Set(JS_STR("write"), js_stdout);
 	js_stdout->Set(JS_STR("writeLine"), v8::FunctionTemplate::New(_writeline_stdout)->GetFunction());
 	js_stdout->Set(JS_STR("flush"), v8::FunctionTemplate::New(_flush_stdout)->GetFunction());
 
-	v8::Handle<v8::Function> js_stderr = v8::FunctionTemplate::New(_write_stderr)->GetFunction();
+	js_stderr = v8::Persistent<v8::Function>::New(v8::FunctionTemplate::New(_write_stderr)->GetFunction());
 	system->Set(JS_STR("stderr"), js_stderr);
 	js_stderr->Set(JS_STR("write"), js_stderr);
 	js_stderr->Set(JS_STR("writeLine"), v8::FunctionTemplate::New(_writeline_stderr)->GetFunction());

@@ -120,7 +120,7 @@ inline v8::Handle<v8::Value> READ_LINE(FILE * stream, size_t amount) {
 	if (r) {
 		result = JS_BUFFER(buf, strlen(buf));
 	} else {
-		result = JS_ERROR("Cannot read enough bytes");
+		result = JS_NULL;
 	}
 	delete[] buf;
 	
@@ -138,20 +138,12 @@ inline size_t WRITE(FILE * stream, v8::Handle<v8::Value> data) {
 	}
 }
 
-inline int WRITE_LINE(FILE * stream, v8::Handle<v8::Value> data) {
-	if (IS_BUFFER(data)) {
-		ByteStorage * bs = JS_TO_BYTESTORAGE(data);
-		size_t size = bs->getLength()+1;
-		char * buffer = new char[size];
-		buffer[size-1] = '\0';
-		memcpy(buffer, bs->getData(), size-1);
-		int result = fputs(buffer, stream);
-		delete[] buffer;
-		return result;
-	} else {
-		v8::String::Utf8Value utfdata(data);
-		return fputs(*utfdata, stream);
-	}
+inline size_t WRITE_LINE(FILE * stream, v8::Handle<v8::Value> data) {
+	size_t result = 0;
+	result += WRITE(stream, data);
+	char newline = '\n';
+	result += fwrite(&newline, sizeof(char), 1, stream);
+	return result;
 }
 
 #endif

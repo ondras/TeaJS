@@ -70,3 +70,22 @@ exports.testDirectory = function() {
 	d.remove();
 	assert.equal(d.exists(), false, "deleted directory");
 }
+
+exports.testReadWriteLine = function() {
+	var n = "testfile_"+Math.random();
+	var f = new fs.File(n);
+	var arr = ["abc", "def", "ghi"];
+	
+	f.open("w");
+	for (var i=0;i<arr.length;i++) { f.writeLine(arr[i]); }
+	f.close();
+	
+	f.open("r");
+	while (1) {
+		var line = f.readLine();
+		if (!line) { break; }
+		assert.equal(line.toString("ascii"), arr.shift() + "\n", "written and read lines are equal");
+	}
+	
+	f.remove();
+}

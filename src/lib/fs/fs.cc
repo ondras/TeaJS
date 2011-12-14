@@ -203,6 +203,16 @@ JS_METHOD(_rewind) {
 	return args.This();
 }
 
+JS_METHOD(_iseof) {
+	v8::Handle<v8::Value> file = LOAD_VALUE(1);
+	if (file->IsFalse()) {
+		return JS_ERROR("File must be opened before an EOF check");
+	}
+	FILE * f = LOAD_PTR(1, FILE *);
+
+	return JS_BOOL(feof(f) != 0);
+}
+
 JS_METHOD(_write) {
 	v8::Handle<v8::Value> file = LOAD_VALUE(1);
 	
@@ -365,6 +375,7 @@ SHARED_INIT() {
 	pt->Set("copy", v8::FunctionTemplate::New(_copyfile));
 	pt->Set("stat", v8::FunctionTemplate::New(_stat));
 	pt->Set("isFile", v8::FunctionTemplate::New(_isfile));
+	pt->Set("isEOF", v8::FunctionTemplate::New(_iseof));
 
 	exports->Set(JS_STR("File"), ft->GetFunction());			
 	file = v8::Persistent<v8::Function>::New(ft->GetFunction());

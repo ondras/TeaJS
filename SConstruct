@@ -107,7 +107,7 @@ def build_pgsql(env):
 	)
 	if env["os"] == "windows":
 		e.Append(
-			LIBS = ["pthreadGCE2"],
+			LIBS = ["pthreadGCE2"]
 		)
 	# if
 	e.SharedLibrary(
@@ -167,6 +167,11 @@ def build_tls(env):
 	e.Append(
 		LIBS = ["ssl"]
 	)
+	if env["os"] == "darwin":
+		e.Append(
+			LIBS = ["crypto"]
+		)
+	# if
 	build_with_binary(
 		e, 
 		target = "lib/tls", 

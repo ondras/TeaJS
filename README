@@ -1,5 +1,5 @@
-v8cgi - CGI wrapper around V8 JS engine
-=======================================
+v8cgi - multi-purpose wrapper around V8 JS engine
+=================================================
 
 This is BETA software. You are encouraged to use and test it, but do not expect rock-solid robustness.
 
@@ -16,7 +16,9 @@ For the most recent instructions, refer to the wiki page for this project: http:
 
 3) Running
 
-  - see example/example.js
+  - ./v8cgi example/example.js (using v8cgi built from source)
+  - v8cgi example/example.js OR JUST example/example.js (using v8cgi installed from a package)
+  - v8cgi.exe example/example.js (using v8cgi on Windows)
 
 4) Contact
 

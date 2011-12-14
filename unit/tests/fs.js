@@ -86,6 +86,7 @@ exports.testReadWriteLine = function() {
 		if (!line) { break; }
 		assert.equal(line.toString("ascii"), arr.shift() + "\n", "written and read lines are equal");
 	}
+	f.close();
 	
 	f.remove();
 }

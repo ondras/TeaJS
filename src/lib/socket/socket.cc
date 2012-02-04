@@ -323,7 +323,7 @@ JS_METHOD(_select) {
 		int time = args[3]->IntegerValue();
 		tv = new timeval;
 		tv->tv_sec = time / 1000;
-		tv->tv_usec = time % 1000;
+		tv->tv_usec = 1000 * (time % 1000);
 	}
 	
 	

@@ -55,6 +55,13 @@ JS_METHOD(_onexit) {
  * global.exit - terminate execution
  */
 JS_METHOD(_exit) {
+	v8cgi_App * app = APP_PTR;
+	if (args.Length() > 0) {
+		app->exit_code = args[0]->IntegerValue();
+	} else {
+		app->exit_code = 1;
+	}
+
 	v8::V8::TerminateExecution();
 	/* do something at least a bit complex so the stack guard can throw the termination exception */
 	v8::Script::Compile(JS_STR("(function(){})()"))->Run();
@@ -67,6 +74,7 @@ JS_METHOD(_exit) {
 void v8cgi_App::init() {
 	this->cfgfile = STRING(CONFIG_PATH);
 	this->show_errors = false;
+	this->exit_code = 0;
 }
 
 /**
@@ -121,9 +129,11 @@ void v8cgi_App::execute(char ** envp) {
 		if (this->mainfile == "") { throw std::string("Nothing to do :)"); }
 
 		this->require(this->mainfile, path_getcwd()); 
-		if (tc.HasCaught()) { throw this->format_exception(&tc); } /* uncaught exception when executing main file */
+		
+		if (tc.HasCaught() && tc.CanContinue()) { throw this->format_exception(&tc); } /* uncaught exception when executing main file */
 
 	} catch (std::string e) {
+		this->exit_code = 1;
 		caught = e;
 	}
 	
@@ -340,7 +350,6 @@ std::string v8cgi_App::format_exception(v8::TryCatch* try_catch) {
 	v8::Handle<v8::Message> message = try_catch->Message();
 	std::string msgstring = "";
 	std::stringstream ss;
-
 
 	if (message.IsEmpty()) {
 		msgstring += *exception;

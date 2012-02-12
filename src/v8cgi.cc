@@ -36,7 +36,7 @@ public:
 	/**
 	 * Initialize from command line
 	 */
-	int init(int argc, char ** argv) {
+	void init(int argc, char ** argv) {
 		v8cgi_App::init();
 		
 		this->argv0 = (argc > 0 ? path_normalize(argv[0]) : std::string(""));
@@ -51,10 +51,8 @@ public:
 		} catch (std::string e) {
 			fwrite((void *) e.c_str(), sizeof(char), e.length(), stderr);
 			fwrite((void *) "\n", sizeof(char), 1, stderr);
-			return 1;
+			this->exit_code = 1;
 		}
-		
-		return 0;
 	}
 
 	void fromEnvVars() {
@@ -206,10 +204,9 @@ private:
 extern char ** environ;
 
 int main(int argc, char ** argv) {
-	int result = 0;
 	v8cgi_CGI cgi;
-	result = cgi.init(argc, argv);
-	if (result) { exit(result); }
+	cgi.init(argc, argv);
+	if (cgi.exit_code) { exit(cgi.exit_code); }
 
 #ifdef FASTCGI
 	signal(SIGTERM, handle_sigterm);
@@ -237,9 +234,9 @@ int main(int argc, char ** argv) {
 		}
 		
 #ifdef FASTCGI
-		FCGI_SetExitStatus(result);
+		FCGI_SetExitStatus(cgi.exit_code);
 	}
 #endif
 
-	return result;
+	return cgi.exit_code;
 }

@@ -28,9 +28,9 @@ public:
 	
 	/* list of "onexit" functions */
 	funcvector onexit;
-
 	
 	bool show_errors;
+	int exit_code;
 
 protected:
 	/* env. preparation */

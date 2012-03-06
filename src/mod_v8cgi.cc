@@ -29,6 +29,10 @@ typedef struct {
  */
 extern "C" module AP_MODULE_DECLARE_DATA v8cgi_module; 
 
+#ifdef APLOG_USE_MODULE
+APLOG_USE_MODULE(v8cgi);
+#endif
+
 class v8cgi_Module : public v8cgi_App {
 public:
 	request_rec * request;
@@ -38,7 +42,11 @@ public:
 	}
 	
 	void error(const char * data) {
+	#ifdef APLOG_USE_MODULE
+		ap_log_rerror(__FILE__, __LINE__, APLOG_MODULE_INDEX, APLOG_ERR, 0, this->request, "%s", data);
+	#else
 		ap_log_rerror(__FILE__, __LINE__, APLOG_ERR, 0, this->request, "%s", data);
+	#endif
 	}
 
 	/** 

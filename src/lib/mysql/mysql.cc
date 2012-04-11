@@ -82,9 +82,21 @@ JS_METHOD(_connect) {
 	v8::String::Utf8Value user(args[1]);
 	v8::String::Utf8Value pass(args[2]);
 	v8::String::Utf8Value db(args[3]);
-
+	
+	std::string fullhost(*host);
+	std::string onlyhost;
+	int port = 0;
+	
+	size_t index = fullhost.find(':');
+	if (index != std::string::npos) {
+		onlyhost = fullhost.substr(0, index);
+		port = atoi(fullhost.substr(index+1, fullhost.length()-index-1).c_str());
+	} else {
+		onlyhost = fullhost;
+	}
+	
 	conn = mysql_init(NULL);
-	if (!mysql_real_connect(conn, *host, *user, *pass, *db, 0, NULL, CLIENT_MULTI_STATEMENTS)) {
+	if (!mysql_real_connect(conn, onlyhost.c_str(), *user, *pass, *db, port, NULL, CLIENT_MULTI_STATEMENTS)) {
 		return JS_ERROR(MYSQL_ERROR);
 	} else {
 		mysql_query(conn, "SET NAMES 'utf8'");

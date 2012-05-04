@@ -37,8 +37,6 @@ std::string formatError(SSL * ssl, int ret) {
 				reason = ERR_reason_error_string(errcode);
 			} else {
 				reason = "SSL_ERROR_SYSCALL";
-				printf("~~%i~~\n", ret);
-				printf("~~%i~~\n", errno);
 			}
 		break;
 		case SSL_ERROR_SSL: 
@@ -151,7 +149,11 @@ JS_METHOD(_receive) {
 		return buffer;
 	} else {
 		delete[] data;
-        return SSL_ERROR(ssl, result);
+		if (SSL_get_error(ssl, result) == SSL_ERROR_WANT_READ) { /* blocking socket */
+			return JS_BOOL(false);
+		} else {
+			return SSL_ERROR(ssl, result);
+		}
 	}
 }
 
@@ -180,8 +182,6 @@ JS_METHOD(_send) {
 JS_METHOD(_close) {
 	SSL * ssl = LOAD_SSL;
 	int result = SSL_shutdown(ssl);
-	printf("$$ %i $$\n", result);
-	printf("$$ %i $$\n", errno);
 	if (result == 0) { return _close(args); }
 	
 	if (result > 0) {

@@ -60,6 +60,31 @@ v8::Handle<v8::Value> FormatError() {
 
 namespace {
 
+v8::Persistent<v8::Function> socketFunc;
+v8::Persistent<v8::FunctionTemplate> socketTemplate;
+
+inline bool isSocket(v8::Handle<v8::Value> value) {
+	if (INSTANCEOF(value, socketTemplate)) { return true; }
+
+	v8::Handle<v8::Value> getSocket = value->ToObject()->Get(JS_STR("getSocket"));
+	if (!getSocket->IsFunction()) { return false; }
+	
+	v8::Handle<v8::Function> getSocketFunc = v8::Handle<v8::Function>::Cast(getSocket);
+	v8::Handle<v8::Value> socket = getSocketFunc->Call(value->ToObject(), 0, NULL);
+	return INSTANCEOF(socket, socketTemplate);
+}
+
+inline int jsToSocket(v8::Handle<v8::Value> value) {
+	if (INSTANCEOF(value, socketTemplate)) { return value->ToObject()->GetInternalField(0)->IntegerValue(); }
+	
+	v8::Handle<v8::Value> getSocket = value->ToObject()->Get(JS_STR("getSocket"));
+
+	v8::Handle<v8::Function> getSocketFunc = v8::Handle<v8::Function>::Cast(getSocket);
+	v8::Handle<v8::Value> socket = getSocketFunc->Call(value->ToObject(), 0, NULL);
+
+	return socket->ToObject()->GetInternalField(0)->IntegerValue();
+}
+
 #ifndef HAVE_PTON
 int inet_pton(int family, const char *src, void *dst) {
 	struct addrinfo hints, *res, *ressave;
@@ -102,9 +127,6 @@ const char * inet_ntop(int family, const void *src, char *dst, socklen_t cnt) {
 	return NULL;
 }
 #endif
-
-v8::Persistent<v8::Function> socketFunc;
-v8::Persistent<v8::FunctionTemplate> socketTemplate;
 
 typedef union sock_addr {
     struct sockaddr_in in;
@@ -310,8 +332,8 @@ JS_METHOD(_select) {
 		int len = arr->Length();
 		for (int j=0;j<len;j++) {
 			v8::Handle<v8::Value> member = arr->Get(JS_INT(j));
-			if (!INSTANCEOF(member, socketTemplate)) { return JS_ERROR("Arguments must be arrays of Socket instances"); }
-			int fd = member->ToObject()->GetInternalField(0)->IntegerValue();
+			if (!isSocket(member)) { return JS_ERROR("Arguments must be arrays of Socket instances"); }
+			int fd = jsToSocket(member);
 			if (fd > max) { max = fd; }
 			FD_SET(fd, &fds[i]);
 		}
@@ -326,8 +348,11 @@ JS_METHOD(_select) {
 		tv->tv_usec = 1000 * (time % 1000);
 	}
 	
-	
-	int ret = select(max+1, &fds[0], &fds[1], &fds[2], tv);
+	int ret;
+	while (1) {
+		ret = select(max+1, &fds[0], &fds[1], &fds[2], tv);
+		if (ret != SOCKET_ERROR || errno != EINTR) { break; }
+	}
 	if (tv != NULL) { delete tv; } /* clean up time */
 	if (ret == SOCKET_ERROR) { return FormatError(); }
 	
@@ -338,7 +363,7 @@ JS_METHOD(_select) {
 		int len = arr->Length();
 		for (int j=0;j<len;j++) {
 			v8::Handle<v8::Value> member = arr->Get(JS_INT(j));
-			int fd = member->ToObject()->GetInternalField(0)->IntegerValue();
+			int fd = jsToSocket(member);
 			if (!FD_ISSET(fd, &fds[i])) { arr->ForceDelete(JS_INT(j)); }
 		}
 	}

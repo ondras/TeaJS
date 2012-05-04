@@ -19,9 +19,41 @@ namespace {
 SSL_CTX * ctx;
 
 std::string formatError(SSL * ssl, int ret) {
-    char string[120];
-    ERR_error_string_n(SSL_get_error(ssl, ret), string, sizeof(string));
-    return std::string(string);
+	int code = SSL_get_error(ssl, ret);
+	int errcode;
+	std::string reason;
+
+	switch (code) {
+		case SSL_ERROR_NONE: reason = "SSL_ERROR_NONE"; break;
+		case SSL_ERROR_ZERO_RETURN: reason = "SSL_ERROR_ZERO_RETURN"; break;
+		case SSL_ERROR_WANT_READ: reason = "SSL_ERROR_WANT_READ"; break;
+		case SSL_ERROR_WANT_WRITE: reason = "SSL_ERROR_WANT_WRITE"; break;
+		case SSL_ERROR_WANT_ACCEPT: reason = "SSL_ERROR_WANT_ACCEPT"; break;
+		case SSL_ERROR_WANT_CONNECT: reason = "SSL_ERROR_WANT_CONNECT"; break;
+		case SSL_ERROR_WANT_X509_LOOKUP: reason = "SSL_ERROR_WANT_X509_LOOKUP"; break;
+		case SSL_ERROR_SYSCALL: 
+			errcode = ERR_get_error();
+			if (errcode) {
+				reason = ERR_reason_error_string(errcode);
+			} else {
+				reason = "SSL_ERROR_SYSCALL";
+				printf("~~%i~~\n", ret);
+				printf("~~%i~~\n", errno);
+			}
+		break;
+		case SSL_ERROR_SSL: 
+			errcode = ERR_get_error();
+			if (errcode) {
+				reason = ERR_reason_error_string(errcode);
+			} else {
+				reason = "SSL_ERROR_SSL";
+			}
+		break;
+		
+		
+	}
+	
+	return reason;
 }
 
 void finalize(v8::Handle<v8::Object> obj) {
@@ -66,6 +98,16 @@ JS_METHOD(_getSocket) {
 
 JS_METHOD(_verifyCertificate) {
 	return JS_INT(SSL_get_verify_result(LOAD_SSL));
+}
+
+JS_METHOD(_useCertificate) {
+	v8::String::Utf8Value file(args[0]);
+	return JS_INT(SSL_use_certificate_file(LOAD_SSL, *file, SSL_FILETYPE_PEM));
+}
+
+JS_METHOD(_usePrivateKey) {
+	v8::String::Utf8Value file(args[0]);
+	return JS_INT(SSL_use_PrivateKey_file(LOAD_SSL, *file, SSL_FILETYPE_PEM));
 }
 
 JS_METHOD(_accept) {
@@ -138,10 +180,13 @@ JS_METHOD(_send) {
 JS_METHOD(_close) {
 	SSL * ssl = LOAD_SSL;
 	int result = SSL_shutdown(ssl);
-	
+	printf("$$ %i $$\n", result);
+	printf("$$ %i $$\n", errno);
 	if (result == 0) { return _close(args); }
 	
 	if (result > 0) {
+		return args.This();
+	} else if (SSL_get_error(ssl, result) == SSL_ERROR_SYSCALL && result == -1 && (errno == ECONNRESET || errno == EPIPE)) { /* connection reset */
 		return args.This();
 	} else {
 		return SSL_ERROR(ssl, result);
@@ -170,6 +215,8 @@ SHARED_INIT() {
 	 */
 	pt->Set("getSocket", v8::FunctionTemplate::New(_getSocket));
 	pt->Set("verifyCertificate", v8::FunctionTemplate::New(_verifyCertificate));	
+	pt->Set("useCertificate", v8::FunctionTemplate::New(_useCertificate));	
+	pt->Set("usePrivateKey", v8::FunctionTemplate::New(_usePrivateKey));	
 	pt->Set("accept", v8::FunctionTemplate::New(_accept));
 	pt->Set("connect", v8::FunctionTemplate::New(_connect));
 	pt->Set("receive", v8::FunctionTemplate::New(_receive));

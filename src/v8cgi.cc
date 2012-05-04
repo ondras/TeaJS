@@ -9,10 +9,10 @@
 #include "app.h"
 #include "macros.h"
 #include "path.h"
+#include <signal.h>
 
 #ifdef FASTCGI
 #  include <fcgi_stdio.h>
-#  include <signal.h>
 #endif
 
 #ifdef windows
@@ -194,11 +194,6 @@ private:
 		FCGI_SetExitStatus(0);
 		exit(0); 
 	}
-
-	void handle_sigpipe(int param) {
-		FCGI_SetExitStatus(0);
-		exit(0); 
-	}
 #endif
 
 extern char ** environ;
@@ -208,11 +203,12 @@ int main(int argc, char ** argv) {
 	cgi.init(argc, argv);
 	if (cgi.exit_code) { exit(cgi.exit_code); }
 
+#ifdef SIGPIPE
+	signal(SIGPIPE, SIG_IGN);
+#endif
+
 #ifdef FASTCGI
 	signal(SIGTERM, handle_sigterm);
-#  ifdef SIGPIPE
-	signal(SIGPIPE, handle_sigpipe);
-#  endif
 #  ifdef SIGUSR1
 	signal(SIGUSR1, handle_sigusr1);
 #  endif

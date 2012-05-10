@@ -174,6 +174,8 @@ JS_METHOD(_send) {
 	
 	if (result > 0) {
 		return args.This();
+	} else if (SSL_get_error(ssl, result) == SSL_ERROR_WANT_WRITE) { /* blocking socket */
+		return JS_BOOL(false);
 	} else {
 		return SSL_ERROR(ssl, result);
 	}

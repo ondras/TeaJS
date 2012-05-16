@@ -114,6 +114,8 @@ JS_METHOD(_accept) {
 	
 	if (result == 1) {
 		return args.This();
+	} else if (result == -1 && SSL_get_error(ssl, result) == SSL_ERROR_WANT_READ) { /* blocking socket */
+		return JS_BOOL(false);
 	} else {
 		return SSL_ERROR(ssl, result);
 	}

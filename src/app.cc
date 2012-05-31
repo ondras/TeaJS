@@ -380,7 +380,7 @@ std::string v8cgi_App::format_exception(v8::TryCatch* try_catch) {
 void v8cgi_App::create_context() {
 	v8::HandleScope handle_scope;
 	
-	if (this->global.IsEmpty()) {
+	if (this->global.IsEmpty()) { /* first time */
 		this->globalt = v8::Persistent<v8::ObjectTemplate>::New(v8::ObjectTemplate::New());
 		this->globalt->SetInternalFieldCount(2);
 		this->context = v8::Context::New(NULL, this->globalt);
@@ -388,15 +388,13 @@ void v8cgi_App::create_context() {
 		this->global = v8::Persistent<v8::Value>::New(JS_GLOBAL);
 		GLOBAL_PROTO->SetInternalField(0, v8::External::New((void *) this)); 
 		GLOBAL_PROTO->SetInternalField(1, v8::External::New((void *) &(this->gc))); 
-	} else {
-		
+	} else { /* Nth time */
 #ifdef REUSE_CONTEXT
-		this->clear_global(); /* znovupouziti - jen vycisteni */
+		this->context->Enter();
+		this->clear_global(); /* reuse - just clear */
 #else
 		this->context = v8::Context::New(NULL, this->globalt, this->global);
 		this->context->Enter();
-		GLOBAL_PROTO->SetInternalField(0, v8::External::New((void *) this)); 
-		GLOBAL_PROTO->SetInternalField(1, v8::External::New((void *) &(this->gc))); 
 #endif
 	}
 
@@ -406,9 +404,8 @@ void v8cgi_App::create_context() {
  * Deletes the existing context
  */
 void v8cgi_App::delete_context() {
-#ifndef REUSE_CONTEXT
-	this->context->DetachGlobal();
 	this->context->Exit();
+#ifndef REUSE_CONTEXT
 	this->context.Dispose();
 	this->context.Clear();
 #endif

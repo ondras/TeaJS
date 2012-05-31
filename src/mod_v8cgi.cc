@@ -168,6 +168,8 @@ void v8cgi_Module::prepare(char ** envp) {
 	apache->Set(JS_STR("error"), v8::FunctionTemplate::New(_error)->GetFunction());
 }
 
+v8cgi_Module app;
+
 /**
  * This is called from Apache every time request arrives
  */
@@ -231,10 +233,6 @@ static int mod_v8cgi_handler(request_rec *r) {
 		strncpy(&(envp[i][len1+1]), elts[i].val, len2);
 	}
 
-	v8cgi_config * cfg = (v8cgi_config *) ap_get_module_config(r->server->module_config, &v8cgi_module);
-	v8cgi_Module app;
-	app.init(cfg);
-	
 	try {
 		app.execute(r, envp);
 	} catch (std::string e) {
@@ -266,6 +264,9 @@ static int mod_v8cgi_init_handler(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *p
 	version += "mod_v8cgi/";
 	version += STRING(VERSION);
 	ap_add_version_component(p, version.c_str());
+
+	v8cgi_config * cfg = (v8cgi_config *) ap_get_module_config(s->module_config, &v8cgi_module);
+	app.init(cfg);
     return OK;
 }
 

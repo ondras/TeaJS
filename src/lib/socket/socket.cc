@@ -353,10 +353,15 @@ JS_METHOD(_select) {
 	}
 	
 	int ret;
-	while (1) {
-		ret = select(max+1, &fds[0], &fds[1], &fds[2], tv);
-		if (ret != SOCKET_ERROR || sock_errno != EINTR) { break; }
+	
+	{
+		v8::Unlocker unlocker;
+		while (1) {
+			ret = select(max+1, &fds[0], &fds[1], &fds[2], tv);
+			if (ret != SOCKET_ERROR || sock_errno != EINTR) { break; }
+		}
 	}
+
 	if (tv != NULL) { delete tv; } /* clean up time */
 	if (ret == SOCKET_ERROR) { return FormatError(); }
 	

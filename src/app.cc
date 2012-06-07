@@ -386,8 +386,6 @@ void v8cgi_App::create_context() {
 		this->context = v8::Context::New(NULL, this->globalt);
 		this->context->Enter();
 		this->global = v8::Persistent<v8::Value>::New(JS_GLOBAL);
-		GLOBAL_PROTO->SetInternalField(0, v8::External::New((void *) this)); 
-		GLOBAL_PROTO->SetInternalField(1, v8::External::New((void *) &(this->gc))); 
 	} else { /* Nth time */
 #ifdef REUSE_CONTEXT
 		this->context->Enter();
@@ -397,6 +395,8 @@ void v8cgi_App::create_context() {
 		this->context->Enter();
 #endif
 	}
+	GLOBAL_PROTO->SetInternalField(0, v8::External::New((void *) this)); 
+	GLOBAL_PROTO->SetInternalField(1, v8::External::New((void *) &(this->gc))); 
 
 }
 

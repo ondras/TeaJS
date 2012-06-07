@@ -172,7 +172,7 @@ def build_tls(env):
 	e.Append(
 		LIBS = ["ssl"]
 	)
-	if env["os"] == "darwin":
+	if env["os"] == "darwin" or env["os"] == "windows":
 		e.Append(
 			LIBS = ["crypto"]
 		)

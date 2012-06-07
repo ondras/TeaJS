@@ -15,6 +15,8 @@
 #  include <winsock2.h>
 #  include <ws2tcpip.h>
 #  define close(s) closesocket(s)
+#  define sock_errno WSAGetLastError()
+#  define WOULD_BLOCK (sock_errno == WSAEWOULDBLOCK || sock_errno == WSAEINPROGRESS)
 #else
 #  include <unistd.h>
 #  include <sys/socket.h>
@@ -24,6 +26,8 @@
 #  include <netinet/in.h>
 #  include <netinet/tcp.h>
 #  include <netdb.h>
+#  define sock_errno errno
+#  define WOULD_BLOCK (sock_errno == EWOULDBLOCK || sock_errno == EAGAIN)
 #endif 
 
 #ifndef EWOULDBLOCK
@@ -278,7 +282,7 @@ JS_METHOD(_getaddrinfo) {
 	if (result != 0) {
 		return JS_ERROR(gai_strerror(result));
 	}
-	
+
 	v8::Local<v8::Object> item = create_peer(servinfo->ai_addr)->ToObject();
 	freeaddrinfo(servinfo);
 	return item->Get(JS_INT(0));
@@ -351,7 +355,7 @@ JS_METHOD(_select) {
 	int ret;
 	while (1) {
 		ret = select(max+1, &fds[0], &fds[1], &fds[2], tv);
-		if (ret != SOCKET_ERROR || errno != EINTR) { break; }
+		if (ret != SOCKET_ERROR || sock_errno != EINTR) { break; }
 	}
 	if (tv != NULL) { delete tv; } /* clean up time */
 	if (ret == SOCKET_ERROR) { return FormatError(); }
@@ -394,7 +398,7 @@ JS_METHOD(_connect) {
 	result = connect(sock, (sockaddr *) &addr, len);
 	
 	if (!result) { return JS_BOOL(true); }
-	if (errno == EINPROGRESS) { return JS_BOOL(false); }
+	if (WOULD_BLOCK) { return JS_BOOL(false); }
 	return FormatError();
 }
 
@@ -448,7 +452,7 @@ JS_METHOD(_accept) {
 		argv[3] = args.This()->Get(JS_STR("proto"));
 		return socketFunc->NewInstance(4, argv);
 	}
-	if (errno == EAGAIN || errno == EWOULDBLOCK) { return JS_BOOL(false); }
+	if (WOULD_BLOCK) { return JS_BOOL(false); }
 	return FormatError();
 }
 
@@ -483,7 +487,7 @@ JS_METHOD(_send) {
 	}
 	
 	if (result != SOCKET_ERROR) { return JS_INT(result); }
-	if (errno == EAGAIN || errno == EWOULDBLOCK) { return JS_BOOL(false); }
+	if (WOULD_BLOCK) { return JS_BOOL(false); }
 	return FormatError();
 }
 
@@ -505,7 +509,8 @@ JS_METHOD(_receive) {
 	}
 	
 	delete[] data;
-	if (errno == EAGAIN || errno == EWOULDBLOCK) { return JS_BOOL(false); }
+	if (WOULD_BLOCK) { return JS_BOOL(false); }
+
 	return FormatError();
 }
 

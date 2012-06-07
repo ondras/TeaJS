@@ -9,6 +9,17 @@
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+
+#ifdef windows
+#  define sock_errno WSAGetLastError()
+#  define CONN_RESET (sock_errno == WSAECONNRESET)
+#else
+#  define sock_errno errno
+#  define CONN_RESET (sock_errno == ECONNRESET || sock_errno == EPIPE)
+#endif 
+
+
+
 #define NOT_SOCKET JS_TYPE_ERROR("Invalid call format. Use 'new TLS(socket)'")
 #define LOAD_SOCKET LOAD_VALUE(0)->ToObject()->GetInternalField(0)->Int32Value()
 #define LOAD_SSL LOAD_PTR(1, SSL *)
@@ -190,7 +201,7 @@ JS_METHOD(_close) {
 	
 	if (result > 0) {
 		return args.This();
-	} else if (SSL_get_error(ssl, result) == SSL_ERROR_SYSCALL && result == -1 && (errno == ECONNRESET || errno == EPIPE)) { /* connection reset */
+	} else if (SSL_get_error(ssl, result) == SSL_ERROR_SYSCALL && result == -1 && CONN_RESET) { /* connection reset */
 		return args.This();
 	} else {
 		return SSL_ERROR(ssl, result);

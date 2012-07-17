@@ -222,11 +222,10 @@ int main(int argc, char ** argv) {
 		try {
 			cgi.execute(environ);
 		} catch (std::string e) {
-			if (cgi.show_errors) {
-				fwrite((void *) e.c_str(), sizeof(char), e.length(), stdout);
-			} else {
-				fwrite((void *) e.c_str(), sizeof(char), e.length(), stderr);
-			}
+			FILE * target;
+			target = (cgi.show_errors ? stdout : stderr);
+			fwrite((void *) e.c_str(), sizeof(char), e.length(), target);
+			fwrite((void *) "\n", sizeof(char), 1, target);
 		}
 		
 #ifdef FASTCGI

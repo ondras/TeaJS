@@ -1,5 +1,5 @@
 /**
- * v8cgi - (fast)cgi binary
+ * TeaJS - (fast(cgi)) binary
  */
 
 #include <v8.h>
@@ -27,17 +27,17 @@
  * put a -- surrounded by whitespace after all the v8 arguments
  *
  * any arguments after the v8_args but before the program_file are
- * used by v8cgi.
+ * used by TeaJS.
  */
-static const char * const v8cgi_usage = "v8cgi [v8_args --] [-v] [-h] [-w] [-c path] [-d port] program_file [argument ...]";
+static const char * const teajs_usage = "tea [v8_args --] [-v] [-h] [-w] [-c path] [-d port] program_file [argument ...]";
 
-class v8cgi_CGI : public v8cgi_App {
+class TeaJS_CGI : public TeaJS_App {
 public:
 	/**
 	 * Initialize from command line
 	 */
 	void init(int argc, char ** argv) {
-		v8cgi_App::init();
+		TeaJS_App::init();
 		
 		this->argv0 = (argc > 0 ? path_normalize(argv[0]) : std::string(""));
 
@@ -78,7 +78,7 @@ private:
 	void process_args(int argc, char ** argv) {
 		std::string err = "Invalid command line usage.\n";
 		err += "Correct usage: ";
-		err += v8cgi_usage; /* see the v8cgi_usage definition for the format */
+		err += teajs_usage; /* see the teajs_usage definition for the format */
 		
 		int index = 0;
 		bool wait_for_debugger = false;
@@ -106,7 +106,7 @@ private:
 		/* if there were no v8 args, then reset index to the first argument */
 		if (!have_v8args) { index = 1; }
 		
-		/* scan for v8cgi-specific arguments now */
+		/* scan for teajs-specific arguments now */
 		while (index < argc) {
 			std::string optname(argv[index]);
 			if (optname[0] != '-') { break; } /* not starting with "-" => mainfile */
@@ -137,12 +137,12 @@ private:
 				break;
 				
 				case 'h':
-					printf(v8cgi_usage);
+					printf(teajs_usage);
 					printf("\n");
 				break;
 				
 				case 'v':
-					printf("v8cgi version %s", STRING(VERSION));
+					printf("TeaJS version %s", STRING(VERSION));
 					printf("\n");
 				break;
 				
@@ -155,7 +155,7 @@ private:
 		} 
 		
 		if (debugger_port) { /* launch debugging agent */ 
-			v8::Debug::EnableAgent("v8cgi", debugger_port, wait_for_debugger);
+			v8::Debug::EnableAgent("TeaJS", debugger_port, wait_for_debugger);
 		}
 		
 		if (index < argc) {
@@ -199,7 +199,7 @@ private:
 extern char ** environ;
 
 int main(int argc, char ** argv) {
-	v8cgi_CGI cgi;
+	TeaJS_CGI cgi;
 	cgi.init(argc, argv);
 	if (cgi.exit_code) { exit(cgi.exit_code); }
 

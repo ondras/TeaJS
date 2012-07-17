@@ -1,9 +1,9 @@
-Most of v8cgi docs are available online, see http://code.google.com/p/v8cgi/wiki/Manual. 
+Most of TeaJS docs are available online, see http://code.google.com/p/teajs/wiki/Manual. 
 This file is slowly getting obsolete.
 
 ---------------------------------------------------------------------------
 
-NOTE: replace ~/src with the path where you checkout and build v8 and v8cgi!
+NOTE: replace ~/src with the path where you checkout and build V8 and TeaJS!
 NOTE: If you don't like to use vi to edit files, use gedit instead.
 
 ---------------------------------------------------------------------------
@@ -16,46 +16,46 @@ sudo apt-get install mysqlclient15-dev libsqlite3-dev libpq-dev libgd2-xpm-dev a
 mkdir ~/src
 cd ~/src
 svn checkout http://v8.googlecode.com/svn/trunk/ v8  ## (check for updated instructions at google code: http://code.google.com/p/v8/source/checkout)
-svn checkout http://v8cgi.googlecode.com/svn/trunk/ v8cgi  ## (check for updated instructions at google code: http://code.google.com/p/v8cgi/source/checkout)
+hg clone http://code.google.com/p/teajs/ ## (check for updated instructions at google code: http://code.google.com/p/teajs/source/checkout)
 chdir v8
 scons arch=x64 library=shared
 ##	OR if not using an x64 OS:
 scons library=shared
 sudo cp libv8.so /usr/lib/libv8.so
-cd ../v8cgi
+cd ../teajs
 scons module=1 gd=1 mysql=1 pgsql=1 sqlite=1 dom=1
-sudo cp v8cgi.conf.posix /etc/v8cgi.conf
+sudo cp teajs.conf.posix /etc/teajs.conf
 
 
-- configure /etc/v8cgi.config
-sudo vi /etc/v8cgi.conf
-require.paths.push('~/src/v8cgi/lib');
+- configure /etc/teajs.conf
+sudo vi /etc/teajs.conf
+require.paths.push('~/src/teajs/lib');
 
 
 - configure the apache module:
-sudo vi /etc/apache2/mods-available/v8cgi.load
+sudo vi /etc/apache2/mods-available/teajs.load
 * The only line in the file should be:
-LoadModule v8cgi_module ~/src/v8cgi/mod_v8cgi.so
+LoadModule teajs_module ~/src/teajs/mod_teajs.so
 --
-sudo vi /etc/apache2/mods-available/v8cgi.conf
+sudo vi /etc/apache2/mods-available/teajs.conf
 * The only line in the file should be:
-AddHandler v8cgi-script .sjs .ssjs .jst
+AddHandler teajs-script .sjs .ssjs .jst
 
 
 - enable the mod:
-sudo a2enmod v8cgi
+sudo a2enmod teajs
 
 
 - create/edit virtual host file
-sudo vi /etc/apache2/sites-available/v8cgi
-* This configuration should work, remember to replace ~/src with where you built v8 and v8cgi
+sudo vi /etc/apache2/sites-available/teajs
+* This configuration should work, remember to replace ~/src with where you built v8 and TeaJS
 ----------------------------------------------------------------------
 <VirtualHost *:80>
-        ServerName v8cgi
+        ServerName teajs
         ServerAdmin webmaster@localhost
-        DocumentRoot ~/src/v8cgi/htdocs
+        DocumentRoot ~/src/teajs/htdocs
 
-        <Directory ~src/v8cgi/htdocs>
+        <Directory ~src/teajs/htdocs>
                 Options Indexes All Multiviews
                 AllowOverride All
                 Order allow,deny
@@ -63,29 +63,29 @@ sudo vi /etc/apache2/sites-available/v8cgi
                 DirectoryIndex index.sjs
         </Directory>
 
-        ErrorLog /var/log/apache2/v8cgi_error.log
+        ErrorLog /var/log/apache2/teajs_error.log
 
         # Possible values include: debug, info, notice, warn, error, crit,
         # alert, emerg.
         LogLevel warn
 
-        CustomLog /var/log/apache2/v8cgi_access.log combined
+        CustomLog /var/log/apache2/teajs_access.log combined
         ServerSignature On
 
 </VirtualHost>
 ---------------------------------------------------------------------------
 
-- configure v8cgi hostname
+- configure teajs hostname
 sudo vi /etc/hosts
 * the first line in mine looks like this:
-127.0.0.1	localhost freewill v8cgi
+127.0.0.1	localhost teajs
 
 - enable the site
-sudo a2ensite v8cgi
+sudo a2ensite teajs
 
 - restart apache:
 sudo /etc/init.d/apache2 restart
 
 - Check it out:
 point browser at
-http://v8cgi/
+http://teajs/

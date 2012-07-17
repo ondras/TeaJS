@@ -1,4 +1,4 @@
-#!/usr/bin/env v8cgi
+#!/usr/bin/env teajs
 
 var fs = require("fs");
 

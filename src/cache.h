@@ -1,5 +1,5 @@
 /*
- * There are multiple caching levels in v8cgi.
+ * There are multiple caching levels in TeaJS.
  * - getHandle checks file's MTIME and provides source code / DSO handle
  * - getScript checks file's MTIME and provides compiled source code
  * - getExports returns module's "exports" object. No checks are performed, exports are valid through whole request.

@@ -1,5 +1,5 @@
 /**
- * v8cgi app file. This class represents generic V8 embedding; cgi binary and apache module inherit from it.
+ * TeaJS app file. This class represents generic V8 embedding; cgi binary and apache module inherit from it.
  */
 
 #include <sstream>
@@ -29,7 +29,7 @@
  * global.require = load module and return its (cached) exports
  */
 JS_METHOD(_require) {
-	v8cgi_App * app = APP_PTR;
+	TeaJS_App * app = APP_PTR;
 	v8::String::Utf8Value file(args[0]);
 	std::string root = *(v8::String::Utf8Value(args.Data()));
 	
@@ -44,7 +44,7 @@ JS_METHOD(_require) {
  * global.onexit = add a function to be executed when context ends
  */
 JS_METHOD(_onexit) {
-	v8cgi_App * app = APP_PTR;
+	TeaJS_App * app = APP_PTR;
 	if (!args[0]->IsFunction()) { return JS_TYPE_ERROR("Non-function passed to onexit()"); }
 	v8::Persistent<v8::Function> fun = v8::Persistent<v8::Function>::New(v8::Handle<v8::Function>::Cast(args[0]));
 	app->onexit.push_back(fun);
@@ -55,7 +55,7 @@ JS_METHOD(_onexit) {
  * global.exit - terminate execution
  */
 JS_METHOD(_exit) {
-	v8cgi_App * app = APP_PTR;
+	TeaJS_App * app = APP_PTR;
 	if (args.Length() > 0) {
 		app->exit_code = args[0]->IntegerValue();
 	} else {
@@ -71,7 +71,7 @@ JS_METHOD(_exit) {
 /**
  * To be executed only once - initialize stuff
  */
-void v8cgi_App::init() {
+void TeaJS_App::init() {
 	this->cfgfile = STRING(CONFIG_PATH);
 	this->show_errors = false;
 	this->exit_code = 0;
@@ -80,7 +80,7 @@ void v8cgi_App::init() {
 /**
  * Initialize and setup the context. Executed during every request, prior to executing main request file.
  */
-void v8cgi_App::prepare(char ** envp) {
+void TeaJS_App::prepare(char ** envp) {
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::Object> g = JS_GLOBAL;
 
@@ -104,7 +104,7 @@ void v8cgi_App::prepare(char ** envp) {
 	
 	g->Set(JS_STR("Config"), config->Get(JS_STR("Config")));
 
-	setup_v8cgi(g);
+	setup_teajs(g);
 	setup_system(g, envp, this->mainfile, this->mainfile_args);
 }
 
@@ -112,7 +112,7 @@ void v8cgi_App::prepare(char ** envp) {
  * Process a request.
  * @param {char**} envp Environment
  */
-void v8cgi_App::execute(char ** envp) {
+void TeaJS_App::execute(char ** envp) {
 	v8::Locker locker;
 	v8::HandleScope handle_scope;
 
@@ -145,7 +145,7 @@ void v8cgi_App::execute(char ** envp) {
 /**
  * End request
  */
-void v8cgi_App::finish() {
+void TeaJS_App::finish() {
 	v8::Handle<v8::Value> show = this->get_config("showErrors");
 	this->show_errors = show->ToBoolean()->IsTrue();
 
@@ -171,7 +171,7 @@ void v8cgi_App::finish() {
  * @param {std::string} name
  * @param {std::string} relativeRoot module root for relative includes
  */
-v8::Handle<v8::Object> v8cgi_App::require(std::string name, std::string relativeRoot) {
+v8::Handle<v8::Object> TeaJS_App::require(std::string name, std::string relativeRoot) {
 	v8::HandleScope hs;
 #ifdef VERBOSE
 	printf("[require] looking for '%s'\n", name.c_str()); 
@@ -230,7 +230,7 @@ v8::Handle<v8::Object> v8cgi_App::require(std::string name, std::string relative
 /**
  * Include a js module
  */
-int v8cgi_App::load_js(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module) {
+int TeaJS_App::load_js(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module) {
 	v8::HandleScope handle_scope;
 
 	/* compiled script wrapped in anonymous function */
@@ -250,7 +250,7 @@ int v8cgi_App::load_js(std::string filename, v8::Handle<v8::Function> require, v
 /**
  * Include a DSO module
  */
-void v8cgi_App::load_dso(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module) {
+void TeaJS_App::load_dso(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module) {
 	v8::HandleScope handle_scope;
 	void * handle = this->cache.getHandle(filename);;
 	
@@ -270,11 +270,11 @@ void v8cgi_App::load_dso(std::string filename, v8::Handle<v8::Function> require,
 /**
  * Fully expand/resolve module name
  */
-v8cgi_App::modulefiles v8cgi_App::resolve_module(std::string name, std::string relativeRoot) {
+TeaJS_App::modulefiles TeaJS_App::resolve_module(std::string name, std::string relativeRoot) {
 	if (!name.length()) { return modulefiles(); }
 
 	if (path_isabsolute(name)) {
-		/* v8cgi non-standard extension - absolute path */
+		/* TeaJS non-standard extension - absolute path */
 #ifdef VERBOSE
 		printf("[resolve_module] expanded to '%s'\n", name.c_str()); 
 #endif	
@@ -315,7 +315,7 @@ v8cgi_App::modulefiles v8cgi_App::resolve_module(std::string name, std::string r
 /**
  * Try to adjust file's extension in order to locate an existing file
  */
-v8cgi_App::modulefiles v8cgi_App::resolve_extension(std::string path) {
+TeaJS_App::modulefiles TeaJS_App::resolve_extension(std::string path) {
 	/* remove /./, /../ etc */
 	std::string fullPath = path_normalize(path); 
 	modulefiles result;
@@ -344,7 +344,7 @@ v8cgi_App::modulefiles v8cgi_App::resolve_extension(std::string path) {
 /** 
  * Convert JS exception to c string 
  */
-std::string v8cgi_App::format_exception(v8::TryCatch* try_catch) {
+std::string TeaJS_App::format_exception(v8::TryCatch* try_catch) {
 	v8::HandleScope handle_scope;
 	v8::String::Utf8Value exception(try_catch->Exception());
 	v8::Handle<v8::Message> message = try_catch->Message();
@@ -377,7 +377,7 @@ std::string v8cgi_App::format_exception(v8::TryCatch* try_catch) {
 /**
  * Creates a new context
  */
-void v8cgi_App::create_context() {
+void TeaJS_App::create_context() {
 	v8::HandleScope handle_scope;
 	
 	if (this->global.IsEmpty()) { /* first time */
@@ -403,7 +403,7 @@ void v8cgi_App::create_context() {
 /**
  * Deletes the existing context
  */
-void v8cgi_App::delete_context() {
+void TeaJS_App::delete_context() {
 	this->context->Exit();
 #ifndef REUSE_CONTEXT
 	this->context.Dispose();
@@ -414,7 +414,7 @@ void v8cgi_App::delete_context() {
 /**
  * Removes all "garbage" from the global object
  */
-void v8cgi_App::clear_global() {
+void TeaJS_App::clear_global() {
 	v8::Handle<v8::Array> keys = JS_GLOBAL->GetPropertyNames();
 	int length = keys->Length();
 	for (int i=0;i<length;i++) {
@@ -426,7 +426,7 @@ void v8cgi_App::clear_global() {
 /**
  * Retrieve a configuration value
  */
-v8::Handle<v8::Value> v8cgi_App::get_config(std::string name) {
+v8::Handle<v8::Value> TeaJS_App::get_config(std::string name) {
 	v8::Handle<v8::Value> config = JS_GLOBAL->Get(JS_STR("Config"));
 	if (!config->IsObject()) { return JS_UNDEFINED; }
 	return config->ToObject()->Get(JS_STR(name.c_str()));
@@ -435,7 +435,7 @@ v8::Handle<v8::Value> v8cgi_App::get_config(std::string name) {
 /**
  * Build module-specific require
  */
-v8::Handle<v8::Function> v8cgi_App::build_require(std::string path, v8::Handle<v8::Value> (*func) (const v8::Arguments&)) {
+v8::Handle<v8::Function> TeaJS_App::build_require(std::string path, v8::Handle<v8::Value> (*func) (const v8::Arguments&)) {
 	std::string root = path_dirname(path);
 	v8::Handle<v8::FunctionTemplate> requiretemplate = v8::FunctionTemplate::New(func, JS_STR(root.c_str()));
 	v8::Handle<v8::Function> require = requiretemplate->GetFunction();
@@ -444,13 +444,14 @@ v8::Handle<v8::Function> v8cgi_App::build_require(std::string path, v8::Handle<v
 	return require;
 }
 
-void v8cgi_App::setup_v8cgi(v8::Handle<v8::Object> target) {
+void TeaJS_App::setup_teajs(v8::Handle<v8::Object> target) {
 	v8::HandleScope handle_scope;
-	v8::Handle<v8::Object> v8cgi = v8::Object::New();
 	
-	v8cgi->Set(JS_STR("version"), JS_STR(STRING(VERSION)));
-	v8cgi->Set(JS_STR("instanceType"), JS_STR(this->instanceType()));
-	v8cgi->Set(JS_STR("executableName"), JS_STR(this->executableName()));
+	v8::Handle<v8::Object> teajs = v8::Object::New();
+	teajs->Set(JS_STR("version"), JS_STR(STRING(VERSION)));
+	teajs->Set(JS_STR("instanceType"), JS_STR(this->instanceType()));
+	teajs->Set(JS_STR("executableName"), JS_STR(this->executableName()));
 	
-	target->Set(JS_STR("v8cgi"), v8cgi);
+	target->Set(JS_STR("teajs"), teajs);
+	target->Set(JS_STR("v8cgi"), teajs);
 }

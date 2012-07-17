@@ -12,14 +12,14 @@
 /**
  * This class defines a basic v8-based application.
  */
-class v8cgi_App {
+class TeaJS_App {
 public:
 	typedef std::vector<v8::Persistent<v8::Function> > funcvector;
 	
 	/* resolved native module, resolved js module */
 	typedef std::vector<std::string> modulefiles;
 
-	virtual ~v8cgi_App() {};
+	virtual ~TeaJS_App() {};
 	/* once per app lifetime */
 	virtual void init(); 
 	/* once per request */
@@ -46,8 +46,8 @@ protected:
 	void create_context();
 	/* delete existing context */
 	void delete_context();
-	/* setup the v8cgi free variable */
-	void setup_v8cgi(v8::Handle<v8::Object> target);
+	/* setup the teajs free variable */
+	void setup_teajs(v8::Handle<v8::Object> target);
 
 private:
 	/* current active context */

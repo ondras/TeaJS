@@ -1,4 +1,4 @@
-#!/usr/bin/env v8cgi
+#!/usr/bin/env teajs
 
 var exports = require("GL");
 for (var p in exports) { global[p] = exports[p]; }

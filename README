@@ -1,26 +1,26 @@
-v8cgi - multi-purpose wrapper around V8 JS engine
-=================================================
+TeaJS - Your cup of server-side JavaScript
+==========================================
 
-This is BETA software. You are encouraged to use and test it, but do not expect rock-solid robustness.
+TeaJS is a multi-purpose wrapper around V8 JS engine.
 
-For the most recent instructions, refer to the wiki page for this project: http://code.google.com/p/v8cgi/wiki
+For the most recent instructions, refer to the wiki page for this project: http://code.google.com/p/teajs/wiki
 
 
 1) Building 
 
-  - see http://code.google.com/p/v8cgi/wiki/Compiling
+  - see http://code.google.com/p/teajs/wiki/Compiling
 
 2) Configuration
 
-  - see http://code.google.com/p/v8cgi/wiki/Manual and http://code.google.com/p/v8cgi/wiki/ApacheConfiguration
+  - see http://code.google.com/p/teajs/wiki/Manual and http://code.google.com/p/teajs/wiki/ApacheConfiguration
 
 3) Running
 
-  - ./v8cgi example/example.js (using v8cgi built from source)
-  - v8cgi example/example.js OR JUST example/example.js (using v8cgi installed from a package)
-  - v8cgi.exe example/example.js (using v8cgi on Windows)
+  - ./tea example/example (using TeaJS built from source)
+  - tea example/example OR JUST example/example.js (using TeaJS installed from a package)
+  - tea.exe example/example (using TeaJS on Windows)
 
 4) Contact
 
-  - Forum: http://groups.google.com/group/v8cgi
+  - Forum: http://groups.google.com/group/teajs
   - ondras@zarovi.cz

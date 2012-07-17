@@ -2,17 +2,14 @@ var Config = {};
 exports.Config = Config;
 
 // put default .js and .so files here
-// NOTE: this was called "Config.libraryPath" in older versions of v8cgi
-require.paths.push("c:/program files/v8cgi/lib");
-
-// OBSOLETE, not used anymore
-//Config["libraryAutoload"] = [];
+// NOTE: this was called "Config.libraryPath" in older versions of TeaJS
+require.paths.push("/usr/local/lib/teajs");
 
 // name of session cookie
 Config["sessionCookie"] = "V8SID";
 
 // directory for session storage
-Config["sessionPath"] = "c:/windows/temp";
+Config["sessionPath"] = "/tmp";
 
 // session lifetime - in seconds
 Config["sessionTime"] = 60*60;

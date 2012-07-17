@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string>
 
-// Adds a fiber API to v8cgi.
+// Adds a fiber API to TeaJS.
 //
 // Create a fiber to run a function:
 //   var fiber = new Fiber(name_string, function);

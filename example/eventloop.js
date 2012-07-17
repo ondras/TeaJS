@@ -1,4 +1,4 @@
-#!/usr/bin/env v8cgi
+#!/usr/bin/env teajs
 
 var eventloop = require("eventloop");
 var iterations = 0;

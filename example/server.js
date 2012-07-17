@@ -1,4 +1,4 @@
-#!/usr/bin/env v8cgi
+#!/usr/bin/env teajs
 
 /* simple HTTP server; listens on 127.0.0.1:10001 and returns HTTP/200 OK */
 

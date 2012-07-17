@@ -1,11 +1,11 @@
-#!/usr/bin/env v8cgi
+#!/usr/bin/env teajs
 
 /**
  * More info on http://www.activerecordjs.org/record.html
  */
 var ActiveRecord = require('active_record').ActiveRecord;
 
-ActiveRecord.connect(ActiveRecord.Adapters.v8cgiMySQL, {
+ActiveRecord.connect(ActiveRecord.Adapters.TeaJSMySQL, {
 	user: 'root', 
 	pass: 'root', 
 	name: 'testdb'

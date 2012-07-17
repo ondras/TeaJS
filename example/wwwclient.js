@@ -1,4 +1,4 @@
-#!/usr/bin/env v8cgi
+#!/usr/bin/env teajs
 
 /* simple http client application - downloads an URL and outputs its contents */
 

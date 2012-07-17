@@ -1,9 +1,9 @@
 /*
- *	PostgreSQL database module for v8cgi
+ *	PostgreSQL database module for TeaJS
  *
  *	Based on the corresponding MySQL and SQLite modules
  *	"js_mysql.cc" and "js_sqlite.cc", respectively, from
- *	v8cgi release 0.6.0; see also:
+ *	TeaJS release 0.6.0; see also:
  *	1. http://www.postgresql.org/docs/8.4/static/libpq-exec.html
  *	2. http://www.postgresql.org/docs/8.4/static/libpq-async.html
  *

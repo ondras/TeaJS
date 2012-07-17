@@ -1,6 +1,6 @@
 /**
- * v8cgi - apache module. 
- * Extends v8cgi_App by adding customized initialization and (std)IO routines
+ * TeaJS - apache module. 
+ * Extends TeaJS_App by adding customized initialization and (std)IO routines
  */
 #include <stdlib.h>
 #include <string.h>
@@ -22,18 +22,18 @@
 
 typedef struct {
 	const char * config;
-} v8cgi_config;
+} teajs_config;
 
 /**
  * First module declaration 
  */
-extern "C" module AP_MODULE_DECLARE_DATA v8cgi_module; 
+extern "C" module AP_MODULE_DECLARE_DATA teajs_module; 
 
 #ifdef APLOG_USE_MODULE
-APLOG_USE_MODULE(v8cgi);
+APLOG_USE_MODULE(teajs);
 #endif
 
-class v8cgi_Module : public v8cgi_App {
+class TeaJS_Module : public TeaJS_App {
 public:
 	request_rec * request;
 	
@@ -57,11 +57,11 @@ public:
 		this->mainfile = std::string(request->filename);
 		int chdir_result = path_chdir(path_dirname(this->mainfile));
 		if (chdir_result == -1) { return; }
-		v8cgi_App::execute(envp);
+		TeaJS_App::execute(envp);
 	}
 	
-	void init(v8cgi_config * cfg) { 
-		v8cgi_App::init();
+	void init(teajs_config * cfg) { 
+		TeaJS_App::init();
 		this->cfgfile = cfg->config;
 	}
 
@@ -104,7 +104,7 @@ private:
 };
 
 JS_METHOD(_read) {
-	v8cgi_Module * app = (v8cgi_Module *) APP_PTR;
+	TeaJS_Module * app = (TeaJS_Module *) APP_PTR;
 	if (args.Length() < 1) { return JS_TYPE_ERROR("Invalid call format. Use 'apache.read(amount)'"); }
 	size_t count = args[0]->IntegerValue();
 	
@@ -125,7 +125,7 @@ JS_METHOD(_read) {
 }
 
 JS_METHOD(_write) {
-	v8cgi_Module * app = (v8cgi_Module *) APP_PTR;
+	TeaJS_Module * app = (TeaJS_Module *) APP_PTR;
 	if (args.Length() < 1) { return JS_TYPE_ERROR("Invalid call format. Use 'apache.write(data)'"); }
 
 	size_t result;
@@ -141,22 +141,22 @@ JS_METHOD(_write) {
 }
 
 JS_METHOD(_error) {
-	v8cgi_Module * app = (v8cgi_Module *) APP_PTR;
+	TeaJS_Module * app = (TeaJS_Module *) APP_PTR;
 	v8::String::Utf8Value error(args[0]);
 	app->error(*error);
 	return v8::Undefined();
 }
 
 JS_METHOD(_header) {
-	v8cgi_Module * app = (v8cgi_Module *) APP_PTR;
+	TeaJS_Module * app = (TeaJS_Module *) APP_PTR;
 	v8::String::Utf8Value name(args[0]);
 	v8::String::Utf8Value value(args[1]);
 	app->header(*name, *value);
 	return v8::Undefined();
 }
 
-void v8cgi_Module::prepare(char ** envp) {
-	v8cgi_App::prepare(envp);
+void TeaJS_Module::prepare(char ** envp) {
+	TeaJS_App::prepare(envp);
 
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::Object> g = JS_GLOBAL;
@@ -169,17 +169,17 @@ void v8cgi_Module::prepare(char ** envp) {
 }
 
 #ifdef REUSE_CONTEXT
-v8cgi_Module app;
+TeaJS_Module app;
 #endif
 
 /**
  * This is called from Apache every time request arrives
  */
-static int mod_v8cgi_handler(request_rec *r) {
+static int mod_teajs_handler(request_rec *r) {
 	const apr_array_header_t *arr;
 	const apr_table_entry_t *elts;
 
-	if (!r->handler || strcmp(r->handler, "v8cgi-script")) { return DECLINED; }
+	if (!r->handler || strcmp(r->handler, "teajs-script")) { return DECLINED; }
 
 	ap_setup_client_block(r, REQUEST_CHUNKED_DECHUNK);
 	ap_add_common_vars(r);
@@ -236,8 +236,8 @@ static int mod_v8cgi_handler(request_rec *r) {
 	}
 
 #ifndef REUSE_CONTEXT
-	v8cgi_config * cfg = (v8cgi_config *) ap_get_module_config(r->server->module_config, &v8cgi_module);
-	v8cgi_Module app;
+	teajs_config * cfg = (teajs_config *) ap_get_module_config(r->server->module_config, &teajs_module);
+	TeaJS_Module app;
 	app.init(cfg);
 #endif
 
@@ -267,13 +267,13 @@ static int mod_v8cgi_handler(request_rec *r) {
 /**
  * Module initialization 
  */
-static int mod_v8cgi_init_handler(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp, server_rec *s) {
+static int mod_teajs_init_handler(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp, server_rec *s) {
 	std::string version;
-	version += "mod_v8cgi/";
+	version += "mod_teajs/";
 	version += STRING(VERSION);
 	ap_add_version_component(p, version.c_str());
 #ifdef REUSE_CONTEXT
-	v8cgi_config * cfg = (v8cgi_config *) ap_get_module_config(s->module_config, &v8cgi_module);
+	teajs_config * cfg = (teajs_config *) ap_get_module_config(s->module_config, &teajs_module);
 	app.init(cfg);
 #endif
     return OK;
@@ -283,23 +283,23 @@ static int mod_v8cgi_init_handler(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *p
  * Child initialization 
  * FIXME: what is this for?
  */
-static void mod_v8cgi_child_init(apr_pool_t *p, server_rec *s) { 
+static void mod_teajs_child_init(apr_pool_t *p, server_rec *s) { 
 }
 
 /**
  * Register relevant hooks
  */
-static void mod_v8cgi_register_hooks(apr_pool_t *p ) {
-	ap_hook_handler(mod_v8cgi_handler, NULL, NULL, APR_HOOK_MIDDLE);
-	ap_hook_post_config(mod_v8cgi_init_handler, NULL, NULL, APR_HOOK_MIDDLE);
-	ap_hook_child_init(mod_v8cgi_child_init, NULL, NULL, APR_HOOK_MIDDLE);
+static void mod_teajs_register_hooks(apr_pool_t *p ) {
+	ap_hook_handler(mod_teajs_handler, NULL, NULL, APR_HOOK_MIDDLE);
+	ap_hook_post_config(mod_teajs_init_handler, NULL, NULL, APR_HOOK_MIDDLE);
+	ap_hook_child_init(mod_teajs_child_init, NULL, NULL, APR_HOOK_MIDDLE);
 }
 
 /**
  * Create initial configuration values 
  */
-static void * mod_v8cgi_create_config(apr_pool_t *p, server_rec *s) { 
-	v8cgi_config * newcfg = (v8cgi_config *) apr_pcalloc(p, sizeof(v8cgi_config));
+static void * mod_teajs_create_config(apr_pool_t *p, server_rec *s) { 
+	teajs_config * newcfg = (teajs_config *) apr_pcalloc(p, sizeof(teajs_config));
 	newcfg->config = STRING(CONFIG_PATH);
 	return (void *) newcfg;
 }
@@ -307,21 +307,21 @@ static void * mod_v8cgi_create_config(apr_pool_t *p, server_rec *s) {
 /**
  * Callback executed for every configuration change 
  */
-static const char * set_v8cgi_config(cmd_parms * parms, void * mconfig, const char * arg) { 
-	v8cgi_config * cfg = (v8cgi_config *) ap_get_module_config(parms->server->module_config, &v8cgi_module);
+static const char * set_teajs_config(cmd_parms * parms, void * mconfig, const char * arg) { 
+	teajs_config * cfg = (teajs_config *) ap_get_module_config(parms->server->module_config, &teajs_module);
 	cfg->config = (char *) arg;
 	return NULL;
 }
 
 typedef const char * (* CONFIG_HANDLER) ();
 /* list of configurations */
-static const command_rec mod_v8cgi_cmds[] = { 
+static const command_rec mod_teajs_cmds[] = { 
 	AP_INIT_TAKE1(
-		"v8cgi_Config",
-		(CONFIG_HANDLER) set_v8cgi_config,
+		"TeaJS_Config",
+		(CONFIG_HANDLER) set_teajs_config,
 		NULL,
 		RSRC_CONF,
-		"Path to v8cgi configuration file."
+		"Path to TeaJS configuration file."
 	),
 	{NULL}
 };
@@ -330,13 +330,13 @@ static const command_rec mod_v8cgi_cmds[] = {
  * Module (re-)declaration
  */
 extern "C" { 
-	module AP_MODULE_DECLARE_DATA v8cgi_module = {
+	module AP_MODULE_DECLARE_DATA teajs_module = {
 		STANDARD20_MODULE_STUFF,
 		NULL,
 		NULL,
-		mod_v8cgi_create_config,
+		mod_teajs_create_config,
 		NULL,
-		mod_v8cgi_cmds,
-		mod_v8cgi_register_hooks,
+		mod_teajs_cmds,
+		mod_teajs_register_hooks,
 	};
 }

@@ -1,5 +1,5 @@
 /*
- *	Server-side DOM module for v8cgi
+ *	Server-side DOM module for TeaJS
  *
  *	Initial version: 2009-09-03, Ryan RAFFERTY
  */

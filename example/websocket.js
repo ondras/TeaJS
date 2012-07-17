@@ -1,4 +1,4 @@
-#!/usr/bin/env v8cgi
+#!/usr/bin/env teajs
 
 /* simple websocket echo server: repeats received message to all clients (and logs to console) */
 

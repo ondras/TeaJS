@@ -1,5 +1,5 @@
 /*
- *	OpenGL module for v8cgi
+ *	OpenGL module for TeaJS
  *
  *	Based on Nicolas Garcia Belmonte's V8-GL project
  *	(http://github.com/philogb/v8-gl/tree/master#readme)
@@ -85,7 +85,7 @@ SHARED_INIT() {
 
   *pargc = arr->Length();
   argv = new char*[(*pargc+1)];
-  std::string ctmp( "./v8cgi" );
+  std::string ctmp( "./tea" );
   argv[0] = strdup(ctmp.c_str());
   for (int i = 0; i < *pargc; i++) {
     std::string tmp( *String::Utf8Value( arr->Get(JS_INT(i))->ToString() ) );

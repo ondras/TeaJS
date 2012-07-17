@@ -257,8 +257,8 @@ def build_module(env, sources):
 	# if
 	
 	e.SharedLibrary(
-		target = "mod_v8cgi", 
-		source = [sources, "src/mod_v8cgi.cc"],
+		target = "mod_teajs", 
+		source = [sources, "src/mod_teajs.cc"],
 		SHLIBPREFIX=""
 	)
 # def
@@ -277,8 +277,8 @@ def build_cgi(env, sources):
 		)
 	# if
 	env.Program(
-		source = [sources, "src/v8cgi.cc"],
-		target = "v8cgi"
+		source = [sources, "src/teajs.cc"],
+		target = "tea"
 	)
 # def
 
@@ -300,7 +300,7 @@ if sys.platform.find("win") != -1 and sys.platform.find("darwin") == -1:
 	pgsql_include = "c:/"
 	apache_include = "c:/"
 	apr_include = "c:/"
-	config_path = "c:/v8cgi.conf"
+	config_path = "c:/teajs.conf"
 	os_string = "windows"
 	xercesc_include = "c:/"
 	gl_include = "c:/"
@@ -309,7 +309,7 @@ elif sys.platform.find("darwin") != -1:
 	pgsql_include = "/opt/local/include/postgresql83"
 	apache_include = "/opt/local/apache2/include"
 	apr_include = "/opt/local/include/apr-1"
-	config_path = "/etc/v8cgi.conf"
+	config_path = "/etc/teajs.conf"
 	os_string = "darwin"
 	xercesc_include = "/opt/local/include/xercesc3"
 	gl_include = "/opt/local/include/GL"
@@ -318,7 +318,7 @@ else:
 	pgsql_include = "`/usr/bin/pg_config --includedir`"
 	apache_include = "/usr/include/apache2"
 	apr_include = "/usr/include/apr-1.0"
-	config_path = "/etc/v8cgi.conf"
+	config_path = "/etc/teajs.conf"
 	os_string = "posix"
 	xercesc_include = "/usr/include/xercesc"
 	gl_include = "/usr/include/GL"

@@ -1,91 +1,47 @@
-Most of TeaJS docs are available online, see http://code.google.com/p/teajs/wiki/Manual. 
-This file is slowly getting obsolete.
+Most of TeaJS docs are available online, see http://code.google.com/p/teajs/wiki/Manual. This file contains a somewhat obsolete archive version of the said page. 
 
----------------------------------------------------------------------------
+= First steps =
 
-NOTE: replace ~/src with the path where you checkout and build V8 and TeaJS!
-NOTE: If you don't like to use vi to edit files, use gedit instead.
+In order to use TeaJS, you first have to get the binary. Windows users can just download a precompiled release [1], Ubuntu users can use a PPA [2]; otherwise one has to compile TeaJS from source. There is a separated wikipage dedicated to compiling TeaJS [3].
 
----------------------------------------------------------------------------
+When you have a TeaJS working, you might need to setup the configuration file. It needs to be placed to a pre-defined location, which is set at compile time. If unsure, just run `tea` - it will tell you if the configuration file is not at the correct location.
 
-- prerequisites (for compiling all optional components):
-sudo apt-get install mysqlclient15-dev libsqlite3-dev libpq-dev libgd2-xpm-dev apache-threaded-dev libxerces-c-dev	## NOTE: if DOM support is not required, then the libxerces-c-dev package can be omitted
+You should check the configuration file and edit it if necessary. The most important value is `require.paths`, which corresponds to the directory in which TeaJS modules are located. *It is not possible to directly modify require.paths property; one must use array methods to modify its contents.*
 
+*Windows users only:* TeaJS requires v8.dll to be present; additional TeaJS modules (most notably PostgreSQL) have more dll dependencies. These files are located in `dll/` subdirectory of Windows distribution, copy them either to system path or to TeaJS directory as necessary.
 
-- build (replace ~/src with path to where you compile these):
-mkdir ~/src
-cd ~/src
-svn checkout http://v8.googlecode.com/svn/trunk/ v8  ## (check for updated instructions at google code: http://code.google.com/p/v8/source/checkout)
-hg clone http://code.google.com/p/teajs/ ## (check for updated instructions at google code: http://code.google.com/p/teajs/source/checkout)
-chdir v8
-scons arch=x64 library=shared
-##	OR if not using an x64 OS:
-scons library=shared
-sudo cp libv8.so /usr/lib/libv8.so
-cd ../teajs
-scons module=1 gd=1 mysql=1 pgsql=1 sqlite=1 dom=1
-sudo cp teajs.conf.posix /etc/teajs.conf
+= Running =
 
+== As a command-line program ==
 
-- configure /etc/teajs.conf
-sudo vi /etc/teajs.conf
-require.paths.push('~/src/teajs/lib');
+Syntax (Linux/BSD/MacOS/Posix):
+{{{
+tea [-c configfile] [-d debugger_port] myscript.js
+}}}
 
+Syntax (Windows):
+{{{
+tea.exe [-c configfile] [-d debugger_port] myscript.js
+}}}
 
-- configure the apache module:
-sudo vi /etc/apache2/mods-available/teajs.load
-* The only line in the file should be:
-LoadModule teajs_module ~/src/teajs/mod_teajs.so
---
-sudo vi /etc/apache2/mods-available/teajs.conf
-* The only line in the file should be:
-AddHandler teajs-script .sjs .ssjs .jst
+If no `-c` option is specified, then the system-wide config file is used. The location for this file is set at compile time. If no system config file exists, TeaJS will refuse to run.
+
+The `-d` options specifies a TCP port for the V8 debugger agent to listen at. If no `-d` option is specified, the debugger agent is disabled.
+
+== As Apache module ==
+
+This is described at separate page [4].
+
+= Additional reading =
+  * API Documentation [5]
+  * Short code examples [6]
+  * Using and creating modules [7]
 
 
-- enable the mod:
-sudo a2enmod teajs
-
-
-- create/edit virtual host file
-sudo vi /etc/apache2/sites-available/teajs
-* This configuration should work, remember to replace ~/src with where you built v8 and TeaJS
-----------------------------------------------------------------------
-<VirtualHost *:80>
-        ServerName teajs
-        ServerAdmin webmaster@localhost
-        DocumentRoot ~/src/teajs/htdocs
-
-        <Directory ~src/teajs/htdocs>
-                Options Indexes All Multiviews
-                AllowOverride All
-                Order allow,deny
-                allow from all
-                DirectoryIndex index.sjs
-        </Directory>
-
-        ErrorLog /var/log/apache2/teajs_error.log
-
-        # Possible values include: debug, info, notice, warn, error, crit,
-        # alert, emerg.
-        LogLevel warn
-
-        CustomLog /var/log/apache2/teajs_access.log combined
-        ServerSignature On
-
-</VirtualHost>
----------------------------------------------------------------------------
-
-- configure teajs hostname
-sudo vi /etc/hosts
-* the first line in mine looks like this:
-127.0.0.1	localhost teajs
-
-- enable the site
-sudo a2ensite teajs
-
-- restart apache:
-sudo /etc/init.d/apache2 restart
-
-- Check it out:
-point browser at
-http://teajs/
+[1] http://code.google.com/p/teajs/downloads/list
+[2] https://launchpad.net/~ondras/+archive/teajs
+[3] http://code.google.com/p/teajs/wiki/Manual
+[4] http://code.google.com/p/teajs/wiki/ApacheConfiguration
+[5] http://code.google.com/p/teajs/wiki/API
+[6] http://code.google.com/p/teajs/wiki/CodeSnippets
+[7] http://code.google.com/p/teajs/wiki/Modules

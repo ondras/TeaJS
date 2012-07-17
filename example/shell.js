@@ -7,11 +7,10 @@ while (1) {
 	var cmd = system.stdin.readLine().toString("utf-8").trim();
 	if (cmd == "quit" || cmd == "exit" || cmd == "bye") { break; }
 
-	var error = false;
 	try {
 		var result = eval(cmd);
 		if (result !== undefined) { system.stdout.writeLine(result); }
-	} catch(e) {
+	} catch (e) {
 		system.stdout.writeLine(e);
 	}
 }

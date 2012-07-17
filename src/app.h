@@ -46,7 +46,7 @@ protected:
 	void create_context();
 	/* delete existing context */
 	void delete_context();
-	/* setup the teajs free variable */
+	/* setup the TeaJS free variable */
 	void setup_teajs(v8::Handle<v8::Object> target);
 
 private:

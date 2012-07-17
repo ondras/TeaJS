@@ -452,6 +452,6 @@ void TeaJS_App::setup_teajs(v8::Handle<v8::Object> target) {
 	teajs->Set(JS_STR("instanceType"), JS_STR(this->instanceType()));
 	teajs->Set(JS_STR("executableName"), JS_STR(this->executableName()));
 	
-	target->Set(JS_STR("teajs"), teajs);
+	target->Set(JS_STR("TeaJS"), teajs);
 	target->Set(JS_STR("v8cgi"), teajs);
 }

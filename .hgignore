@@ -1,0 +1,9 @@
+syntax: glob
+
+*.os
+*.so
+*.o
+tea
+.sconf_temp
+config.log
+*.dblite

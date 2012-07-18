@@ -4,6 +4,11 @@ syntax: glob
 *.so
 *.o
 tea
+tea.exe
 .sconf_temp
 config.log
 *.dblite
+*.dll
+*.a
+*.def
+*.bat

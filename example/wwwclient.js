@@ -3,9 +3,9 @@
 /* simple http client application - downloads an URL and outputs its contents */
 
 var http = require("http");
-var client = new http.ClientRequest("http://ondras.zarovi.cz/");
+var client = new http.ClientRequest("http://www.google.com/");
 var response = client.send(true);
 
-system.stdout(JSON.stringify(response.headers(), false, " "));
-system.stdout("\n\n");
-system.stdout(response.data.toString("utf-8"));
+system.stdout.writeLine(JSON.stringify(response.headers(), false, " "));
+system.stdout.writeLine();
+system.stdout.writeLine(response.data);

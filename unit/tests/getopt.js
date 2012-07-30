@@ -73,3 +73,10 @@ exports.testIssue17 = function() {
 	var go = setup();
 	go.parse(["-c", "a"]);
 }
+
+exports.testIssue7 = function() {
+	var go = new GO();
+	go.add("format", "desc", false, "f", "image-format", GO.REQUIRED_ARGUMENT);
+	go.parse(["--image-format=png"]);
+	assert.equal(go.get("format"), "png", "long option name with dash");
+}

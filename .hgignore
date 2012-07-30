@@ -12,3 +12,4 @@ config.log
 *.a
 *.def
 *.bat
+release.sh

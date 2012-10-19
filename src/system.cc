@@ -10,6 +10,7 @@
 #include "app.h"
 #include "system.h"
 #include "path.h"
+#include <unistd.h>
 #include <sys/time.h>
 
 #ifndef HAVE_SLEEP

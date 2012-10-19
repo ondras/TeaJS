@@ -8,6 +8,7 @@
 #include "macros.h"
 #include "common.h"
 #include <stdlib.h>
+#include <unistd.h>
 
 #ifndef windows
 #  include <sys/wait.h>

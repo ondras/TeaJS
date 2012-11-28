@@ -3,7 +3,7 @@
  *
  *	Based on the corresponding MySQL and SQLite modules
  *	"js_mysql.cc" and "js_sqlite.cc", respectively, from
- *	TeaJS release 0.6.0; see also:
+ *	v8cgi release 0.6.0; see also:
  *	1. http://www.postgresql.org/docs/8.4/static/libpq-exec.html
  *	2. http://www.postgresql.org/docs/8.4/static/libpq-async.html
  *
@@ -75,6 +75,47 @@ void destroy_pgsql(v8::Handle<v8::Object> obj) {
 	v8::Handle<v8::Function> fun = v8::Handle<v8::Function>::Cast(obj->Get(JS_STR("close")));
 	fun->Call(obj, 0, NULL);
 }
+v8::Handle<v8::Array> fetch_any(pq::PGresult *res,bool fetch_all,bool fetch_objects)
+{
+//	int x = pq::PQnfields(res);
+	int y;
+	if (fetch_all) y = pq::PQntuples(res); else y=1;
+	int cnt = pq::PQnfields(res);
+    
+	v8::Handle<v8::Array> fieldnames = v8::Array::New(cnt);
+	int *types=(int*)malloc(sizeof(int)*cnt);
+	for(int u = 0; u < cnt; u++) {
+		if (fetch_objects) fieldnames->Set(JS_INT(u), JS_STR(pq::PQfname(res, u)));
+		types[u]=pq::PQftype(res,u);
+	}
+	v8::Handle<v8::Array> result = v8::Array::New(y);
+	for (int i = 0; i < y; i++) {
+		v8::Handle<v8::Object> item = v8::Object::New();
+		result->Set(JS_INT(i), item);
+		for (int j=0; j<cnt; j++) {
+			if (pq::PQgetisnull(res, i, j)) {
+				item->Set(fieldnames->Get(JS_INT(j)), v8::Null());
+				continue;
+			}
+			switch (types[j]) {
+				case 20:
+				case 21:
+				case 23:
+					item->Set(fieldnames->Get(JS_INT(j)), JS_STR(pq::PQgetvalue(res, i, j))->ToInteger());
+					break;
+				case 1700:
+					item->Set(fieldnames->Get(JS_INT(j)), JS_STR(pq::PQgetvalue(res, i, j))->ToNumber());
+					break;
+				default:
+					item->Set(fieldnames->Get(JS_INT(j)), JS_STR(pq::PQgetvalue(res, i, j)));
+					break;
+			}
+		}
+	}
+	return result;
+}
+
+
 
   /**
    *	"rslt" corresponds to database query result objects
@@ -490,6 +531,11 @@ JS_METHOD(_query) {
     args.This()->Set(JS_STR("queryCount"), JS_INT(qc+1));
     return JS_BOOL(code);
   }
+  JS_METHOD(_isconnected) {
+    PGSQL_PTR_CON;
+ //   ASSERT_CONNECTED;
+    return JS_BOOL(conn);
+  }
 
   /**
    *	ISBUSY method
@@ -644,7 +690,7 @@ JS_METHOD(_query) {
   JS_METHOD(_fetchall) {
     PGSQL_RES_LOAD(res);
     ASSERT_RESULT;
-    int x = pq::PQnfields(res);
+/*    int x = pq::PQnfields(res);
     int y = pq::PQntuples(res);
     v8::Handle<v8::Array> result = v8::Array::New(y);
     for (int i = 0; i < y; i++) {
@@ -656,7 +702,8 @@ JS_METHOD(_query) {
 	else
 	  item->Set(JS_INT(j), JS_STR(pq::PQgetvalue(res, i, j)));
     }
-    return result;
+    return result;*/
+	return fetch_any(res,true,false);
   }
 
   /**
@@ -665,20 +712,13 @@ JS_METHOD(_query) {
   JS_METHOD(_fetchrow) {
     PGSQL_RES_LOAD(res);
     ASSERT_RESULT;
-    int x = pq::PQnfields(res);
-    int y = pq::PQntuples(res);
-    int i = 0;
+	int i=0;
     if (args.Length() > 0) {
-      v8::String::Utf8Value a(args[0]);
-      i = atoi(*a);
+		v8::String::Utf8Value a(args[0]);
+		i = atoi(*a);
     }
-    v8::Handle<v8::Array> result = v8::Array::New(y);
-    for (int j=0; j<x; j++)
-      if (pq::PQgetisnull(res, i, j))
-	result->Set(JS_INT(j), v8::Null());
-      else
-	result->Set(JS_INT(j), JS_STR(pq::PQgetvalue(res, i, j)));
-    return result;
+	v8::Handle<v8::Array> item = fetch_any(res,i?true:false,false);
+	return item->Get(JS_INT(i));
   }
 
   /**
@@ -688,23 +728,7 @@ JS_METHOD(_query) {
   JS_METHOD(_fetchallobjects) {
     PGSQL_RES_LOAD(res);
     ASSERT_RESULT;
-    int x = pq::PQnfields(res);
-    int y = pq::PQntuples(res);
-    int cnt = pq::PQnfields(res);
-    v8::Handle<v8::Array> fieldnames = v8::Array::New(cnt);
-    for(int u = 0; u < cnt; u++)
-      fieldnames->Set(JS_INT(u), JS_STR(pq::PQfname(res, u)));
-    v8::Handle<v8::Array> result = v8::Array::New(y);
-    for (int i = 0; i < y; i++) {
-      v8::Handle<v8::Object> item = v8::Object::New();
-      result->Set(JS_INT(i), item);
-      for (int j=0; j<x; j++)
-	if (pq::PQgetisnull(res, i, j))
-	  item->Set(fieldnames->Get(JS_INT(j)), v8::Null());
-	else
-	  item->Set(fieldnames->Get(JS_INT(j)), JS_STR(pq::PQgetvalue(res, i, j)));
-    }
-    return result;
+	return fetch_any(res,true,true);
   }
 
   /**
@@ -714,24 +738,13 @@ JS_METHOD(_query) {
   JS_METHOD(_fetchrowobject) {
     PGSQL_RES_LOAD(res);
     ASSERT_RESULT;
-    int x = pq::PQnfields(res);
-    int y = pq::PQntuples(res);
-    int cnt = pq::PQnfields(res);
-    int i = 0;
-    if (args.Length() > 0) {
-      v8::String::Utf8Value a(args[0]);
-      i = atoi(*a);
-    }
-    v8::Handle<v8::Array> fieldnames = v8::Array::New(cnt);
-    for(int u = 0; u < cnt; u++)
-      fieldnames->Set(JS_INT(u), JS_STR(pq::PQfname(res, u)));
-    v8::Handle<v8::Array> result = v8::Array::New(y);
-    for (int j=0; j<x; j++)
-      if (pq::PQgetisnull(res, i, j))
-	result->Set(fieldnames->Get(JS_INT(j)), v8::Null());
-      else
-	result->Set(fieldnames->Get(JS_INT(j)), JS_STR(pq::PQgetvalue(res, i, j)));
-    return result;
+	int i = 0;
+	if (args.Length() > 0) {
+		v8::String::Utf8Value a(args[0]);
+		i = atoi(*a);
+	}
+	v8::Handle<v8::Array> item = fetch_any(res,i?true:false,false);
+	return item->Get(JS_INT(i));
   }
 
   JS_METHOD(_reset) {
@@ -1477,6 +1490,7 @@ SHARED_INIT() {
   pt->Set(JS_STR("sendQuery"), v8::FunctionTemplate::New(pgsql::_sendquery));
   pt->Set(JS_STR("sendQueryParams"), v8::FunctionTemplate::New(pgsql::_sendqueryparams));
   pt->Set(JS_STR("isBusy"), v8::FunctionTemplate::New(pgsql::_isbusy));
+  pt->Set(JS_STR("isConnected"), v8::FunctionTemplate::New(pgsql::_isconnected));
   pt->Set(JS_STR("socket"), v8::FunctionTemplate::New(pgsql::_socket));
   pt->Set(JS_STR("cancel"), v8::FunctionTemplate::New(pgsql::_cancel));
   pt->Set(JS_STR("prepare"), v8::FunctionTemplate::New(pgsql::_prepare));

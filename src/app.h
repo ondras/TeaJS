@@ -1,7 +1,6 @@
 #ifndef _JS_APP_H
 #define _JS_APP_H
 
-#include <map>
 #include <utility>
 #include <vector>
 #include <list>

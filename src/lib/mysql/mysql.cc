@@ -9,6 +9,7 @@
 #include <mysql.h>
 #include <stdlib.h>
 #include <string>
+#include <map>
 
 #define MYSQL_ERROR mysql_error(conn)
 #define ASSERT_CONNECTED if (!conn) { return JS_ERROR("No connection established yet."); }
@@ -19,6 +20,9 @@
 namespace {
 
 v8::Persistent<v8::FunctionTemplate> rest;
+typedef std::map<std::string, void *> persistent_connection_t;
+persistent_connection_t persistent_connections;
+
 
 void finalize(v8::Handle<v8::Object> obj) {
 	v8::Handle<v8::Function> fun = v8::Handle<v8::Function>::Cast(obj->Get(JS_STR("close")));
@@ -327,6 +331,42 @@ JS_METHOD(_result_close) {
 	}
 }
 
+
+JS_METHOD(_storeConnection) {
+	v8::String::Utf8Value name(args[0]);
+	std::string str_name(*name);
+
+	persistent_connection_t::iterator it = persistent_connections.find(str_name);
+	if (args[1]->IsFalse()) { /* delete */
+		persistent_connections.erase(it);
+		return JS_UNDEFINED;
+	}
+
+	if (!args[1]->IsObject()) { return JS_TYPE_ERROR("Invalid argument"); }	
+	v8::Handle<v8::Object> inst = v8::Handle<v8::Object>::Cast(args[1]);
+	if (inst->InternalFieldCount() < 1) { return JS_TYPE_ERROR("Invalid argument"); }
+
+	if (it != persistent_connections.end()) { return JS_ERROR("Connection name already used"); }
+
+	persistent_connections[str_name] = inst->GetPointerFromInternalField(0);
+	return JS_UNDEFINED;
+
+}
+
+JS_METHOD(_loadConnection) {
+	v8::String::Utf8Value name(args[0]);
+	std::string str_name(*name);
+
+	persistent_connection_t::iterator it = persistent_connections.find(str_name);
+	if (it == persistent_connections.end()) { return JS_NULL; }
+
+	MYSQL * conn = (MYSQL *) (it->second);
+	v8::Handle<v8::Object> inst = v8::FunctionTemplate::New(_mysql)->GetFunction()->NewInstance();
+	inst->SetPointerInInternalField(0, (void *)conn);
+
+	return inst;
+}
+
 } /* end namespace */
 
 SHARED_INIT() {
@@ -341,6 +381,12 @@ SHARED_INIT() {
 	 * Static property, useful for stats gathering
 	 */
 	ot->Set(JS_STR("queryCount"), JS_INT(0));
+
+	/**
+	 * Persistent connection storage
+	 */
+	ot->Set(JS_STR("storeConnection"), v8::FunctionTemplate::New(_storeConnection));
+	ot->Set(JS_STR("loadConnection"), v8::FunctionTemplate::New(_loadConnection));
 		 
 	v8::Handle<v8::ObjectTemplate> pt = ft->PrototypeTemplate();
 

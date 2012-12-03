@@ -20,6 +20,8 @@
 namespace {
 
 v8::Persistent<v8::FunctionTemplate> rest;
+v8::Persistent<v8::FunctionTemplate> mysqlt;
+
 typedef std::map<std::string, void *> persistent_connection_t;
 persistent_connection_t persistent_connections;
 
@@ -361,7 +363,7 @@ JS_METHOD(_loadConnection) {
 	if (it == persistent_connections.end()) { return JS_NULL; }
 
 	MYSQL * conn = (MYSQL *) (it->second);
-	v8::Handle<v8::Object> inst = v8::FunctionTemplate::New(_mysql)->GetFunction()->NewInstance();
+	v8::Handle<v8::Object> inst = mysqlt->GetFunction()->NewInstance();
 	inst->SetPointerInInternalField(0, (void *)conn);
 
 	return inst;
@@ -371,10 +373,10 @@ JS_METHOD(_loadConnection) {
 
 SHARED_INIT() {
 	v8::HandleScope handle_scope;
-	v8::Handle<v8::FunctionTemplate> ft = v8::FunctionTemplate::New(_mysql);
-	ft->SetClassName(JS_STR("MySQL"));
+	mysqlt = v8::Persistent<v8::FunctionTemplate>::New(_mysql);
+	mysqlt->SetClassName(JS_STR("MySQL"));
 
-	v8::Handle<v8::ObjectTemplate> ot = ft->InstanceTemplate();
+	v8::Handle<v8::ObjectTemplate> ot = mysqlt->InstanceTemplate();
 	ot->SetInternalFieldCount(1); /* connection */
 	
 	/**
@@ -385,10 +387,10 @@ SHARED_INIT() {
 	/**
 	 * Persistent connection storage
 	 */
-	ft->Set(JS_STR("storeConnection"), v8::FunctionTemplate::New(_storeConnection));
-	ft->Set(JS_STR("loadConnection"), v8::FunctionTemplate::New(_loadConnection));
+	mysqlt->Set(JS_STR("storeConnection"), v8::FunctionTemplate::New(_storeConnection));
+	mysqlt->Set(JS_STR("loadConnection"), v8::FunctionTemplate::New(_loadConnection));
 		 
-	v8::Handle<v8::ObjectTemplate> pt = ft->PrototypeTemplate();
+	v8::Handle<v8::ObjectTemplate> pt = mysqlt->PrototypeTemplate();
 
 	/**
 	 * MySQL prototype methods (new MySQL().*)
@@ -420,5 +422,5 @@ SHARED_INIT() {
 	resproto->Set(JS_STR("fetchObjects"), v8::FunctionTemplate::New(_fetchobjects));
 	resproto->Set(JS_STR("close"), v8::FunctionTemplate::New(_result_close));
 
-	exports->Set(JS_STR("MySQL"), ft->GetFunction());
+	exports->Set(JS_STR("MySQL"), mysqlt->GetFunction());
 }

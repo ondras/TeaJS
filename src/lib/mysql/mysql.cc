@@ -373,7 +373,7 @@ JS_METHOD(_loadConnection) {
 
 SHARED_INIT() {
 	v8::HandleScope handle_scope;
-	mysqlt = v8::Persistent<v8::FunctionTemplate>::New(_mysql);
+	mysqlt = v8::Persistent<v8::FunctionTemplate>::New(v8::FunctionTemplate::New(_mysql));
 	mysqlt->SetClassName(JS_STR("MySQL"));
 
 	v8::Handle<v8::ObjectTemplate> ot = mysqlt->InstanceTemplate();

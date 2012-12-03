@@ -57,6 +57,9 @@ v8::Handle<v8::Value> createResult(MYSQL * conn) {
 JS_METHOD(_mysql) {
 	ASSERT_CONSTRUCTOR;
 	SAVE_PTR(0, NULL);
+
+	SAVE_VALUE(1, JS_BOOL(args[0]->IsTrue()));
+
 	GC * gc = GC_PTR;
 	gc->add(args.This(), finalize);
 	return args.This();
@@ -377,7 +380,7 @@ SHARED_INIT() {
 	mysqlt->SetClassName(JS_STR("MySQL"));
 
 	v8::Handle<v8::ObjectTemplate> ot = mysqlt->InstanceTemplate();
-	ot->SetInternalFieldCount(1); /* connection */
+	ot->SetInternalFieldCount(2); /* connection, do-not-auto-close */
 	
 	/**
 	 * Static property, useful for stats gathering

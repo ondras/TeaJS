@@ -27,8 +27,10 @@ persistent_connection_t persistent_connections;
 
 
 void finalize(v8::Handle<v8::Object> obj) {
-	v8::Handle<v8::Function> fun = v8::Handle<v8::Function>::Cast(obj->Get(JS_STR("close")));
-	fun->Call(obj, 0, NULL);
+	if (obj->GetInternalField(1)->IsFalse()) {
+		v8::Handle<v8::Function> fun = v8::Handle<v8::Function>::Cast(obj->Get(JS_STR("close")));
+		fun->Call(obj, 0, NULL);
+	}
 }
 
 void result_finalize(v8::Handle<v8::Object> obj) {
@@ -342,7 +344,7 @@ JS_METHOD(_storeConnection) {
 	std::string str_name(*name);
 
 	persistent_connection_t::iterator it = persistent_connections.find(str_name);
-	if (args[1]->IsFalse()) { /* delete */
+	if (args[1]->ToBoolean()->IsFalse()) { /* delete */
 		persistent_connections.erase(it);
 		return JS_UNDEFINED;
 	}
@@ -366,7 +368,9 @@ JS_METHOD(_loadConnection) {
 	if (it == persistent_connections.end()) { return JS_NULL; }
 
 	MYSQL * conn = (MYSQL *) (it->second);
-	v8::Handle<v8::Object> inst = mysqlt->GetFunction()->NewInstance();
+	
+	v8::Handle<v8::Value> newArgs[1] = {JS_BOOL(true)};
+	v8::Handle<v8::Object> inst = mysqlt->GetFunction()->NewInstance(1, newArgs);
 	inst->SetPointerInInternalField(0, (void *)conn);
 
 	return inst;

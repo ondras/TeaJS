@@ -385,8 +385,8 @@ SHARED_INIT() {
 	/**
 	 * Persistent connection storage
 	 */
-	ot->Set(JS_STR("storeConnection"), v8::FunctionTemplate::New(_storeConnection));
-	ot->Set(JS_STR("loadConnection"), v8::FunctionTemplate::New(_loadConnection));
+	ft->Set(JS_STR("storeConnection"), v8::FunctionTemplate::New(_storeConnection));
+	ft->Set(JS_STR("loadConnection"), v8::FunctionTemplate::New(_loadConnection));
 		 
 	v8::Handle<v8::ObjectTemplate> pt = ft->PrototypeTemplate();
 

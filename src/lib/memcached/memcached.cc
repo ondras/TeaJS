@@ -13,8 +13,7 @@
 namespace {
 
 void finalize(v8::Handle<v8::Object> obj) {
-  memcached_st * memc =
-      reinterpret_cast<memcached_st *>(obj->GetPointerFromInternalField(0));
+  memcached_st * memc = LOAD_PTR_FROM(obj, 0, memcached_st *);
   if (memc) {
     memcached_free(memc);
   }

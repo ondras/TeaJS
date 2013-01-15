@@ -5,7 +5,7 @@
 #include "gc.h"
 #include "bytestorage.h"
 
-#define BS_OTHER(object) reinterpret_cast<ByteStorage *>(object->GetPointerFromInternalField(0))
+#define BS_OTHER(object) LOAD_PTR_FROM(object, 0, ByteStorage *)
 #define BS_THIS BS_OTHER(args.This())
 #define WRONG_CTOR JS_TYPE_ERROR("Buffer() called with wrong arguments.")
 #define WRONG_START_STOP JS_RANGE_ERROR("Buffer() Invalid start/stop numbers")

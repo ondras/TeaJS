@@ -273,8 +273,7 @@ JS_METHOD(_becomeRunnable) {
 void become_main(v8::Handle<v8::Object> js_this) {
   int status;
 
-  NativeData* native_data = reinterpret_cast<NativeData*>(
-      js_this->GetPointerFromInternalField(FiberFieldNativeDataPtr));
+  NativeData* native_data = LOAD_PTR_FROM(js_this, FiberFieldNativeDataPtr, NativeData *);
   native_data->thread = pthread_self();
   native_data->thread_created = true;
   status = pthread_setspecific(tls_key, native_data);

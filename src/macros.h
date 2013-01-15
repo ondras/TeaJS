@@ -14,8 +14,10 @@
 #define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
 #define MAX(X,Y) ((X) > (Y) ? (X) : (Y))
 
-#define SAVE_PTR(index, ptr) args.This()->SetPointerInInternalField(index, (void *)(ptr))
-#define LOAD_PTR(index, type) reinterpret_cast<type>(args.This()->GetPointerFromInternalField(index))
+#define SAVE_PTR_TO(obj, index, ptr) obj->SetInternalField(index, v8::External::New(ptr))
+#define LOAD_PTR_FROM(obj, index, type) reinterpret_cast<type>(v8::Handle<v8::External>::Cast(obj->GetInternalField(index))->Value())
+#define SAVE_PTR(index, ptr) SAVE_PTR_TO(args.This(), index, ptr)
+#define LOAD_PTR(index, type) LOAD_PTR_FROM(args.This(), index, type)
 #define SAVE_VALUE(index, val) args.This()->SetInternalField(index, val)
 #define LOAD_VALUE(index) args.This()->GetInternalField(index)
 #define JS_STR(...) v8::String::New(__VA_ARGS__)
@@ -61,7 +63,7 @@ inline v8::Handle<v8::Value> BYTESTORAGE_TO_JS(ByteStorage * bs) {
 
 inline ByteStorage * JS_TO_BYTESTORAGE(v8::Handle<v8::Value> value) {
 	v8::Handle<v8::Object> object = value->ToObject();
-	return reinterpret_cast<ByteStorage *>(object->GetPointerFromInternalField(0));
+	return LOAD_PTR_FROM(object, 0, ByteStorage *);
 }
 
 inline v8::Handle<v8::Value> JS_BUFFER(char * data, size_t length) {

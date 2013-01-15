@@ -355,7 +355,7 @@ JS_METHOD(_storeConnection) {
 
 	if (it != persistent_connections.end()) { return JS_ERROR("Connection name already used"); }
 
-	persistent_connections[str_name] = inst->GetPointerFromInternalField(0);
+	persistent_connections[str_name] = LOAD_PTR_FROM(inst, 0, void *);
 	return JS_UNDEFINED;
 
 }
@@ -371,7 +371,7 @@ JS_METHOD(_loadConnection) {
 	
 	v8::Handle<v8::Value> newArgs[1] = {JS_BOOL(true)};
 	v8::Handle<v8::Object> inst = mysqlt->GetFunction()->NewInstance(1, newArgs);
-	inst->SetPointerInInternalField(0, (void *)conn);
+	SAVE_PTR_TO(inst, 0, (void *)conn);
 
 	return inst;
 }

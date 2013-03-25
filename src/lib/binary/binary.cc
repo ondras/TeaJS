@@ -125,9 +125,10 @@ JS_METHOD(_Buffer) {
 		return JS_ERROR(e.c_str());
 	}
 	
+	if(!failed.IsEmpty()) return failed;
+
 	GC * gc = GC_PTR;
 	gc->add(args.This(), Buffer_destroy);
-	if(!failed.IsEmpty()) return failed;
 
 	return args.This();
 }

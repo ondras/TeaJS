@@ -1,4 +1,3 @@
-
 var assert = require("assert");
 var Buffer = require("binary").Buffer;
 

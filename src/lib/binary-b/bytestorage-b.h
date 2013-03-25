@@ -2,10 +2,10 @@
 #define _BYTESTORAGE_B_H
 
 #include <v8.h>
+#include "macros.h"
 
-#define BS_OTHER(object) reinterpret_cast<ByteStorageB *>(object->GetPointerFromInternalField(0))
+#define BS_OTHER(object) LOAD_PTR_FROM(object, 0, ByteStorageB *)
 #define BS_THIS BS_OTHER(args.This())
-
 
 /**
  * Generic byte storage class

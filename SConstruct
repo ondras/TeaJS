@@ -340,9 +340,9 @@ vars.Add(BoolVariable("zlib", "zlib library", 1))
 vars.Add(BoolVariable("tls", "SSL/TLS library", 1))
 vars.Add(BoolVariable("module", "Build Apache module", 1))
 vars.Add(BoolVariable("cgi", "Build CGI binary", 1))
+vars.Add(BoolVariable("fibers", "Fiber support", 1))
 
 # off by default
-vars.Add(BoolVariable("fibers", "Fiber support", 0))
 vars.Add(BoolVariable("binary_b", "Build Binary/B module", 0))
 vars.Add(BoolVariable("xdom", "DOM Level 3 library (xerces based, for XML/XHTML)", 0))
 vars.Add(BoolVariable("pgsql", "PostgreSQL library", 0))

@@ -428,8 +428,7 @@ if env["os"] == "posix":
 
 # look for V8 - sanity check
 if (env["os"] != "windows") and not (conf.CheckLib(v8_lib)):
-	print("Cannot find V8 library!")
-	sys.exit(1)
+	print("\n---> Cannot find V8 library! <--- \n")
 # if
 
 # configured build environment

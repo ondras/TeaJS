@@ -263,6 +263,15 @@ def build_module(env, sources):
 	)
 # def
 
+def build_so(env, sources):
+        e = env.Clone()
+	e.SharedLibrary(
+		target = "libteajs", 
+                source = [sources],
+		SHLIBPREFIX=""
+	)
+# def
+
 def build_cgi(env, sources):
 	if env["fcgi"] == 1:
 		env.Append(
@@ -339,6 +348,7 @@ vars.Add(BoolVariable("fs", "Filesystem I/O library", 1))
 vars.Add(BoolVariable("zlib", "zlib library", 1))
 vars.Add(BoolVariable("tls", "SSL/TLS library", 1))
 vars.Add(BoolVariable("module", "Build Apache module", 1))
+vars.Add(BoolVariable("so", "Build shared library", 1))
 vars.Add(BoolVariable("cgi", "Build CGI binary", 1))
 vars.Add(BoolVariable("fibers", "Fiber support", 1))
 
@@ -500,4 +510,5 @@ if env["xdom"] == 1: build_xdom(env)
 if env["gl"] == 1: build_gl(env)
 if env["binary_b"] == 1: build_binary_b(env)
 if env["module"] == 1: build_module(env, sources)
+if env["so"] == 1: build_so(env, sources)
 if env["cgi"] == 1: build_cgi(env, sources)

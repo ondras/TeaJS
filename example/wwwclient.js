@@ -3,7 +3,7 @@
 /* simple http client application - downloads an URL and outputs its contents */
 
 var http = require("http");
-var client = new http.ClientRequest("http://www.google.com/");
+var client = new http.ClientRequest("https://www.google.com/");
 var response = client.send(true);
 
 system.stdout.writeLine(JSON.stringify(response.headers(), false, " "));

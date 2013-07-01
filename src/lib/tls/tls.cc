@@ -198,7 +198,7 @@ JS_METHOD(_close) {
 	SSL * ssl = LOAD_SSL;
 	int result = SSL_shutdown(ssl);
 	if (result == 0) { return _close(args); }
-	
+
 	if (result > 0) {
 		return args.This();
 	} else if (SSL_get_error(ssl, result) == SSL_ERROR_SYSCALL && result == -1 && CONN_RESET) { /* connection reset */

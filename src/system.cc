@@ -60,12 +60,16 @@ JS_METHOD(_write_stderr) {
 }
 
 JS_METHOD(_writeline_stdout) {
-	WRITE_LINE(stdout, args[0]);
+	v8::Handle<v8::Value> str = args[0];
+	if (!args.Length()) { str = JS_STR(""); }
+	WRITE_LINE(stdout, str);
 	return js_stdout;
 }
 
 JS_METHOD(_writeline_stderr) {
-	WRITE_LINE(stderr, args[0]);
+	v8::Handle<v8::Value> str = args[0];
+	if (!args.Length()) { str = JS_STR(""); }
+	WRITE_LINE(stderr, str);
 	return js_stderr;
 }
 

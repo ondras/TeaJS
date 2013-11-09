@@ -50,3 +50,5 @@ void GC::finish() {
 	}
 	this->data.clear();
 }
+
+GC::~GC() {};

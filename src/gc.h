@@ -11,7 +11,7 @@
 
 class GC {
 public:
-	virtual ~GC() {};
+	virtual ~GC();
 
 	typedef void (*dtor_t) (v8::Handle<v8::Object>);
 

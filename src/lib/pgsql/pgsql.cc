@@ -31,7 +31,7 @@ namespace pgsql {
 
   // Establish lock to prevent violation of V8 threading
   // restrictions:
-  v8::Locker global_lock;
+  v8::Locker global_lock(JS_ISOLATE);
 
   #include <pthread.h>
 
@@ -48,8 +48,8 @@ namespace pgsql {
   #endif
 
   #define PGSQL_ERROR pq::PQerrorMessage(conn)
-  #define ASSERT_CONNECTED if (!conn) { return JS_ERROR("No connection established yet."); }
-  #define ASSERT_RESULT if (!res) { return JS_ERROR("No result returned yet."); }
+  #define ASSERT_CONNECTED if (!conn) { JS_ERROR("No connection established yet."); return; }
+  #define ASSERT_RESULT if (!res) { JS_ERROR("No result returned yet."); return; }
   #define PGSQL_PTR_CON pq::PGconn * conn = LOAD_PTR(0, pq::PGconn *)
   #define PGSQL_RES_LOAD(item) pq::PGresult * item = LOAD_PTR(0, pq::PGresult *)
   #define PGSQL_RES_SAVE(item) SAVE_VALUE(0, item)
@@ -62,7 +62,7 @@ namespace pgsql {
 	// SQL commands and/or data is complete before
 	// proceeding (generally, this pertains to async usage)
 	//
-  #define PGSQL_FLUSH(conn) if (pq::PQisnonblocking(conn)) { int stat = pq::PQflush(conn);      while (stat > 0) {	int sock = pq::PQsocket(conn);	if (sock < 0)	  return JS_ERROR("SOCKET ERROR");	fd_set input_mask;	FD_ZERO(&input_mask);	FD_SET(sock, &input_mask);	if ( select(sock + 1, &input_mask, NULL, NULL, NULL) ) {	}	stat = pq::PQflush(conn);      }    }
+  #define PGSQL_FLUSH(conn) if (pq::PQisnonblocking(conn)) { int stat = pq::PQflush(conn);      while (stat > 0) {	int sock = pq::PQsocket(conn);	if (sock < 0)	  { JS_ERROR("SOCKET ERROR"); return; }	fd_set input_mask;	FD_ZERO(&input_mask);	FD_SET(sock, &input_mask);	if ( select(sock + 1, &input_mask, NULL, NULL, NULL) ) {	}	stat = pq::PQflush(conn);      }    }
 
 
 
@@ -82,19 +82,19 @@ v8::Handle<v8::Array> fetch_any(pq::PGresult *res,bool fetch_all,bool fetch_obje
 	if (fetch_all) y = pq::PQntuples(res); else y=1;
 	int cnt = pq::PQnfields(res);
     
-	v8::Handle<v8::Array> fieldnames = v8::Array::New(cnt);
+	v8::Handle<v8::Array> fieldnames = v8::Array::New(JS_ISOLATE, cnt);
 	int *types=(int*)malloc(sizeof(int)*cnt);
 	for(int u = 0; u < cnt; u++) {
 		if (fetch_objects) fieldnames->Set(JS_INT(u), JS_STR(pq::PQfname(res, u)));
 		types[u]=pq::PQftype(res,u);
 	}
-	v8::Handle<v8::Array> result = v8::Array::New(y);
+	v8::Handle<v8::Array> result = v8::Array::New(JS_ISOLATE, y);
 	for (int i = 0; i < y; i++) {
-		v8::Handle<v8::Object> item = v8::Object::New();
+		v8::Handle<v8::Object> item = v8::Object::New(JS_ISOLATE);
 		result->Set(JS_INT(i), item);
 		for (int j=0; j<cnt; j++) {
 			if (pq::PQgetisnull(res, i, j)) {
-				item->Set(fieldnames->Get(JS_INT(j)), v8::Null());
+				item->Set(fieldnames->Get(JS_INT(j)), v8::Null(JS_ISOLATE));
 				continue;
 			}
 			switch (types[j]) {
@@ -120,7 +120,7 @@ v8::Handle<v8::Array> fetch_any(pq::PGresult *res,bool fetch_all,bool fetch_obje
   /**
    *	"rslt" corresponds to database query result objects
    */
-  v8::Persistent<v8::FunctionTemplate> rslt;
+  v8::Persistent<v8::FunctionTemplate> _rslt;
 
   /**
    *	Result constructor:
@@ -135,7 +135,7 @@ v8::Handle<v8::Array> fetch_any(pq::PGresult *res,bool fetch_all,bool fetch_obje
     PGSQL_RES_SETPOS(0);
     GC * gc = GC_PTR;
     gc->add(args.This(), destroy_result);
-    return args.This();
+    args.GetReturnValue().Set(args.This());
   }
 
   /**
@@ -150,7 +150,7 @@ v8::Handle<v8::Array> fetch_any(pq::PGresult *res,bool fetch_all,bool fetch_obje
 	pq::PQclear(res);
 	PGSQL_RES_CLEAR;
     }
-    return args.This();
+    args.GetReturnValue().Set(args.This());
   }
 
   /**
@@ -172,10 +172,10 @@ v8::Handle<v8::Array> fetch_any(pq::PGresult *res,bool fetch_all,bool fetch_obje
       v8::Handle<v8::Function> connect = v8::Handle<v8::Function>::Cast(f);
       v8::Local<v8::Value> ret = connect->Call(args.This(), len, fargs);
       delete[] fargs;
-      return ret;
+      args.GetReturnValue().Set(ret);
     }
     else
-      return args.This();
+      args.GetReturnValue().Set(args.This());
   }
 
   /**
@@ -188,7 +188,7 @@ v8::Handle<v8::Array> fetch_any(pq::PGresult *res,bool fetch_all,bool fetch_obje
       pq::PQfinish(conn);
       SAVE_PTR(0, NULL);
     }
-    return args.This();
+    args.GetReturnValue().Set(args.This());
   }
 
   /**
@@ -196,8 +196,10 @@ v8::Handle<v8::Array> fetch_any(pq::PGresult *res,bool fetch_all,bool fetch_obje
    *	- call format: new PostgreSQL().connect("host", "user", "pass", "db")
    */ 
   JS_METHOD(_connect) {
-    if (args.Length() < 1 and args.Length() != 5)
-      return JS_TYPE_ERROR("Invalid call format. Use either 'pgsql.connect(\"hostaddr=host port=port dbname=dbname user=user password=pass\")' or 'pgsql.connect(host, port, db, user, password)'");
+    if (args.Length() < 1 and args.Length() != 5) {
+      JS_TYPE_ERROR("Invalid call format. Use either 'pgsql.connect(\"hostaddr=host port=port dbname=dbname user=user password=pass\")' or 'pgsql.connect(host, port, db, user, password)'");
+      return;
+    }
     uint32_t max = 4096;
     pq::PGconn * conn = NULL;
     char * tconnstr = new char[max];
@@ -251,7 +253,8 @@ v8::Handle<v8::Array> fetch_any(pq::PGresult *res,bool fetch_all,bool fetch_obje
       else {
 	v8::String::Utf8Value err(JS_STR("[js_pgsql.cc] ERROR: incorrect number of input parameters (%d)"));
 	delete[] tconnstr;
-	return JS_ERROR(*err);
+	JS_ERROR(*err);
+  return;
       }
     }
     else {
@@ -277,12 +280,13 @@ v8::Handle<v8::Array> fetch_any(pq::PGresult *res,bool fetch_all,bool fetch_obje
       char err[max];
       sprintf((char *)err,"%s (connstr: [%s])",ex.c_str(),tconnstr);
       delete[] tconnstr;
-      return JS_ERROR(err);
+      JS_ERROR(err);
+      return;
     }
     else {
       SAVE_PTR(0, conn);
       delete[] tconnstr;
-      return args.This();
+      args.GetReturnValue().Set(args.This());
     }
   }
 
@@ -300,7 +304,8 @@ JS_METHOD(_query) {
 	ASSERT_CONNECTED;
 	uint32_t len = args.Length();
 	if (len < 1) {
-		return JS_TYPE_ERROR("No query specified");
+		JS_TYPE_ERROR("No query specified");
+    return;
 	}
 	if (len > 1) {
 		v8::Handle<v8::Value> * fargs = new v8::Handle<v8::Value>[len];
@@ -311,7 +316,7 @@ JS_METHOD(_query) {
 		v8::Handle<v8::Function> queryParams = v8::Handle<v8::Function>::Cast(f);
 		v8::Local<v8::Value> ret = queryParams->Call(args.This(), len, fargs);
 		delete[] fargs;
-		return ret;
+		args.GetReturnValue().Set(ret);
 	}
 	v8::String::Utf8Value q(args[0]);
 	pq::PGresult *res;
@@ -329,13 +334,16 @@ JS_METHOD(_query) {
 		error += errTmp;
 		error += ")";
 		pq::PQclear(res);
-		return JS_ERROR(error.c_str());
+		JS_ERROR(error.c_str());
+    return;
 	}
 	int qc = args.This()->Get(JS_STR("queryCount"))->ToInteger()->Int32Value();
 	args.This()->Set(JS_STR("queryCount"), JS_INT(qc+1));
 	if (res) {
-		v8::Handle<v8::Value> resargs[] = { v8::External::New((void *) res) };
-		return rslt->GetFunction()->NewInstance(1, resargs);
+		v8::Handle<v8::Value> resargs[] = { v8::External::New(JS_ISOLATE, (void *) res) };
+        v8::Local<v8::FunctionTemplate> rslt = v8::Local<v8::FunctionTemplate>::New(JS_ISOLATE, _rslt);
+		args.GetReturnValue().Set(rslt->GetFunction()->NewInstance(1, resargs));
+        return;
 	} else {
 		 if (pq::PQntuples(res)) {
 			// pq::PQclear(res);
@@ -344,9 +352,10 @@ JS_METHOD(_query) {
 				pq::PQfinish(conn);
 				SAVE_PTR(0, NULL);
 			}
-			return JS_ERROR(ex.c_str());
+			JS_ERROR(ex.c_str());
+      return;
 		} else {
-			return args.This();
+			args.GetReturnValue().Set(args.This());
 		}
 	}
 }
@@ -363,10 +372,14 @@ JS_METHOD(_query) {
   JS_METHOD(_queryparams) {
     PGSQL_PTR_CON;
     ASSERT_CONNECTED;
-    if (args.Length() < 2)
-      return JS_TYPE_ERROR("Too few input parameters");
-    if (args.Length() > 2)
-      return JS_TYPE_ERROR("Too many input parameters");
+    if (args.Length() < 2) {
+      JS_TYPE_ERROR("Too few input parameters");
+      return;
+    }
+    if (args.Length() > 2) {
+      JS_TYPE_ERROR("Too many input parameters");
+      return;
+    }
     pq::PGresult *res;
     v8::String::Utf8Value q(args[0]);
     v8::Handle<v8::Array> tarray = v8::Handle<v8::Array>::Cast(args[1]->ToObject());
@@ -402,13 +415,16 @@ JS_METHOD(_query) {
 	pq::PQfinish(conn);
 	SAVE_PTR(0, NULL);
       }
-      return JS_ERROR(ex.c_str());
+      JS_ERROR(ex.c_str());
+      return;
     }
     int qc = args.This()->Get(JS_STR("queryCount"))->ToInteger()->Int32Value();
     args.This()->Set(JS_STR("queryCount"), JS_INT(qc+1));
     if (res) {
-      v8::Handle<v8::Value> resargs[] = { v8::External::New((void *) res) };
-      return rslt->GetFunction()->NewInstance(1, resargs);
+      v8::Handle<v8::Value> resargs[] = { v8::External::New(JS_ISOLATE, (void *) res) };
+      v8::Local<v8::FunctionTemplate> rslt = v8::Local<v8::FunctionTemplate>::New(JS_ISOLATE, _rslt);
+      args.GetReturnValue().Set(rslt->GetFunction()->NewInstance(1, resargs));
+      return;
     }
     else
       if (pq::PQntuples(res)) {
@@ -417,10 +433,11 @@ JS_METHOD(_query) {
 	  pq::PQfinish(conn);
 	  SAVE_PTR(0, NULL);
 	}
-	return JS_ERROR(ex.c_str());
+	JS_ERROR(ex.c_str());
+  return;
       }
       else
-	return args.This();
+	args.GetReturnValue().Set(args.This());
   }
 
   /**
@@ -435,24 +452,32 @@ JS_METHOD(_query) {
     ASSERT_CONNECTED;
     v8::String::Utf8Value q(args[0]);
     int sock = pq::PQsocket(conn);
-    if (sock < 0)
-      return JS_ERROR("SOCKET ERROR");
+    if (sock < 0) {
+      JS_ERROR("SOCKET ERROR");
+      return;
+    }
     fd_set write_mask;
     FD_ZERO(&write_mask);
     FD_SET(sock, &write_mask);
     int code = 0;
     int flush = pq::PQflush(conn);
     while (code < 1) {
-      if (flush < 0)
-	return JS_ERROR("[js_pgsql.cc @ _sendquery()] ERROR: pq::PQflush() returned an error code");
-      else
-	while (flush > 0)
-	  if ( select(sock + 1, NULL, &write_mask, NULL, NULL) == -1 )
-	    return JS_ERROR("SOCKET ERROR");
-	  else
-	    flush = pq::PQflush(conn);
-      if (flush < 0)
-	return JS_ERROR("[js_pgsql.cc @ _sendquery()] ERROR: pq::PQflush() returned an error code");
+      if (flush < 0) {
+        JS_ERROR("[js_pgsql.cc @ _sendquery()] ERROR: pq::PQflush() returned an error code");
+        return;
+      } else {
+        while (flush > 0)
+          if (select(sock + 1, NULL, &write_mask, NULL, NULL) == -1) {
+            JS_ERROR("SOCKET ERROR");
+            return;
+          } else {
+            flush = pq::PQflush(conn);
+          }
+      }
+      if (flush < 0) {
+      	JS_ERROR("[js_pgsql.cc @ _sendquery()] ERROR: pq::PQflush() returned an error code");
+        return;
+      }
       code = pq::PQsendQuery(conn, *q);
       flush = pq::PQflush(conn);
       if (code < 0) {
@@ -462,12 +487,13 @@ JS_METHOD(_query) {
 	msg << ") ";
 	msg << PGSQL_ERROR;
 	std::string err(msg.str());
-	return JS_ERROR(err.c_str());
+	JS_ERROR(err.c_str());
+  return;
       }
     }
     int qc = args.This()->Get(JS_STR("queryCount"))->ToInteger()->Int32Value();
     args.This()->Set(JS_STR("queryCount"), JS_INT(qc+1));
-    return JS_BOOL(code);
+    args.GetReturnValue().Set(code);
   }
 
   /**
@@ -480,10 +506,14 @@ JS_METHOD(_query) {
   JS_METHOD(_sendqueryparams) {
     PGSQL_PTR_CON;
     ASSERT_CONNECTED;
-    if (args.Length() < 1)
-      return JS_TYPE_ERROR("[js_pgsql.cc @ _sendqueryparams()] ERROR: No query specified");
-    if (args.Length() > 1)
-      return JS_TYPE_ERROR("[js_pgsql.cc @ _sendqueryparams()] ERROR: Too many input parameters");
+    if (args.Length() < 1) {
+      JS_TYPE_ERROR("[js_pgsql.cc @ _sendqueryparams()] ERROR: No query specified");
+      return;
+    }
+    if (args.Length() > 1) {
+      JS_TYPE_ERROR("[js_pgsql.cc @ _sendqueryparams()] ERROR: Too many input parameters");
+      return;
+    }
     v8::String::Utf8Value q(args[0]);
     v8::Handle<v8::Array> tarray = v8::Handle<v8::Array>::Cast(args[1]->ToObject());
     v8::Handle<v8::Object> parray = args[1]->ToObject();
@@ -497,24 +527,33 @@ JS_METHOD(_query) {
 	params[i] = strdup(*tval);
     }
     int sock = pq::PQsocket(conn);
-    if (sock < 0)
-      return JS_ERROR("SOCKET ERROR");
+    if (sock < 0) {
+      JS_ERROR("SOCKET ERROR");
+      return;
+    }
     fd_set write_mask;
     FD_ZERO(&write_mask);
     FD_SET(sock, &write_mask);
     int code = 0;
     int flush = pq::PQflush(conn);
     while (code < 1) {
-      if (flush < 0)
-	return JS_ERROR("[js_pgsql.cc @ _sendqueryparams()] ERROR: pq::PQflush() returned an error code");
-      else
-	while (flush > 0)
-	  if ( select(sock + 1, NULL, &write_mask, NULL, NULL) == -1 )
-	    return JS_ERROR("SOCKET ERROR");
-	  else
-	    flush = pq::PQflush(conn);
-      if (flush < 0)
-	return JS_ERROR("[js_pgsql.cc @ _sendqueryparams()] ERROR: pq::PQflush() returned an error code");
+      if (flush < 0) {
+        JS_ERROR("[js_pgsql.cc @ _sendqueryparams()] ERROR: pq::PQflush() returned an error code");
+        return;
+      } else {
+        while (flush > 0) {
+          if (select(sock + 1, NULL, &write_mask, NULL, NULL) == -1) {
+            JS_ERROR("SOCKET ERROR");
+            return;
+          } else {
+            flush = pq::PQflush(conn);
+          }
+        }
+      }
+      if (flush < 0) {
+	      JS_ERROR("[js_pgsql.cc @ _sendqueryparams()] ERROR: pq::PQflush() returned an error code");
+        return;
+      }
       code = pq::PQsendQueryParams(conn, *q, nparams, NULL, params, NULL, NULL, 0);
       flush = pq::PQflush(conn);
       if (code < 0) {
@@ -524,17 +563,18 @@ JS_METHOD(_query) {
 	msg << ") ";
 	msg << PGSQL_ERROR;
 	std::string err(msg.str());
-	return JS_ERROR(err.c_str());
+	JS_ERROR(err.c_str());
+  return;
       }
     }
     int qc = args.This()->Get(JS_STR("queryCount"))->ToInteger()->Int32Value();
     args.This()->Set(JS_STR("queryCount"), JS_INT(qc+1));
-    return JS_BOOL(code);
+    args.GetReturnValue().Set(code);
   }
   JS_METHOD(_isconnected) {
     PGSQL_PTR_CON;
  //   ASSERT_CONNECTED;
-    return JS_BOOL(conn);
+    args.GetReturnValue().Set(JS_BOOL(conn));
   }
 
   /**
@@ -544,7 +584,7 @@ JS_METHOD(_query) {
   JS_METHOD(_isbusy) {
     PGSQL_PTR_CON;
     ASSERT_CONNECTED;
-    return JS_BOOL(pq::PQisBusy(conn));
+    args.GetReturnValue().Set(pq::PQisBusy(conn));
   }
 
   /**
@@ -555,7 +595,7 @@ JS_METHOD(_query) {
   JS_METHOD(_socket) {
     PGSQL_PTR_CON;
     ASSERT_CONNECTED;
-    return JS_INT(pq::PQsocket(conn));
+    args.GetReturnValue().Set(pq::PQsocket(conn));
   }
 
   /**
@@ -570,80 +610,87 @@ JS_METHOD(_query) {
     pq::PGcancel * pg_cancel = pq::PQgetCancel(conn);
     v8::Local<v8::Value> ret = JS_INT(pq::PQcancel(pg_cancel,ebuf,sizeof(ebuf)));
     pq::PQfreeCancel(pg_cancel);
-    if (*ret < 0)
-      return JS_ERROR("ERROR: Cancel failed");
-    else
-      return ret;
+    if (*ret < 0) {
+      JS_ERROR("ERROR: Cancel failed");
+      return;
+    }
+    args.GetReturnValue().Set(ret);
   }
 
   JS_METHOD(_escape) {
     PGSQL_PTR_CON;
     ASSERT_CONNECTED;
-    if (args.Length() < 1)
-      return JS_TYPE_ERROR("Nothing to escape");
+    if (args.Length() < 1) {
+      JS_TYPE_ERROR("Nothing to escape");
+      return;
+    }
     v8::String::Utf8Value str(args[0]);
     int len = args[0]->ToString()->Utf8Length();
     char * result = new char[2*len + 1];
     int length = pq::PQescapeStringConn(conn, result, *str, len, NULL);
-    v8::Handle<v8::Value> output = JS_STR(result, length);
+    v8::Handle<v8::Value> output = JS_STR_LEN(result, length);
     delete[] result;
-    return output;
+    args.GetReturnValue().Set(output);
   }
 
   JS_METHOD(_escapebytea) {
     PGSQL_PTR_CON;
     ASSERT_CONNECTED;
-    if (args.Length() < 1)
-      return JS_TYPE_ERROR("Nothing to escape");
+    if (args.Length() < 1) {
+      JS_TYPE_ERROR("Nothing to escape");
+      return;
+    }
     v8::String::Utf8Value str(args[0]);
     int len = args[0]->ToString()->Utf8Length();
     size_t * length = NULL;
     char * result = (char *)pq::PQescapeByteaConn(conn, (const unsigned char *)*str, len, length);
-    v8::Handle<v8::Value> output = JS_STR(result, *length);
+    v8::Handle<v8::Value> output = JS_STR_LEN(result, *length);
     delete[] result;
-    return output;
+    args.GetReturnValue().Set(output);
   }
 
   JS_METHOD(_unescapebytea) {
     PGSQL_PTR_CON;
     ASSERT_CONNECTED;
-    if (args.Length() < 1)
-      return JS_TYPE_ERROR("Nothing to escape");
+    if (args.Length() < 1) {
+      JS_TYPE_ERROR("Nothing to escape");
+      return;
+    }
     v8::String::Utf8Value str(args[0]);
     size_t * length = NULL;
     char * result = (char *)pq::PQunescapeBytea((const unsigned char *)*str, length);
-    v8::Handle<v8::Value> output = JS_STR(result, *length);
+    v8::Handle<v8::Value> output = JS_STR_LEN(result, *length);
     delete[] result;
-    return output;
+    args.GetReturnValue().Set(output);
   }
 
   JS_METHOD(_numrows) {
     // PGresult * res = LOAD_PTR(0, PGresult *);
     PGSQL_RES_LOAD(res);
     ASSERT_RESULT;
-    return JS_INT(pq::PQntuples(res));
+    args.GetReturnValue().Set(pq::PQntuples(res));
   }
 
   JS_METHOD(_numfields) {
     PGSQL_RES_LOAD(res);
     ASSERT_RESULT;
-    return JS_INT(pq::PQnfields(res));
+    args.GetReturnValue().Set(pq::PQnfields(res));
   }
 
   JS_METHOD(_numaffectedrows) {
     PGSQL_RES_LOAD(res);
     ASSERT_RESULT;
-    return JS_INT(atoi(pq::PQcmdTuples(res)));
+    args.GetReturnValue().Set(atoi(pq::PQcmdTuples(res)));
   }
 
   JS_METHOD(_fetchnames) {
     PGSQL_RES_LOAD(res);
     ASSERT_RESULT;
     int cnt = pq::PQnfields(res);
-    v8::Handle<v8::Array> result = v8::Array::New(cnt);
+    v8::Handle<v8::Array> result = v8::Array::New(JS_ISOLATE, cnt);
     for(int i = 0; i < cnt; i++)
       result->Set(JS_INT(i), JS_STR(pq::PQfname(res, i)));
-    return result;
+    args.GetReturnValue().Set(result);
   }
 
   /**
@@ -658,11 +705,15 @@ JS_METHOD(_query) {
     v8::String::Utf8Value b(args[1]);
     int i = atoi(*a);
     int j = atoi(*b);
-    if (i > x || i < 0)
-      return JS_TYPE_ERROR("Row number out of bounds");
-    if (j > y || j < 0)
-      return JS_TYPE_ERROR("Column number out of bounds");
-    return JS_STR(pq::PQgetvalue(res,i,j));
+    if (i > x || i < 0) {
+      JS_TYPE_ERROR("Row number out of bounds");
+      return;
+    }
+    if (j > y || j < 0) {
+      JS_TYPE_ERROR("Column number out of bounds");
+      return;
+    }
+    args.GetReturnValue().Set(JS_STR(pq::PQgetvalue(res,i,j)));
   }
 
   /**
@@ -677,11 +728,15 @@ JS_METHOD(_query) {
     v8::String::Utf8Value b(args[1]);
     int i = atoi(*a);
     int j = pq::PQfnumber(res,*b);
-    if (i > x || i < 0)
-      return JS_TYPE_ERROR("Row number out of bounds");
-    if (j > y || j < 0)
-      return JS_TYPE_ERROR("Column name does not exist");
-    return JS_STR(pq::PQgetvalue(res,i,j));
+    if (i > x || i < 0) {
+      JS_TYPE_ERROR("Row number out of bounds");
+      return;
+    }
+    if (j > y || j < 0) {
+      JS_TYPE_ERROR("Column name does not exist");
+      return;
+    }
+    args.GetReturnValue().Set(JS_STR(pq::PQgetvalue(res,i,j)));
   }
 
   /**
@@ -703,7 +758,7 @@ JS_METHOD(_query) {
 	  item->Set(JS_INT(j), JS_STR(pq::PQgetvalue(res, i, j)));
     }
     return result;*/
-	return fetch_any(res,true,false);
+    args.GetReturnValue().Set(fetch_any(res,true,false));
   }
 
   /**
@@ -718,7 +773,7 @@ JS_METHOD(_query) {
 		i = atoi(*a);
     }
 	v8::Handle<v8::Array> item = fetch_any(res,i?true:false,false);
-	return item->Get(JS_INT(i));
+    args.GetReturnValue().Set(item->Get(JS_INT(i)));
   }
 
   /**
@@ -728,7 +783,7 @@ JS_METHOD(_query) {
   JS_METHOD(_fetchallobjects) {
     PGSQL_RES_LOAD(res);
     ASSERT_RESULT;
-	return fetch_any(res,true,true);
+    args.GetReturnValue().Set(fetch_any(res,true,true));
   }
 
   /**
@@ -744,13 +799,13 @@ JS_METHOD(_query) {
 		i = atoi(*a);
 	}
 	v8::Handle<v8::Array> item = fetch_any(res,i?true:false,false);
-	return item->Get(JS_INT(i));
+    args.GetReturnValue().Set(item->Get(JS_INT(i)));
   }
 
   JS_METHOD(_reset) {
-	v8::HandleScope scope;
+	v8::HandleScope scope(JS_ISOLATE);
 	PGSQL_RES_SETPOS(0);
-	return JS_BOOL(TRUE);
+    args.GetReturnValue().Set(JS_BOOL(TRUE));
   }
 
 JS_METHOD(_execute) {
@@ -777,16 +832,19 @@ JS_METHOD(_execute) {
 		msg << PGSQL_ERROR;
 		std::string err(msg.str());
 		pq::PQclear(res);
-		return JS_ERROR(err.c_str());
+		JS_ERROR(err.c_str());
+    return;
 	}
 	if (!res) {
 		std::stringstream msg;
 		msg << "[js_pgsql.cc @ _execute()] ERROR: null result";
 		std::string err(msg.str());
-		return JS_ERROR(err.c_str());
+		JS_ERROR(err.c_str());
+    return;
 	} else {
-		v8::Handle<v8::Value> resargs[] = { v8::External::New((void *) res) };
-		return rslt->GetFunction()->NewInstance(1, resargs);
+		v8::Handle<v8::Value> resargs[] = { v8::External::New(JS_ISOLATE, (void *) res) };
+        v8::Local<v8::FunctionTemplate> rslt = v8::Local<v8::FunctionTemplate>::New(JS_ISOLATE, _rslt);
+        args.GetReturnValue().Set(rslt->GetFunction()->NewInstance(1, resargs));
 	}
 }
 
@@ -804,39 +862,49 @@ JS_METHOD(_execute) {
 	q[i] = strdup(*tval);
     }    
     int sock = pq::PQsocket(conn);
-    if (sock < 0)
-      return JS_ERROR("SOCKET ERROR");
+    if (sock < 0) {
+      JS_ERROR("SOCKET ERROR");
+      return;
+    }
     fd_set write_mask;
     FD_ZERO(&write_mask);
     FD_SET(sock, &write_mask);
     int code = 0;
     int flush = pq::PQflush(conn);
     while (code < 1) {
-      if (flush < 0)
-	return JS_ERROR("[js_pgsql.cc @ _sendexecute()] ERROR: pq::PQflush() returned an error code");
-      else
-	while (flush > 0)
-	  if ( select(sock + 1, NULL, &write_mask, NULL, NULL) == -1 )
-	    return JS_ERROR("SOCKET ERROR");
-	  else
-	    flush = pq::PQflush(conn);
-      if (flush < 0)
-	return JS_ERROR("[js_pgsql.cc @ _sendexecute()] ERROR: pq::PQflush() returned an error code");
+      if (flush < 0) {
+        JS_ERROR("[js_pgsql.cc @ _sendexecute()] ERROR: pq::PQflush() returned an error code");
+        return;
+      } else {
+        while (flush > 0) {
+          if (select(sock + 1, NULL, &write_mask, NULL, NULL) == -1) {
+            JS_ERROR("SOCKET ERROR");
+            return;
+          } else {
+            flush = pq::PQflush(conn);
+          }
+        }
+      }
+      if (flush < 0) {
+        JS_ERROR("[js_pgsql.cc @ _sendexecute()] ERROR: pq::PQflush() returned an error code");
+        return;
+      }
       code = pq::PQsendQueryPrepared(conn, *n, len, (const char* const*)q, NULL, NULL, 0);
       flush = pq::PQflush(conn);
       if (code < 0) {
-	std::stringstream msg("");
-	msg << "[js_pgsql.cc @ _sendexecute()] ERROR: (";
-	msg << code;
-	msg << ") ";
-	msg << PGSQL_ERROR;
-	std::string err(msg.str());
-	return JS_ERROR(err.c_str());
+      	std::stringstream msg("");
+      	msg << "[js_pgsql.cc @ _sendexecute()] ERROR: (";
+      	msg << code;
+      	msg << ") ";
+      	msg << PGSQL_ERROR;
+      	std::string err(msg.str());
+      	JS_ERROR(err.c_str());
+        return;
       }
     }
     int qc = args.This()->Get(JS_STR("queryCount"))->ToInteger()->Int32Value();
     args.This()->Set(JS_STR("queryCount"), JS_INT(qc+1));
-    return JS_BOOL(code);
+    args.GetReturnValue().Set(JS_BOOL(code));
   }
 
   JS_METHOD(_prepare) {
@@ -856,17 +924,19 @@ JS_METHOD(_execute) {
       msg << PGSQL_ERROR;
       std::string err(msg.str());
       pq::PQclear(res);
-      return JS_ERROR(err.c_str());
+      JS_ERROR(err.c_str());
+      return;
     }
     if (!res) {
       std::stringstream msg;
       msg << "[js_pgsql.cc @ _prepare()] ERROR: null result";
       std::string err(msg.str());
-      return JS_ERROR(err.c_str());
-    }
-    else {
-      v8::Handle<v8::Value> resargs[] = { v8::External::New((void *) res) };
-      return rslt->GetFunction()->NewInstance(1, resargs);
+      JS_ERROR(err.c_str());
+      return;
+    } else {
+      v8::Handle<v8::Value> resargs[] = { v8::External::New(JS_ISOLATE, (void *) res) };
+      v8::Local<v8::FunctionTemplate> rslt = v8::Local<v8::FunctionTemplate>::New(JS_ISOLATE, _rslt);
+      args.GetReturnValue().Set(rslt->GetFunction()->NewInstance(1, resargs));
     }
   }
 
@@ -888,15 +958,17 @@ JS_METHOD(_execute) {
       msg << PGSQL_ERROR;
       std::string err(msg.str());
       pq::PQclear(res);
-      return JS_ERROR(err.c_str());
+      JS_ERROR(err.c_str());
+      return;
     }
     if (!res) {
       std::stringstream err("[js_pgsql.cc @ _deallocate()] ERROR: null result");
-      return JS_ERROR(err.str().c_str());
-    }
-    else {
-      v8::Handle<v8::Value> resargs[] = { v8::External::New((void *) res) };
-      return rslt->GetFunction()->NewInstance(1, resargs);
+      JS_ERROR(err.str().c_str());
+      return;
+    } else {
+      v8::Handle<v8::Value> resargs[] = { v8::External::New(JS_ISOLATE, (void *) res) };
+      v8::Local<v8::FunctionTemplate> rslt = v8::Local<v8::FunctionTemplate>::New(JS_ISOLATE, _rslt);
+      args.GetReturnValue().Set(rslt->GetFunction()->NewInstance(1, resargs));
     }
   }
 
@@ -906,39 +978,48 @@ JS_METHOD(_execute) {
     v8::String::Utf8Value n(args[0]);
     v8::String::Utf8Value q(args[1]);
     int sock = pq::PQsocket(conn);
-    if (sock < 0)
-      return JS_ERROR("SOCKET ERROR");
+    if (sock < 0) {
+      JS_ERROR("SOCKET ERROR");
+      return;
+    }
     fd_set write_mask;
     FD_ZERO(&write_mask);
     FD_SET(sock, &write_mask);
     int code = 0;
     int flush = pq::PQflush(conn);
     while (code < 1) {
-      if (flush < 0)
-	return JS_ERROR("[js_pgsql.cc @ _sendprepare()] ERROR: pq::PQflush() returned an error code");
-      else
-	while (flush > 0)
-	  if ( select(sock + 1, NULL, &write_mask, NULL, NULL) == -1 )
-	    return JS_ERROR("SOCKET ERROR");
-	  else
-	    flush = pq::PQflush(conn);
-      if (flush < 0)
-	return JS_ERROR("[js_pgsql.cc @ _sendprepare()] ERROR: pq::PQflush() returned an error code");
+      if (flush < 0) {
+        JS_ERROR("[js_pgsql.cc @ _sendprepare()] ERROR: pq::PQflush() returned an error code");
+        return;
+      } else {
+        while (flush > 0)
+          if (select(sock + 1, NULL, &write_mask, NULL, NULL) == -1) {
+            JS_ERROR("SOCKET ERROR");
+            return;
+          } else {
+            flush = pq::PQflush(conn);
+          }
+      }
+      if (flush < 0) {
+      	JS_ERROR("[js_pgsql.cc @ _sendprepare()] ERROR: pq::PQflush() returned an error code");
+        return;
+      }
       code = pq::PQsendPrepare(conn, *n, *q, 0, NULL);
       flush = pq::PQflush(conn);
       if (code < 0) {
-	std::stringstream msg("");
-	msg << "[js_pgsql.cc @ _sendprepare()] ERROR: (";
-	msg << code;
-	msg << ") ";
-	msg << PGSQL_ERROR;
-	std::string err(msg.str());
-	return JS_ERROR(err.c_str());
+      	std::stringstream msg("");
+      	msg << "[js_pgsql.cc @ _sendprepare()] ERROR: (";
+      	msg << code;
+      	msg << ") ";
+      	msg << PGSQL_ERROR;
+      	std::string err(msg.str());
+      	JS_ERROR(err.c_str());
+        return;
       }
     }
     int qc = args.This()->Get(JS_STR("queryCount"))->ToInteger()->Int32Value();
     args.This()->Set(JS_STR("queryCount"), JS_INT(qc+1));
-    return JS_BOOL(code);
+    args.GetReturnValue().Set(code);
   }
 
   JS_METHOD(_senddeallocate) {
@@ -949,52 +1030,55 @@ JS_METHOD(_execute) {
     int ret = pq::PQsendQuery(conn, q.str().c_str());
     if (!ret) {
       if (pq::PQstatus(conn) != pq::CONNECTION_OK)
-	pq::PQreset(conn);
+	      pq::PQreset(conn);
       ret = pq::PQsendQuery(conn, q.str().c_str());
-      if (!ret)
-	return JS_ERROR("[js_pgsql.cc @ _senddeallocate()] ERROR: pq::PQsendQuery failed");
+      if (!ret) {
+	      JS_ERROR("[js_pgsql.cc @ _senddeallocate()] ERROR: pq::PQsendQuery failed");
+      }
     }
-    return JS_BOOL(ret);
+    args.GetReturnValue().Set(ret);
   }
 
   // * * *
   // * * *	Miscellaneous
   // * * *
 
-  v8::Handle<v8::Value> get_client_encoding_id(v8::Local<v8::String> name, const v8::AccessorInfo& args) {
-	v8::HandleScope scope;
+  void get_client_encoding_id(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &args) {
+	v8::HandleScope scope(JS_ISOLATE);
 	PGSQL_PTR_CON;
 	ASSERT_CONNECTED;
-	return JS_INT(pq::PQclientEncoding(conn));
+    args.GetReturnValue().Set(pq::PQclientEncoding(conn));
   }
 
-  void set_client_encoding_id(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::AccessorInfo& args) {
-	v8::HandleScope scope;
+  void set_client_encoding_id(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<void> &args) {
+	v8::HandleScope scope(JS_ISOLATE);
 	PGSQL_PTR_CON;
 	if (!conn)
-	  return (void)v8::ThrowException(JS_STR("[js_pgsql.cc @ set_client_encoding()] ERROR: null connection"));
+      JS_ERROR("[js_pgsql.cc @ set_client_encoding()] ERROR: null connection");
 	else
-	  return (void)pq::PQsetClientEncoding(conn,*v8::String::Utf8Value(value->ToString()));
+	  pq::PQsetClientEncoding(conn,*v8::String::Utf8Value(value->ToString()));
   }
 
-  v8::Handle<v8::Value> get_client_encoding(v8::Local<v8::String> name, const v8::AccessorInfo& args) {
+  void get_client_encoding(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &args) {
 	PGSQL_PTR_CON;
 	ASSERT_CONNECTED;
-	return JS_STR(pq::pg_encoding_to_char(pq::PQclientEncoding(conn)));
+    args.GetReturnValue().Set(JS_STR(pq::pg_encoding_to_char(pq::PQclientEncoding(conn))));
   }
 
-  void set_error_verbosity(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::AccessorInfo& args) {
-	v8::HandleScope scope;
+  void set_error_verbosity(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<void> &args) {
+	v8::HandleScope scope(JS_ISOLATE);
 	PGSQL_PTR_CON;
-	if (!conn)
-	  return (void)v8::ThrowException(JS_STR("[js_pgsql.cc @ set_error_verbosity()] ERROR: null connection"));
+	if (!conn) {
+    JS_ERROR("[js_pgsql.cc @ set_error_verbosity()] ERROR: null connection");
+    return;
+  }
 	pq::PGVerbosity v = pq::PQERRORS_DEFAULT;
 	std::stringstream inv("");
 	inv << *v8::String::Utf8Value(value->ToString());
 	if (inv.str().compare("terse") || inv.str().compare("TERSE")) { v = pq::PQERRORS_TERSE; }
 	else if (inv.str().compare("default") || inv.str().compare("DEFAULT")) { v = pq::PQERRORS_DEFAULT; }
 	else if (inv.str().compare("verbose") || inv.str().compare("VERBOSE")) { v = pq::PQERRORS_VERBOSE; }
-	return (void)pq::PQsetErrorVerbosity(conn,v);
+	pq::PQsetErrorVerbosity(conn,v);
   }
 
   // * * *
@@ -1009,12 +1093,12 @@ JS_METHOD(_execute) {
   };
 
   void * async_cb_routine(void * inv) {
-    v8::Locker tlock;
-    v8::HandleScope scope;
-    v8::Context::Scope context_scope(v8::Context::New());
-    tlock.StartPreemption(100);
+    v8::Locker tlock(JS_ISOLATE);
+    v8::HandleScope scope(JS_ISOLATE);
+    v8::Context::Scope context_scope(v8::Context::New(JS_ISOLATE));
+    //tlock.StartPreemption(100);
     v8::TryCatch try_catch;
-    v8::Local<v8::Object> global = v8::Context::GetCurrent()->Global();
+    v8::Local<v8::Object> global = JS_ISOLATE->GetCurrentContext()->Global();
     pt_arg_t * args = (pt_arg_t *)inv;
     pq::PGconn * conn = args->conn;
     pq::PGresult * res = args->res;
@@ -1060,7 +1144,7 @@ JS_METHOD(_execute) {
   }
 
   JS_METHOD(_asyncquery) {
-    v8::HandleScope scope;
+    v8::HandleScope scope(JS_ISOLATE);
     v8::TryCatch try_catch;
     PGSQL_PTR_CON;
     ASSERT_CONNECTED;
@@ -1163,26 +1247,32 @@ JS_METHOD(_execute) {
 	pthread_t * tmon = &tmon_main;
 	// v8::TryCatch try_catch;
 	{
-	  v8::Unlocker unlock;
+	  v8::Unlocker unlock(JS_ISOLATE);
 	  int pt_id = pthread_create(
 	    (pthread_t *)cb_thread,
 	    (const pthread_attr_t *)NULL,
 	    (void *(*)(void *))async_cb_routine,
 	    (void *)cb_thread_args
 	    );
-	  if (pt_id < 0)
-	    return JS_ERROR("[js_pgsql.cc @ _asyncquery()] ERROR 1: \"pthread_create()\" returned an error code");
+	  if (pt_id < 0) {
+	    JS_ERROR("[js_pgsql.cc @ _asyncquery()] ERROR 1: \"pthread_create()\" returned an error code");
+      return;
+    }
 	  pt_id = pthread_create(
 	    (pthread_t *)tmon,
 	    (const pthread_attr_t *)NULL,
 	    (void *(*)(void *))reaper,
 	    (void *)cb_thread
 	    );
-	  if (pt_id < 0)
-	    return JS_ERROR("[js_pgsql.cc @ _asyncquery()] ERROR 2: \"pthread_create()\" returned an error code");
+	  if (pt_id < 0) {
+	    JS_ERROR("[js_pgsql.cc @ _asyncquery()] ERROR 2: \"pthread_create()\" returned an error code");
+      return;
+    }
 	  int pt_code=pthread_join(cb_thread_main, (void **) (&status) );
-	  if (pt_code < 0)
-	    return JS_ERROR("[js_pgsql.cc @ _asyncquery()] ERROR 3: \"pthread_join()\" returned an error code");
+	  if (pt_code < 0) {
+	    JS_ERROR("[js_pgsql.cc @ _asyncquery()] ERROR 3: \"pthread_join()\" returned an error code");
+      return;
+    }
 	  unlock.~Unlocker();
 	}
 	// 	***	wait for thread		***
@@ -1192,7 +1282,7 @@ JS_METHOD(_execute) {
 //	else
 //	  ret = cb_thread_args->ret;
     }
-    return ret;
+    args.GetReturnValue().Set(ret);
   }
 
 
@@ -1202,7 +1292,7 @@ JS_METHOD(_execute) {
 
 
   JS_METHOD(_asyncqueryold) {
-    v8::HandleScope scope;
+    v8::HandleScope scope(JS_ISOLATE);
     v8::TryCatch try_catch;
     PGSQL_PTR_CON;
     ASSERT_CONNECTED;
@@ -1257,12 +1347,14 @@ JS_METHOD(_execute) {
 	cbargs = v8::Handle<v8::Array>::Cast(inv->Get(JS_STR("callbackParams")));
     }
     int sock = pq::PQsocket(conn);
-    if (sock < 0)
-      return JS_ERROR("SOCKET ERROR");
+    if (sock < 0) {
+      JS_ERROR("SOCKET ERROR");
+      return;
+    }
     fd_set input_mask;
     FD_ZERO(&input_mask);
     FD_SET(sock, &input_mask);
-    v8::Handle<v8::Value> ret(NULL);
+    v8::Handle<v8::Value> ret;
     pq::PGresult * res = NULL;
     int code = -1;
     if (pquery==1) {
@@ -1294,10 +1386,11 @@ JS_METHOD(_execute) {
 	  res = pq::PQgetResult(conn);
 	}
     if (pq::PQresultStatus(res)==pq::PGRES_TUPLES_OK) {
-	v8::Handle<v8::Value> resargs[] = { v8::External::New((void *) res) };
+    v8::Handle<v8::Value> resargs[] = { v8::External::New(JS_ISOLATE, (void *) res) };
+    v8::Local<v8::FunctionTemplate> rslt = v8::Local<v8::FunctionTemplate>::New(JS_ISOLATE, _rslt);
 	v8::Handle<v8::Value> res_obj( rslt->GetFunction()->NewInstance(1, resargs) );
 	v8::Handle<v8::Value> fargs[] = { res_obj };
-	v8::Local<v8::Object> global = v8::Context::GetCurrent()->Global();
+	v8::Local<v8::Object> global = JS_GLOBAL;
 	v8::Handle<v8::Value> cbresult;
 	if (callback->IsFunction()) {
 	  v8::TryCatch try_catch;
@@ -1312,9 +1405,10 @@ JS_METHOD(_execute) {
 	ret = cbresult;
     }
     else {
-      ret = JS_ERROR(std::string("[js_pgsql.cc @ _asyncquery()] ERROR: " + std::string(PGSQL_ERROR)).c_str());
+      JS_ERROR(std::string("[js_pgsql.cc @ _asyncquery()] ERROR: " + std::string(PGSQL_ERROR)).c_str());
+      return;
     }
-    return ret;
+    args.GetReturnValue().Set(ret);
   }
 
 
@@ -1325,82 +1419,79 @@ JS_METHOD(_execute) {
 	 ***********************************************************/
 
   v8::Local<v8::String> v8_str(const char* x) {
-    return v8::String::New(x);
+    return v8::String::NewFromUtf8(JS_ISOLATE, x);
   }
 
-  v8::Handle<v8::Value> handle_busy(v8::Local<v8::String> name, const v8::AccessorInfo& args) {
+  void handle_busy(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &args) {
 	v8::Handle<v8::Value> fargs[] = { };
 	v8::Handle<v8::Value> f = args.This()->Get(JS_STR("isBusy"));
 	v8::Handle<v8::Function> isBusy = v8::Handle<v8::Function>::Cast(f);
-	return isBusy->Call(args.This(), 0, fargs);
+	args.GetReturnValue().Set(isBusy->Call(args.This(), 0, fargs));
   }
 
-  v8::Handle<v8::Value> handle_connected(v8::Local<v8::String> name, const v8::AccessorInfo& args) {
+  void handle_connected(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &args) {
 	int tmp = -1;
 	{
-	  v8::HandleScope scope;
+	  v8::HandleScope scope(JS_ISOLATE);
 	  v8::Handle<v8::Value> fargs[] = { };
 	  v8::Handle<v8::Value> f = args.This()->Get(JS_STR("socket"));
 	  v8::Handle<v8::Function> socket = v8::Handle<v8::Function>::Cast(f);
 	  v8::Handle<v8::Value> ret = socket->Call(args.This(), sizeof(fargs), fargs);
 	  tmp = ret->ToInteger()->IntegerValue();
-	  scope.~HandleScope();
 	}
 	if (tmp < 0)
-	  return JS_BOOL(FALSE);
+	  args.GetReturnValue().Set(FALSE);
 	else
-	  return JS_BOOL(TRUE);
+	  args.GetReturnValue().Set(TRUE);
   }
 
-  v8::Handle<v8::Value> handle_socket(v8::Local<v8::String> name, const v8::AccessorInfo& args) {
+  void handle_socket(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &args) {
 	v8::Handle<v8::Value> ret;
 	{
-	  v8::HandleScope scope;
+	  v8::HandleScope scope(JS_ISOLATE);
 	  v8::Handle<v8::Value> fargs[] = { };
 	  v8::Handle<v8::Value> f = args.This()->Get(JS_STR("socket"));
 	  v8::Handle<v8::Function> socket = v8::Handle<v8::Function>::Cast(f);
 	  ret = socket->Call(args.This(), 0, fargs);
-	  scope.~HandleScope();
 	}
 	if (ret == JS_INT(-1))
 	  ret = JS_BOOL(FALSE);
-	return ret;
+	args.GetReturnValue().Set(ret);
   }
 
-  v8::Handle<v8::Value> get_nonblocking(v8::Local<v8::String> name, const v8::AccessorInfo& args) {
+  void get_nonblocking(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &args) {
 	v8::Handle<v8::Value> ret = JS_BOOL(FALSE);
 	{
-	  v8::HandleScope scope;
+	  v8::HandleScope scope(JS_ISOLATE);
 	  PGSQL_PTR_CON;
 	  ASSERT_CONNECTED;
 	  ret = JS_BOOL(pq::PQisnonblocking(conn));
-	  scope.~HandleScope();
 	}
-	return ret;
+	args.GetReturnValue().Set(ret);
   }
 
-  void set_nonblocking(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::AccessorInfo& args) {
-	v8::HandleScope scope;
+  void set_nonblocking(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<void> &args) {
+	v8::HandleScope scope(JS_ISOLATE);
 	PGSQL_PTR_CON;
 	if (!conn)
-	  return (void)v8::ThrowException(JS_STR("[js_pgsql.cc @ set_nonblocking()] ERROR: null connection"));
+	  JS_ERROR("[js_pgsql.cc @ set_nonblocking()] ERROR: null connection");
 	else
-	  return (void)pq::PQsetnonblocking(conn,value->ToInt32()->Int32Value());
+	  pq::PQsetnonblocking(conn,value->ToInt32()->Int32Value());
   }
 
-  v8::Handle<v8::Value> rslt_error(v8::Local<v8::String> name, const v8::AccessorInfo& args) {
+  void rslt_error(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &args) {
 	std::string emsg("");
 	{
-	  v8::HandleScope scope;
+	  v8::HandleScope scope(JS_ISOLATE);
 	  PGSQL_RES_LOAD(res);
 	  ASSERT_RESULT;
 	  emsg = pq::PQresultErrorMessage(res);
 	  scope.~HandleScope();
 	}
-	return JS_STR(emsg.c_str());
+	args.GetReturnValue().Set(JS_STR(emsg.c_str()));
   }
 
-  v8::Handle<v8::Value> rslt_rows(v8::Local<v8::String> name, const v8::AccessorInfo& args) {
+  void rslt_rows(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &args) {
 	v8::Handle<v8::Value> ret;
 	{
 	  v8::Handle<v8::Value> targs[] = {  };
@@ -1408,23 +1499,23 @@ JS_METHOD(_execute) {
 	  v8::Handle<v8::Function> fetchAllObjects = v8::Handle<v8::Function>::Cast(f);
 	  ret = fetchAllObjects->Call(args.This(), 0, targs);
 	}
-	return ret;
+	args.GetReturnValue().Set(ret);
   }
 
-  v8::Handle<v8::Value> rslt_max(v8::Local<v8::String> name, const v8::AccessorInfo& args) {
+  void rslt_max(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &args) {
 	v8::Handle<v8::Value> targs[] = {  };
 	v8::Handle<v8::Value> f = args.This()->Get(JS_STR("numRows"));
 	v8::Handle<v8::Function> numrows = v8::Handle<v8::Function>::Cast(f);
 	v8::Handle<v8::Value> tmp = numrows->Call(args.This(), 0, targs);
-	return tmp;
+	args.GetReturnValue().Set(tmp);
   }
 
-  v8::Handle<v8::Value> rslt_pos(v8::Local<v8::String> name, const v8::AccessorInfo& args) {
+  void rslt_pos(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &args) {
 	int pos = PGSQL_RES_POS;
-	return JS_INT(pos);
+	args.GetReturnValue().Set(pos);
   }
 
-  v8::Handle<v8::Value> rslt_next_row(v8::Local<v8::String> name, const v8::AccessorInfo& args) {
+  void rslt_next_row(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &args) {
 	v8::Handle<v8::Value> targs[] = { };
 	v8::Handle<v8::Value> f = args.This()->Get(JS_STR("numRows"));
 	v8::Handle<v8::Function> numrows = v8::Handle<v8::Function>::Cast(f);
@@ -1436,17 +1527,17 @@ JS_METHOD(_execute) {
 	  PGSQL_RES_SETPOS((pos + 1));
 	  f = args.This()->Get(JS_STR("fetchRowObject"));
 	  v8::Handle<v8::Function> fetchrow = v8::Handle<v8::Function>::Cast(f);
-	  return fetchrow->Call(args.This(), 1, fargs);
+	  args.GetReturnValue().Set(fetchrow->Call(args.This(), 1, fargs));
 	}
 	else
-	  return JS_BOOL(FALSE);
+	  args.GetReturnValue().Set(FALSE);
   }
 
 } /* end namespace */
 
 SHARED_INIT() {
   //v8::HandleScope handle_scope;
-  v8::Handle<v8::FunctionTemplate> ft = v8::FunctionTemplate::New(pgsql::_pgsql);
+  v8::Handle<v8::FunctionTemplate> ft = v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_pgsql);
   ft->SetClassName(JS_STR("PostgreSQL"));
 
   v8::Handle<v8::ObjectTemplate> ot = ft->InstanceTemplate();
@@ -1480,31 +1571,32 @@ SHARED_INIT() {
   /**
    * PostgreSQL prototype methods (new PostgreSQL().*)
    */
-  pt->Set(JS_STR("connect"), v8::FunctionTemplate::New(pgsql::_connect));
-  pt->Set(JS_STR("close"), v8::FunctionTemplate::New(pgsql::_close));
-  pt->Set(JS_STR("query"), v8::FunctionTemplate::New(pgsql::_query));
-  pt->Set(JS_STR("queryParams"), v8::FunctionTemplate::New(pgsql::_queryparams));
-  pt->Set(JS_STR("escape"), v8::FunctionTemplate::New(pgsql::_escape));
-  pt->Set(JS_STR("escapeBytea"), v8::FunctionTemplate::New(pgsql::_escapebytea));
-  pt->Set(JS_STR("unescapeBytea"), v8::FunctionTemplate::New(pgsql::_unescapebytea));
-  pt->Set(JS_STR("sendQuery"), v8::FunctionTemplate::New(pgsql::_sendquery));
-  pt->Set(JS_STR("sendQueryParams"), v8::FunctionTemplate::New(pgsql::_sendqueryparams));
-  pt->Set(JS_STR("isBusy"), v8::FunctionTemplate::New(pgsql::_isbusy));
-  pt->Set(JS_STR("isConnected"), v8::FunctionTemplate::New(pgsql::_isconnected));
-  pt->Set(JS_STR("socket"), v8::FunctionTemplate::New(pgsql::_socket));
-  pt->Set(JS_STR("cancel"), v8::FunctionTemplate::New(pgsql::_cancel));
-  pt->Set(JS_STR("prepare"), v8::FunctionTemplate::New(pgsql::_prepare));
-  pt->Set(JS_STR("sendPrepare"), v8::FunctionTemplate::New(pgsql::_sendprepare));
-  pt->Set(JS_STR("sendQuery"), v8::FunctionTemplate::New(pgsql::_sendquery));
-  pt->Set(JS_STR("sendQueryParams"), v8::FunctionTemplate::New(pgsql::_sendqueryparams));
-  pt->Set(JS_STR("execute"), v8::FunctionTemplate::New(pgsql::_execute));
-  pt->Set(JS_STR("sendExecute"), v8::FunctionTemplate::New(pgsql::_sendexecute));
-  pt->Set(JS_STR("asyncQuery"), v8::FunctionTemplate::New(pgsql::_asyncquery));
+  pt->Set(JS_STR("connect"), v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_connect));
+  pt->Set(JS_STR("close"), v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_close));
+  pt->Set(JS_STR("query"), v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_query));
+  pt->Set(JS_STR("queryParams"), v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_queryparams));
+  pt->Set(JS_STR("escape"), v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_escape));
+  pt->Set(JS_STR("escapeBytea"), v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_escapebytea));
+  pt->Set(JS_STR("unescapeBytea"), v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_unescapebytea));
+  pt->Set(JS_STR("sendQuery"), v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_sendquery));
+  pt->Set(JS_STR("sendQueryParams"), v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_sendqueryparams));
+  pt->Set(JS_STR("isBusy"), v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_isbusy));
+  pt->Set(JS_STR("isConnected"), v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_isconnected));
+  pt->Set(JS_STR("socket"), v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_socket));
+  pt->Set(JS_STR("cancel"), v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_cancel));
+  pt->Set(JS_STR("prepare"), v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_prepare));
+  pt->Set(JS_STR("sendPrepare"), v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_sendprepare));
+  pt->Set(JS_STR("sendQuery"), v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_sendquery));
+  pt->Set(JS_STR("sendQueryParams"), v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_sendqueryparams));
+  pt->Set(JS_STR("execute"), v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_execute));
+  pt->Set(JS_STR("sendExecute"), v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_sendexecute));
+  pt->Set(JS_STR("asyncQuery"), v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_asyncquery));
 
-  pgsql::rslt = v8::Persistent<v8::FunctionTemplate>::New(v8::FunctionTemplate::New(pgsql::_result));
-  pgsql::rslt->SetClassName(JS_STR("Result"));
+  v8::Local<v8::FunctionTemplate> rslt = v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_result);
+  rslt->SetClassName(JS_STR("Result"));
+  pgsql::_rslt.Reset(JS_ISOLATE, rslt);
 
-  v8::Handle<v8::ObjectTemplate> resinst = pgsql::rslt->InstanceTemplate();
+  v8::Handle<v8::ObjectTemplate> resinst = rslt->InstanceTemplate();
   resinst->SetInternalFieldCount(2);
 
   // Set handler for virtual "error" property:
@@ -1522,24 +1614,24 @@ SHARED_INIT() {
   // Set handler for virtual "nextRow" property:
   resinst->SetAccessor(pgsql::v8_str("nextRow"),pgsql::rslt_next_row);
 
-  v8::Handle<v8::ObjectTemplate> resproto = pgsql::rslt->PrototypeTemplate();
+  v8::Handle<v8::ObjectTemplate> resproto = rslt->PrototypeTemplate();
 
   /**
    * Result prototype methods (new PostgreSQL().query().*)
    */
-  resproto->Set(JS_STR("numRows"), v8::FunctionTemplate::New(pgsql::_numrows));
-  resproto->Set(JS_STR("numFields"), v8::FunctionTemplate::New(pgsql::_numfields));
-  resproto->Set(JS_STR("numAffectedRows"), v8::FunctionTemplate::New(pgsql::_numaffectedrows));
-  resproto->Set(JS_STR("fetchNames"), v8::FunctionTemplate::New(pgsql::_fetchnames));
-  resproto->Set(JS_STR("fetchResult"), v8::FunctionTemplate::New(pgsql::_fetchresult));
-  resproto->Set(JS_STR("fetchField"), v8::FunctionTemplate::New(pgsql::_fetchfield));
-  resproto->Set(JS_STR("fetchRow"), v8::FunctionTemplate::New(pgsql::_fetchrow));
-  resproto->Set(JS_STR("fetchRowObject"), v8::FunctionTemplate::New(pgsql::_fetchrowobject));
-  resproto->Set(JS_STR("fetchAll"), v8::FunctionTemplate::New(pgsql::_fetchall));
-  resproto->Set(JS_STR("fetchAllObjects"), v8::FunctionTemplate::New(pgsql::_fetchallobjects));
-  resproto->Set(JS_STR("unescapeBytea"), v8::FunctionTemplate::New(pgsql::_unescapebytea));
-  resproto->Set(JS_STR("clear"), v8::FunctionTemplate::New(pgsql::_clear));
-  resproto->Set(JS_STR("reset"), v8::FunctionTemplate::New(pgsql::_reset));
+  resproto->Set(JS_STR("numRows"), v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_numrows));
+  resproto->Set(JS_STR("numFields"), v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_numfields));
+  resproto->Set(JS_STR("numAffectedRows"), v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_numaffectedrows));
+  resproto->Set(JS_STR("fetchNames"), v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_fetchnames));
+  resproto->Set(JS_STR("fetchResult"), v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_fetchresult));
+  resproto->Set(JS_STR("fetchField"), v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_fetchfield));
+  resproto->Set(JS_STR("fetchRow"), v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_fetchrow));
+  resproto->Set(JS_STR("fetchRowObject"), v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_fetchrowobject));
+  resproto->Set(JS_STR("fetchAll"), v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_fetchall));
+  resproto->Set(JS_STR("fetchAllObjects"), v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_fetchallobjects));
+  resproto->Set(JS_STR("unescapeBytea"), v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_unescapebytea));
+  resproto->Set(JS_STR("clear"), v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_clear));
+  resproto->Set(JS_STR("reset"), v8::FunctionTemplate::New(JS_ISOLATE, pgsql::_reset));
 
   exports->Set(JS_STR("PostgreSQL"), ft->GetFunction());
 }

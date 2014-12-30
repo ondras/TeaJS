@@ -401,7 +401,7 @@ if conf.CheckFunc("inet_ntop"):
 
 # default built-in values
 env.Append(
-	LIBS = ["v8"],
+	LIBS = ["v8", "icui18n", "icuuc"],
 	CCFLAGS = ["-Wall", "-O3", "-std=c++11"],
 	CPPPATH = ["src", env["v8_path"] + "/include", env["v8_path"]],
 	LIBPATH = env["v8_path"],

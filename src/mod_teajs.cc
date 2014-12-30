@@ -105,7 +105,7 @@ private:
 
 JS_METHOD(_read) {
 	TeaJS_Module * app = (TeaJS_Module *) APP_PTR;
-	if (args.Length() < 1) { return JS_TYPE_ERROR("Invalid call format. Use 'apache.read(amount)'"); }
+	if (args.Length() < 1) { JS_TYPE_ERROR("Invalid call format. Use 'apache.read(amount)'"); return; }
 	size_t count = args[0]->IntegerValue();
 	
 	char * destination = new char[count];
@@ -121,12 +121,12 @@ JS_METHOD(_read) {
 	v8::Handle<v8::Value> result = JS_BUFFER(destination, read);
 	delete[] destination;
 	
-	return result;
+	args.GetReturnValue().Set(result);
 }
 
 JS_METHOD(_write) {
 	TeaJS_Module * app = (TeaJS_Module *) APP_PTR;
-	if (args.Length() < 1) { return JS_TYPE_ERROR("Invalid call format. Use 'apache.write(data)'"); }
+	if (args.Length() < 1) { JS_TYPE_ERROR("Invalid call format. Use 'apache.write(data)'"); return; }
 
 	size_t result;
 	if (IS_BUFFER(args[0])) {
@@ -137,14 +137,14 @@ JS_METHOD(_write) {
 		v8::String::Utf8Value str(args[0]);
 		result = app->write(*str, str.length());
 	}
-	return JS_INT(result);
+	args.GetReturnValue().Set(JS_INT(result));
 }
 
 JS_METHOD(_error) {
 	TeaJS_Module * app = (TeaJS_Module *) APP_PTR;
 	v8::String::Utf8Value error(args[0]);
 	app->error(*error);
-	return v8::Undefined();
+	args.GetReturnValue().SetUndefined();
 }
 
 JS_METHOD(_header) {
@@ -152,20 +152,20 @@ JS_METHOD(_header) {
 	v8::String::Utf8Value name(args[0]);
 	v8::String::Utf8Value value(args[1]);
 	app->header(*name, *value);
-	return v8::Undefined();
+	args.GetReturnValue().SetUndefined();
 }
 
 void TeaJS_Module::prepare(char ** envp) {
 	TeaJS_App::prepare(envp);
 
-	v8::HandleScope handle_scope;
+	v8::HandleScope handle_scope(JS_ISOLATE);
 	v8::Handle<v8::Object> g = JS_GLOBAL;
-	v8::Handle<v8::Object> apache = v8::Object::New();
+	v8::Handle<v8::Object> apache = v8::Object::New(JS_ISOLATE);
 	g->Set(JS_STR("apache"), apache);
-	apache->Set(JS_STR("header"), v8::FunctionTemplate::New(_header)->GetFunction());
-	apache->Set(JS_STR("read"), v8::FunctionTemplate::New(_read)->GetFunction());
-	apache->Set(JS_STR("write"), v8::FunctionTemplate::New(_write)->GetFunction());
-	apache->Set(JS_STR("error"), v8::FunctionTemplate::New(_error)->GetFunction());
+	apache->Set(JS_STR("header"), v8::FunctionTemplate::New(JS_ISOLATE, _header)->GetFunction());
+	apache->Set(JS_STR("read"), v8::FunctionTemplate::New(JS_ISOLATE, _read)->GetFunction());
+	apache->Set(JS_STR("write"), v8::FunctionTemplate::New(JS_ISOLATE, _write)->GetFunction());
+	apache->Set(JS_STR("error"), v8::FunctionTemplate::New(JS_ISOLATE, _error)->GetFunction());
 }
 
 #ifdef REUSE_CONTEXT

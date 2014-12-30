@@ -81,7 +81,8 @@ enum FiberFields {
 
 #define RETURN_ON_ERROR(status, message) \
   if (status != 0) { \
-    return JS_ERROR(message); \
+    JS_ERROR(message); \
+    return; \
   }
 #define EXIT_ON_ERROR(status, message) \
   if (status != 0) { \
@@ -92,7 +93,7 @@ enum FiberFields {
 uint64_t num_fibers_created = 0;
 NativeData * main_fiber_native_data = NULL;
 pthread_key_t tls_key;
-v8::Persistent<v8::Object> js_fiber_class;
+v8::Persistent<v8::Object> _js_fiber_class;
 
 typedef std::map<uint64_t, NativeData*> FiberIdToNativeDataMap;
 FiberIdToNativeDataMap fiber_id_to_native_data_map;
@@ -115,18 +116,22 @@ void* runJsFunc(void* opaque_native_data) {
   EXIT_ON_ERROR(status, "Could not set tls for non-main fiber");
 
   {
-    v8::Locker locker;
-    v8::HandleScope handle_scope;
+    v8::Locker locker(JS_ISOLATE);
+    v8::HandleScope handle_scope(JS_ISOLATE);
 
-    js_fiber_class->Set(JS_STR("current"), native_data->js_fiber);
+    v8::Local<v8::Object> js_fiber_class = v8::Local<v8::Object>::New(JS_ISOLATE, _js_fiber_class);
+    v8::Local<v8::Object> js_fiber = v8::Local<v8::Object>::New(JS_ISOLATE, native_data->js_fiber);
+    js_fiber_class->Set(JS_STR("current"), js_fiber);
 
-    v8::Handle<v8::Function> func = v8::Handle<v8::Function>::Cast(
-        native_data->func);
+    v8::Local<v8::Value> _func = v8::Local<v8::Value>::New(JS_ISOLATE, native_data->func);
+    v8::Local<v8::Function> func = v8::Local<v8::Function>::Cast(_func);
 
     registerFiber(native_data);
-    native_data->context->Enter();
+
+    v8::Local<v8::Context> context = v8::Local<v8::Context>::New(JS_ISOLATE, native_data->context);
+    context->Enter();
     func->Call(func, 0, NULL);
-    native_data->context->Exit();
+    context->Exit();
     unregisterFiber(native_data);
   }
 
@@ -134,9 +139,9 @@ void* runJsFunc(void* opaque_native_data) {
   EXIT_ON_ERROR(status, "Failed to delete condition_mutex");
   status = pthread_cond_destroy(&native_data->condition);
   EXIT_ON_ERROR(status, "Failed to delete condition");
-  native_data->js_fiber.Dispose();
-  native_data->func.Dispose();
-  native_data->context.Dispose();
+  native_data->js_fiber.Reset();
+  native_data->func.Reset();
+  native_data->context.Reset();
   delete native_data;
 
   return NULL;
@@ -155,17 +160,18 @@ JS_METHOD(_Fiber) {
     if (args.Length() != 2 ||
         !args[0]->IsString() ||
         !args[1]->IsFunction()) {
-      return JS_ERROR(
-          "Invalid arguments. Use 'new Fiber(name{string}, func{function() : void})'");
+      JS_ERROR("Invalid arguments. Use 'new Fiber(name{string}, func{function() : void})'");
+      return;
     }
     func = args[1];
     name = *v8::String::Utf8Value(args[0]);
   } else {
     if (args.Length() != 0) {
-      return JS_ERROR("Invalid arguments. Main fiber should not have args");
+      JS_ERROR("Invalid arguments. Main fiber should not have args");
+      return;
     }
     main_fiber_native_data = native_data;
-    func = v8::Null();
+    func = v8::Null(JS_ISOLATE);
     name = "main";
   }
 
@@ -178,14 +184,14 @@ JS_METHOD(_Fiber) {
   status = pthread_cond_init(&native_data->condition, NULL);
   RETURN_ON_ERROR(status, "Failed to create condition");
 
-  native_data->js_fiber = v8::Persistent<v8::Object>::New(args.This());
-  native_data->func = v8::Persistent<v8::Value>::New(func);
-  native_data->context = v8::Persistent<v8::Context>::New(
-      v8::Context::GetCurrent());
+  native_data->js_fiber.Reset(JS_ISOLATE, args.This());
+  native_data->func.Reset(JS_ISOLATE, func);
+  native_data->context.Reset(JS_ISOLATE, JS_ISOLATE->GetCurrentContext());
 
-  native_data->js_fiber->Set(JS_STR("name"), v8::String::New(name.c_str()));
+  v8::Local<v8::Object> js_fiber = v8::Local<v8::Object>::New(JS_ISOLATE, native_data->js_fiber);
+  js_fiber->Set(JS_STR("name"), v8::String::NewFromUtf8(JS_ISOLATE, name.c_str()));
 
-  return args.This();
+  args.GetReturnValue().Set(args.This());
 }
 
 /**
@@ -194,12 +200,13 @@ JS_METHOD(_Fiber) {
  */
 JS_METHOD(_getCurrentFiber) {
   if (args.Length() != 0) {
-    return JS_ERROR("Invalid arguments. Use current().'");
+    JS_ERROR("Invalid arguments. Use current().'");
+    return;
   }
 
   NativeData * native_data =
       reinterpret_cast<NativeData*>(pthread_getspecific(tls_key));
-  return v8::Local<v8::Object>::New(native_data->js_fiber);
+  args.GetReturnValue().Set(v8::Local<v8::Object>::New(JS_ISOLATE, native_data->js_fiber));
 }
 
 /**
@@ -207,10 +214,11 @@ JS_METHOD(_getCurrentFiber) {
  */
 JS_METHOD(_main) {
   if (args.Length() != 0) {
-    return JS_ERROR("Invalid arguments. Use main().'");
+    JS_ERROR("Invalid arguments. Use main().'");
+    return;
   }
 
-  return v8::Local<v8::Object>::New(main_fiber_native_data->js_fiber);
+  args.GetReturnValue().Set(v8::Local<v8::Object>::New(JS_ISOLATE, main_fiber_native_data->js_fiber));
 }
 
 /**
@@ -218,27 +226,30 @@ JS_METHOD(_main) {
  */
 JS_METHOD(_allRunningFibers) {
   if (args.Length() != 0) {
-    return JS_ERROR("Invalid arguments. Use allRunningFibers().'");
+    JS_ERROR("Invalid arguments. Use allRunningFibers().'");
+    return;
   }
 
-  v8::HandleScope handle_scope;
+  v8::HandleScope handle_scope(JS_ISOLATE);
   v8::Local<v8::Array> result =
-      v8::Array::New(fiber_id_to_native_data_map.size());
+      v8::Array::New(JS_ISOLATE, fiber_id_to_native_data_map.size());
 
   FiberIdToNativeDataMap::iterator fiber = fiber_id_to_native_data_map.begin();
   int index = 0;
   while (fiber != fiber_id_to_native_data_map.end()) {
-    result->Set(v8::Number::New(index), fiber->second->js_fiber);
+    v8::Local<v8::Object> js_fiber = v8::Local<v8::Object>::New(JS_ISOLATE, fiber->second->js_fiber);
+    result->Set(v8::Number::New(JS_ISOLATE, index), js_fiber);
     fiber++;
     index++;
   }
 
-  return handle_scope.Close(result);
+  args.GetReturnValue().Set(result);
 }
 
 JS_METHOD(_becomeRunnable) {
   if (args.Length() != 0) {
-    return JS_ERROR("Invalid arguments. Use becomeRunnable().'");
+    JS_ERROR("Invalid arguments. Use becomeRunnable().'");
+    return;
   }
 
   NativeData * native_data = FIELDS_NATIVE_DATA_PTR;
@@ -267,7 +278,7 @@ JS_METHOD(_becomeRunnable) {
     FIBER_LOG("fiber '%s': becomeRunnable -- finished resuming\n", native_data->name.c_str());
   }
 
-  return args.This();
+  args.GetReturnValue().Set(args.This());
 }
 
 void become_main(v8::Handle<v8::Object> js_this) {
@@ -279,12 +290,15 @@ void become_main(v8::Handle<v8::Object> js_this) {
   status = pthread_setspecific(tls_key, native_data);
   EXIT_ON_ERROR(status, "Could not set tls for main fiber");
   registerFiber(native_data);
-  js_fiber_class->Set(JS_STR("current"), native_data->js_fiber);
+  v8::Local<v8::Object> js_fiber_class = v8::Local<v8::Object>::New(JS_ISOLATE, _js_fiber_class);
+  v8::Local<v8::Object> js_fiber = v8::Local<v8::Object>::New(JS_ISOLATE, native_data->js_fiber);
+  js_fiber_class->Set(JS_STR("current"), js_fiber);
 }
 
 JS_METHOD(_suspend) {
   if (args.Length() != 0) {
-    return JS_ERROR("Invalid arguments. Use suspend().'");
+    JS_ERROR("Invalid arguments. Use suspend().'");
+    return;
   }
   // TODO: assert that This is current fiber
 
@@ -296,42 +310,46 @@ JS_METHOD(_suspend) {
     // another thread can't signal the mutex before we wait on
     // it. (Note: pthread_cond_wait releases the mutex until it
     // returns.)
-    v8::Unlocker unlocker;
+    v8::Unlocker unlocker(JS_ISOLATE);
     FIBER_LOG("fiber '%s': suspending, released v8 lock\n", native_data->name.c_str());
     pthread_cond_wait(&native_data->condition, &native_data->condition_mutex);
     pthread_mutex_unlock(&native_data->condition_mutex);
     FIBER_LOG("fiber '%s': unsuspending, waiting for v8 lock\n", native_data->name.c_str());
   }
-  js_fiber_class->Set(JS_STR("current"), native_data->js_fiber);
+  v8::Local<v8::Object> js_fiber_class = v8::Local<v8::Object>::New(JS_ISOLATE, _js_fiber_class);
+  v8::Local<v8::Object> js_fiber = v8::Local<v8::Object>::New(JS_ISOLATE, native_data->js_fiber);
+  js_fiber_class->Set(JS_STR("current"), js_fiber);
   FIBER_LOG("fiber '%s': unsuspended, acquired v8 lock\n", native_data->name.c_str());
 
-  return args.This();
+  args.GetReturnValue().Set(args.This());
 }
 
 JS_METHOD(_join) {
   if (args.Length() != 0) {
-    return JS_ERROR("Invalid arguments. Use join().'");
+    JS_ERROR("Invalid arguments. Use join().'");
+    return;
   }
 
   // TODO: check that the fiber is started
 
-  v8::Local<v8::Value> caller_js_fiber =
-      js_fiber_class->Get(JS_STR("current"));
+  v8::Local<v8::Object> js_fiber_class = v8::Local<v8::Object>::New(JS_ISOLATE, _js_fiber_class);
+  v8::Local<v8::Value> caller_js_fiber = js_fiber_class->Get(JS_STR("current"));
   NativeData * native_data = FIELDS_NATIVE_DATA_PTR;
 
   if (!native_data->thread_created) {
-    return JS_ERROR("Must call becomeRunnable() on a fiber before joining with it");
+    JS_ERROR("Must call becomeRunnable() on a fiber before joining with it");
+    return;
   }
 
   {
-    v8::Unlocker unlocker;
+    v8::Unlocker unlocker(JS_ISOLATE);
     FIBER_LOG("fiber '%s': joining\n", native_data->name.c_str());
     pthread_join(native_data->thread, NULL);
     FIBER_LOG("fiber '%s': finished joining\n", native_data->name.c_str());
   }
   js_fiber_class->Set(JS_STR("current"), caller_js_fiber);
 
-  return args.This();
+  args.GetReturnValue().Set(args.This());
 }
 
 } /* end namespace */
@@ -342,25 +360,25 @@ SHARED_INIT() {
   status = pthread_key_create(&tls_key, NULL);
   EXIT_ON_ERROR(status, "Could not create tls");
 
-  v8::HandleScope handle_scope;
-  v8::Handle<v8::FunctionTemplate> ft = v8::FunctionTemplate::New(_Fiber);
+  v8::HandleScope handle_scope(JS_ISOLATE);
+  v8::Handle<v8::FunctionTemplate> ft = v8::FunctionTemplate::New(JS_ISOLATE, _Fiber);
   ft->SetClassName(JS_STR("Fiber"));
 
   v8::Handle<v8::ObjectTemplate> ot = ft->InstanceTemplate();
   ot->SetInternalFieldCount(FiberFieldMax);
 
   v8::Handle<v8::ObjectTemplate> pt = ft->PrototypeTemplate();
-  pt->Set(JS_STR("becomeRunnable"), v8::FunctionTemplate::New(_becomeRunnable));
-  pt->Set(JS_STR("suspend"), v8::FunctionTemplate::New(_suspend));
-  pt->Set(JS_STR("join"), v8::FunctionTemplate::New(_join));
+  pt->Set(JS_STR("becomeRunnable"), v8::FunctionTemplate::New(JS_ISOLATE, _becomeRunnable));
+  pt->Set(JS_STR("suspend"), v8::FunctionTemplate::New(JS_ISOLATE, _suspend));
+  pt->Set(JS_STR("join"), v8::FunctionTemplate::New(JS_ISOLATE, _join));
 
   v8::Local<v8::Function> f = ft->GetFunction();
 
   v8::Local<v8::Object> main = f->NewInstance();
-  js_fiber_class = v8::Persistent<v8::Object>::New(f);
+  _js_fiber_class.Reset(JS_ISOLATE, f);
   become_main(main);
-  f->Set(JS_STR("_getCurrentFiber"), v8::FunctionTemplate::New(_getCurrentFiber)->GetFunction());
-  f->Set(JS_STR("allRunningFibers"), v8::FunctionTemplate::New(_allRunningFibers)->GetFunction());
+  f->Set(JS_STR("_getCurrentFiber"), v8::FunctionTemplate::New(JS_ISOLATE, _getCurrentFiber)->GetFunction());
+  f->Set(JS_STR("allRunningFibers"), v8::FunctionTemplate::New(JS_ISOLATE, _allRunningFibers)->GetFunction());
   f->Set(JS_STR("current"), main);
   f->Set(JS_STR("main"), main);
 

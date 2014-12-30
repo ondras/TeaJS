@@ -125,7 +125,7 @@ int ByteStorageB::indexOf(unsigned char value, size_t index1, size_t index2, int
 }
 
 v8::Handle<v8::String> ByteStorageB::toString() {
-	return JS_STR((const char *)this->data, this->length);
+	return JS_STR_LEN((const char *)this->data, this->length);
 }
 
 void ByteStorageB::resize(size_t newLength, bool zeroFill) {
@@ -195,7 +195,7 @@ void ByteStorageB::reverse() {
 	}
 }
 
-void ByteStorageB::splice(size_t start, size_t howMany, const v8::Arguments &args) {
+void ByteStorageB::splice(size_t start, size_t howMany, const v8::FunctionCallbackInfo<v8::Value> &args) {
 	if (start >= this->length) { return; }
 	size_t end = start+howMany;
 	if (end > this->length) { end = this->length; }

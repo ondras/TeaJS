@@ -264,22 +264,21 @@ def build_module(env, sources):
 # def
 
 def build_so(env, sources):
-        e = env.Clone()
+	if (env["os"] == "windows" or env["os"] == "darwin" or bsd):
+		env.Append(
+			LIBS = ["iconv"]
+		)
+	# if
+	e = env.Clone()
 	e.SharedLibrary(
 		target = "libteajs", 
-                source = [sources],
+        source = [sources],
 		SHLIBPREFIX=""
 	)
+
 # def
 
 def build_cgi(env, sources):
-	if env["fcgi"] == 1:
-		env.Append(
-			LIBS = ["fcgi"],
-			CPPPATH = ["src/fcgi/include"],
-			CPPDEFINES = ["FASTCGI"]
-		)
-	# if
 	if (env["os"] == "windows" or env["os"] == "darwin" or bsd):
 		env.Append(
 			LIBS = ["iconv"]
@@ -338,7 +337,6 @@ vars = Variables()
 
 # module switches, on by default
 vars.Add(BoolVariable("mysql", "MySQL library", 1))
-vars.Add(BoolVariable("profiler", "V8 Profiler library", 1))
 vars.Add(BoolVariable("memcached", "Memcached library", 1))
 vars.Add(BoolVariable("gd", "GD library", 1))
 vars.Add(BoolVariable("sqlite", "SQLite library", 1))
@@ -361,6 +359,10 @@ vars.Add(BoolVariable("fcgi", "FastCGI support (for CGI binary)", 0))
 vars.Add(BoolVariable("debug", "Debugging support", 0))
 vars.Add(BoolVariable("verbose", "Verbose debugging messages", 0))
 vars.Add(BoolVariable("reuse_context", "Reuse context for multiple requests", 0))
+
+# since v8 3.20.8 the v8::V8::Pause/ResumeProfiler has been deprecated and was removed on v8 3.21.7
+vars.Add(BoolVariable("profiler", "V8 Profiler library", 0))
+
 
 # optional library paths
 vars.Add(("mysql_path", "MySQL header path", mysql_include))
@@ -397,16 +399,11 @@ if conf.CheckFunc("inet_pton"):
 if conf.CheckFunc("inet_ntop"):
 	env.Append(CPPDEFINES = ["HAVE_NTOP"])
 
-if env["debug"] == 1:
-	v8_lib = "v8_g"
-else:
-	v8_lib = "v8"
-  
 # default built-in values
 env.Append(
-	LIBS = [v8_lib],
-	CCFLAGS = ["-Wall", "-O3"],
-	CPPPATH = ["src", env["v8_path"] + "/include"],
+	LIBS = ["v8"],
+	CCFLAGS = ["-Wall", "-O3", "-std=c++11"],
+	CPPPATH = ["src", env["v8_path"] + "/include", env["v8_path"]],
 	LIBPATH = env["v8_path"],
 	CPPDEFINES = [
 		"CONFIG_PATH=" + env["config_file"],
@@ -437,7 +434,7 @@ if env["os"] == "posix":
 # if
 
 # look for V8 - sanity check
-if (env["os"] != "windows") and not (conf.CheckLib(v8_lib)):
+if (env["os"] != "windows") and not (conf.CheckLib("v8")):
 	print("\n---> Cannot find V8 library! <--- \n")
 # if
 
@@ -468,6 +465,14 @@ if env["os"] == "windows":
 	env.Append(
 		LIBS = ["ws2_32"],
 		CPPDEFINES = ["USING_V8_SHARED", "WIN32", "_WIN32_WINNT=0x0501", "HAVE_RINT", "DSO_EXT=dll"],
+	)
+# if
+
+if env["fcgi"] == 1:
+	env.Append(
+		LIBS = ["fcgi"],
+		CPPPATH = ["src/fcgi/include"],
+		CPPDEFINES = ["FASTCGI"]
 	)
 # if
 

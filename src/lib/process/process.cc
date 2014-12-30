@@ -23,17 +23,18 @@ namespace {
 JS_METHOD(_process) {
 	ASSERT_CONSTRUCTOR;
 	SAVE_PTR(0, NULL);
-	return args.This();
+	args.GetReturnValue().Set(args.This());
 }
 
 JS_METHOD(_system) {
 	if (args.Length() != 1) {
-		return JS_TYPE_ERROR("Wrong argument count. Use new Process().system(\"command\")");
+		JS_TYPE_ERROR("Wrong argument count. Use new Process().system(\"command\")");
+		return;
 	}
 	
 	v8::String::Utf8Value cmd(args[0]);
 	int result = system(*cmd);
-	return JS_INT(result);
+	args.GetReturnValue().Set(JS_INT(result));
 }
 
 /**
@@ -41,7 +42,8 @@ JS_METHOD(_system) {
  */
 JS_METHOD(_exec) {
 	if (args.Length() != 1) {
-		return JS_TYPE_ERROR("Wrong argument count. Use new Process().exec(\"command\")");
+		JS_TYPE_ERROR("Wrong argument count. Use new Process().exec(\"command\")");
+		return;
 	}
 	
 	std::string data;
@@ -57,9 +59,9 @@ JS_METHOD(_exec) {
 	pclose(stream);
 	
 	if(data.c_str() != NULL) {
-		return JS_STR(data.c_str());
+		args.GetReturnValue().Set(JS_STR(data.c_str()));
 	} else {
-		return JS_NULL;
+		args.GetReturnValue().SetNull();
 	}
 }
 
@@ -120,8 +122,9 @@ void _executecommand(
 JS_METHOD(_exec2) {
 	int arg_count = args.Length();
 	if (arg_count < 1 || arg_count > 3) {
-		return JS_TYPE_ERROR("Wrong argument count. Use new Process().exec2(\"command\", [\"standard input\"], [\"env\"])");
-}
+		JS_TYPE_ERROR("Wrong argument count. Use new Process().exec2(\"command\", [\"standard input\"], [\"env\"])");
+		return;
+	}
 
 	const int MAX_BUFFER = 256;
 	char buffer[MAX_BUFFER + 1];
@@ -145,7 +148,8 @@ JS_METHOD(_exec2) {
 	switch (pid) {
 
 	case -1:  // Error case.
-		return JS_ERROR("Failed to fork process");
+		JS_ERROR("Failed to fork process");
+		return;
 
 	case 0:  // Child process.
 
@@ -166,7 +170,8 @@ JS_METHOD(_exec2) {
 
 		_executecommand(command_arg, env);
 
-		return JS_NULL;  // unreachable
+		args.GetReturnValue().SetNull();  // unreachable
+		return;
 
 	default:  // Parent process.
 
@@ -186,7 +191,9 @@ JS_METHOD(_exec2) {
 			if (bytes_read == 0) {
 				break;
 			} else if (bytes_read < 0) {
-				return JS_NULL;  // TODO: throw JavaScript exception
+				// TODO: throw JavaScript exception
+				args.GetReturnValue().SetNull();
+				return;
 			}
 			buffer[bytes_read] = 0;
 			ret_out.append(buffer);
@@ -199,7 +206,9 @@ JS_METHOD(_exec2) {
 			if (bytes_read == 0) {
 				break;
 			} else if (bytes_read < 0) {
-				return JS_NULL;  // TODO: throw JavaScript exception
+				// TODO: throw JavaScript exception
+				args.GetReturnValue().SetNull();
+				return;
 			}
 			buffer[bytes_read] = 0;
 			ret_err.append(buffer);
@@ -209,7 +218,7 @@ JS_METHOD(_exec2) {
 		int status;
 		waitpid(pid, &status, 0);
 
-		v8::Handle<v8::Object> ret = v8::Object::New();
+		v8::Handle<v8::Object> ret = v8::Object::New(JS_ISOLATE);
 		if (WIFEXITED(status)) {
 			ret->Set(JS_STR("status"), JS_INT(WEXITSTATUS(status)));
 		} else {
@@ -219,7 +228,7 @@ JS_METHOD(_exec2) {
 		}
 		ret->Set(JS_STR("out"), JS_STR(ret_out.c_str()));
 		ret->Set(JS_STR("err"), JS_STR(ret_err.c_str()));
-		return ret;
+		args.GetReturnValue().Set(ret);
 	}
 }
 
@@ -236,7 +245,8 @@ JS_METHOD(_exec2) {
 JS_METHOD(_fork) {
 	int arg_count = args.Length();
 	if (arg_count < 1 || arg_count > 3) {
-		return JS_TYPE_ERROR("Wrong argument count. Use new Process().exec2(\"command\", [\"standard input\"], [\"env\"])");
+		JS_TYPE_ERROR("Wrong argument count. Use new Process().exec2(\"command\", [\"standard input\"], [\"env\"])");
+		return;
 	}
 
 	v8::String::Utf8Value command_arg(args[0]);
@@ -252,7 +262,8 @@ JS_METHOD(_fork) {
 	switch (pid) {
 
 	case -1:  // Error case.
-		return JS_ERROR("Failed to fork process");
+		JS_ERROR("Failed to fork process");
+		return;
 
 	case 0: { // Child process.
 
@@ -263,7 +274,8 @@ JS_METHOD(_fork) {
 
 		_executecommand(command_arg, env);
 
-		return JS_NULL;  // unreachable
+		args.GetReturnValue().SetNull();  // unreachable
+		return;
 	}
 
 	default:  // Parent process.
@@ -274,7 +286,8 @@ JS_METHOD(_fork) {
 			write(input_fd[1], *input_arg, input_arg.length()); // Write to child’s stdin
 		}
 		close(input_fd[1]);
-		return JS_UNDEFINED;
+		args.GetReturnValue().SetUndefined();
+		return;
 	}
 }
 
@@ -283,20 +296,20 @@ JS_METHOD(_fork) {
 }
 
 SHARED_INIT() {
-	v8::HandleScope handle_scope;
-	v8::Handle<v8::FunctionTemplate> funct = v8::FunctionTemplate::New(_process);
+	v8::HandleScope handle_scope(JS_ISOLATE);
+	v8::Handle<v8::FunctionTemplate> funct = v8::FunctionTemplate::New(JS_ISOLATE, _process);
 	funct->SetClassName(JS_STR("Process"));
 	v8::Handle<v8::ObjectTemplate> ot = funct->InstanceTemplate();
 	ot->SetInternalFieldCount(1);
 	v8::Handle<v8::ObjectTemplate> process = funct->PrototypeTemplate();
 
 	/* this module provides a set of (static) functions */
-	process->Set(JS_STR("system"), v8::FunctionTemplate::New(_system)->GetFunction());
-	process->Set(JS_STR("exec"), v8::FunctionTemplate::New(_exec)->GetFunction());
+	process->Set(JS_STR("system"), v8::FunctionTemplate::New(JS_ISOLATE, _system)->GetFunction());
+	process->Set(JS_STR("exec"), v8::FunctionTemplate::New(JS_ISOLATE, _exec)->GetFunction());
 
 #ifndef windows
-	process->Set(JS_STR("exec2"), v8::FunctionTemplate::New(_exec2)->GetFunction());
-	process->Set(JS_STR("fork"), v8::FunctionTemplate::New(_fork)->GetFunction());
+	process->Set(JS_STR("exec2"), v8::FunctionTemplate::New(JS_ISOLATE, _exec2)->GetFunction());
+	process->Set(JS_STR("fork"), v8::FunctionTemplate::New(JS_ISOLATE, _fork)->GetFunction());
 #endif
 	
 	exports->Set(JS_STR("Process"), funct->GetFunction());

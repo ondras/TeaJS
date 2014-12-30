@@ -14,22 +14,25 @@
 #define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
 #define MAX(X,Y) ((X) > (Y) ? (X) : (Y))
 
-#define SAVE_PTR_TO(obj, index, ptr) obj->SetInternalField(index, v8::External::New(ptr))
+#define JS_ISOLATE v8::Isolate::GetCurrent()
+
+#define SAVE_PTR_TO(obj, index, ptr) obj->SetInternalField(index, v8::External::New(JS_ISOLATE, ptr))
 #define LOAD_PTR_FROM(obj, index, type) reinterpret_cast<type>(v8::Handle<v8::External>::Cast(obj->GetInternalField(index))->Value())
 #define SAVE_PTR(index, ptr) SAVE_PTR_TO(args.This(), index, ptr)
 #define LOAD_PTR(index, type) LOAD_PTR_FROM(args.This(), index, type)
 #define SAVE_VALUE(index, val) args.This()->SetInternalField(index, val)
 #define LOAD_VALUE(index) args.This()->GetInternalField(index)
-#define JS_STR(...) v8::String::New(__VA_ARGS__)
-#define JS_INT(val) v8::Integer::New(val)
-#define JS_FLOAT(val) v8::Number::New(val)
-#define JS_BOOL(val) v8::Boolean::New(val)
-#define JS_NULL v8::Null()
-#define JS_UNDEFINED v8::Undefined()
-#define JS_METHOD(name) v8::Handle<v8::Value> name(const v8::Arguments& args)
+#define JS_STR(str) v8::String::NewFromUtf8(JS_ISOLATE, str)
+#define JS_STR_LEN(str, len) v8::String::NewFromUtf8(JS_ISOLATE, str, v8::String::kNormalString, len)
+#define JS_INT(val) v8::Integer::New(JS_ISOLATE, val)
+#define JS_FLOAT(val) v8::Number::New(JS_ISOLATE, val)
+#define JS_BOOL(val) v8::Boolean::New(JS_ISOLATE, val)
+#define JS_NULL v8::Null(JS_ISOLATE)
+#define JS_UNDEFINED v8::Undefined(JS_ISOLATE)
+#define JS_METHOD(name) void name(const v8::FunctionCallbackInfo<v8::Value>& args)
 #define INSTANCEOF(obj, func) func->HasInstance(obj)
 
-#define JS_THROW(type, reason) v8::ThrowException(v8::Exception::type(JS_STR(reason)))
+#define JS_THROW(type, reason) JS_ISOLATE->ThrowException(v8::Exception::type(JS_STR(reason)))
 #define JS_ERROR(reason) JS_THROW(Error, reason)
 #define JS_TYPE_ERROR(reason) JS_THROW(TypeError, reason)
 #define JS_RANGE_ERROR(reason) JS_THROW(RangeError, reason)
@@ -37,17 +40,18 @@
 #define JS_REFERENCE_ERROR(reason) JS_THROW(ReferenceError, reason)
 #define JS_RETHROW(tc) v8::Local<v8::Value>::New(tc.Exception());
 
-#define JS_GLOBAL v8::Context::GetCurrent()->Global()
+#define JS_GLOBAL JS_ISOLATE->GetCurrentContext()->Global()
 #define GLOBAL_PROTO v8::Handle<v8::Object>::Cast(JS_GLOBAL->GetPrototype())
 #define APP_PTR reinterpret_cast<TeaJS_App *>(v8::Handle<v8::External>::Cast(GLOBAL_PROTO->GetInternalField(0))->Value())
 #define GC_PTR reinterpret_cast<GC *>(v8::Handle<v8::External>::Cast(GLOBAL_PROTO->GetInternalField(1))->Value())
 
-#define ASSERT_CONSTRUCTOR if (!args.IsConstructCall()) { return JS_ERROR("Invalid call format. Please use the 'new' operator."); }
+#define ASSERT_CONSTRUCTOR if (!args.IsConstructCall()) { JS_ERROR("Invalid call format. Please use the 'new' operator."); return; }
 #define ASSERT_NOT_CONSTRUCTOR if (args.IsConstructCall()) { return JS_ERROR("Invalid call format. Please do not use the 'new' operator."); }
 #define RETURN_CONSTRUCT_CALL \
 	std::vector< v8::Handle<v8::Value> > params(args.Length()); \
 	for (size_t i=0; i<params.size(); i++) { params[i] = args[i]; } \
-	return args.Callee()->NewInstance(args.Length(), &params[0]);
+	args.GetReturnValue().Set(args.Callee()->NewInstance(args.Length(), &params[0])); \
+	return;
 
 #ifdef _WIN32
 #   define SHARED_INIT() extern "C" __declspec(dllexport) void init(v8::Handle<v8::Function> require, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module)
@@ -56,8 +60,9 @@
 #endif
 
 inline v8::Handle<v8::Value> BYTESTORAGE_TO_JS(ByteStorage * bs) {
-	v8::Handle<v8::Function> buffer = v8::Handle<v8::Function>::Cast((APP_PTR)->require("binary", "")->Get(JS_STR("Buffer")));
-	v8::Handle<v8::Value> newargs[] = { v8::External::New((void*)bs) };
+	v8::Local<v8::Object> binary = v8::Local<v8::Object>::New(JS_ISOLATE, (APP_PTR)->require("binary", ""));
+	v8::Handle<v8::Function> buffer = v8::Handle<v8::Function>::Cast(binary->Get(JS_STR("Buffer")));
+	v8::Handle<v8::Value> newargs[] = { v8::External::New(JS_ISOLATE, (void*)bs) };
 	return v8::Handle<v8::Function>::Cast(buffer)->NewInstance(1, newargs);
 }
 
@@ -81,7 +86,7 @@ inline bool IS_BUFFER(v8::Handle<v8::Value> value) {
 	if (!value->IsObject()) { return false; }
 	v8::Handle<v8::Value> proto = value->ToObject()->GetPrototype();
 	try {
-		v8::Handle<v8::Object> binary = (APP_PTR)->require("binary", "");
+		v8::Local<v8::Object> binary = v8::Local<v8::Object>::New(JS_ISOLATE, (APP_PTR)->require("binary", ""));
 		v8::Handle<v8::Value> prototype = binary->Get(JS_STR("Buffer"))->ToObject()->Get(JS_STR("prototype"));
 		return proto->Equals(prototype);
 	} catch (std::string e) { /* for some reasons, the binary module is not available */
@@ -89,7 +94,7 @@ inline bool IS_BUFFER(v8::Handle<v8::Value> value) {
 	} 
 }
 
-inline v8::Handle<v8::Value> READ(FILE * stream, size_t amount) {
+inline void READ(FILE * stream, size_t amount, const v8::FunctionCallbackInfo<v8::Value>& args) {
 	std::string data;
 	size_t size = 0;
 
@@ -109,10 +114,10 @@ inline v8::Handle<v8::Value> READ(FILE * stream, size_t amount) {
 		delete[] tmp;
 	}
 	
-	return JS_BUFFER((char *) data.data(), size);
+	args.GetReturnValue().Set(JS_BUFFER((char *) data.data(), size));
 }
 
-inline v8::Handle<v8::Value> READ_LINE(FILE * stream, size_t amount) {
+inline void READ_LINE(FILE * stream, size_t amount, const v8::FunctionCallbackInfo<v8::Value>& args) {
 	char * buf = new char[amount];
 	v8::Handle<v8::Value> result;
 	
@@ -123,8 +128,8 @@ inline v8::Handle<v8::Value> READ_LINE(FILE * stream, size_t amount) {
 		result = JS_NULL;
 	}
 	delete[] buf;
-	
-	return result;
+
+	args.GetReturnValue().Set(result);
 }
 
 inline size_t WRITE(FILE * stream, v8::Handle<v8::Value> data) {

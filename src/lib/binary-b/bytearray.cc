@@ -11,8 +11,8 @@
 
 namespace {
 
-v8::Persistent<v8::FunctionTemplate> byteArrayTemplate;
-v8::Persistent<v8::Function> byteArray;
+v8::Persistent<v8::FunctionTemplate, v8::CopyablePersistentTraits<v8::FunctionTemplate> > _byteArrayTemplate;
+v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function> > _byteArray;
 
 
 /**
@@ -40,10 +40,12 @@ JS_METHOD(_ByteArray) {
 					if (IS_BINARY(obj)) {
 						SAVE_PTR(0, new ByteStorageB(BS_OTHER(obj)));
 					} else {
-						return WRONG_CTOR;
+						WRONG_CTOR;
+						return;
 					}
 				} else {
-					return WRONG_CTOR;
+					WRONG_CTOR;
+					return;
 				}
 			} break;
 			case 2: {
@@ -55,17 +57,19 @@ JS_METHOD(_ByteArray) {
 				SAVE_PTR(0, bs);
 			} break;
 			default:
-				return WRONG_CTOR;
+				WRONG_CTOR;
+				return;
 			break;
 		}
 	} catch (std::string e) {
-		return JS_ERROR(e.c_str());
+		JS_ERROR(e.c_str());
+		return;
 	}
 	
 	GC * gc = GC_PTR;
 	gc->add(args.This(), Binary_destroy);
 
-	return args.This();
+	args.GetReturnValue().Set(args.This());
 }
 
 JS_METHOD(_slice) {
@@ -78,8 +82,9 @@ JS_METHOD(_slice) {
 	size_t end = (end_ < 0 ? 0 : end_);
 	
 	ByteStorageB * bs2 = new ByteStorageB(bs, start, end);
-	v8::Handle<v8::Value> newargs[] = { v8::External::New((void*)bs2) };
-	return byteArray->NewInstance(1, newargs);
+	v8::Handle<v8::Value> newargs[] = { v8::External::New(JS_ISOLATE, (void*)bs2) };
+	v8::Local<v8::Function> byteArray = v8::Local<v8::Function>::New(JS_ISOLATE, _byteArray);
+	args.GetReturnValue().Set(byteArray->NewInstance(1, newargs));
 }
 
 JS_METHOD(_splice) {
@@ -93,8 +98,9 @@ JS_METHOD(_splice) {
 	
 	bs->splice(start, howMany, args);
 	
-	v8::Handle<v8::Value> newargs[] = { v8::External::New((void*)bs2) };
-	return byteArray->NewInstance(1, newargs);
+	v8::Handle<v8::Value> newargs[] = { v8::External::New(JS_ISOLATE, (void*)bs2) };
+	v8::Local<v8::Function> byteArray = v8::Local<v8::Function>::New(JS_ISOLATE, _byteArray);
+	args.GetReturnValue().Set(byteArray->NewInstance(1, newargs));
 }
 
 JS_METHOD(_displace) {
@@ -105,60 +111,60 @@ JS_METHOD(_displace) {
 	
 	bs->splice(start, howMany, args);
 
-	return JS_INT(bs->getLength());
+	args.GetReturnValue().Set(JS_INT(bs->getLength()));
 }
 
 JS_METHOD(_pop) {
 	ByteStorageB * bs = BS_THIS;
-	if (!bs->getLength()) { return v8::Undefined(); }
-	return JS_INT(bs->pop());
+	if (!bs->getLength()) { args.GetReturnValue().SetUndefined(); return; }
+	args.GetReturnValue().Set(JS_INT(bs->pop()));
 }
 
 JS_METHOD(_shift) {
 	ByteStorageB * bs = BS_THIS;
-	if (!bs->getLength()) { return v8::Undefined(); }
-	return JS_INT(bs->shift());
+	if (!bs->getLength()) { args.GetReturnValue().SetUndefined(); return; }
+	args.GetReturnValue().Set(JS_INT(bs->shift()));
 }
 
 JS_METHOD(_push) {
-	return Binary_concat(args.This(), args, true);
+	Binary_concat(args.This(), args, true);
 }
 
 JS_METHOD(_unshift) {
-	return Binary_concat(args.This(), args, false);
+	Binary_concat(args.This(), args, false);
 }
 
 JS_METHOD(_reverse) {
 	ByteStorageB * bs = BS_THIS;
 	bs->reverse();
-	return args.This();
+	args.GetReturnValue().Set(args.This());
 }
 
 JS_METHOD(_concat) {
 	Binary_concat(args.This(), args, true);
-	return args.This();
+	args.GetReturnValue().Set(args.This());
 }
 
-v8::Handle<v8::Value> _get(uint32_t index, const v8::AccessorInfo &info) {
+void _get(uint32_t index, const v8::PropertyCallbackInfo<v8::Value>& info) {
 	ByteStorageB * bs = BS_OTHER(info.This());
 	size_t len = bs->getLength();
-	if (index < 0 || index >= len) { return v8::Undefined(); }
-	
-	return JS_INT(bs->getByte(index));
+	if (index < 0 || index >= len) { info.GetReturnValue().SetUndefined(); return; }
+
+	info.GetReturnValue().Set(JS_INT(bs->getByte(index)));
 }
 
-v8::Handle<v8::Value> _set(uint32_t index, v8::Local<v8::Value> value, const v8::AccessorInfo &info) {
+void _set(uint32_t index, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<v8::Value>& info) {
 	ByteStorageB * bs = BS_OTHER(info.This());
 	size_t len = bs->getLength();
-	if (index < 0 || index >= len) { return v8::Undefined(); }
+	if (index < 0 || index >= len) { info.GetReturnValue().SetUndefined(); return; }
 	
 	size_t number = value->IntegerValue();
 	bs->setByte(index, (unsigned char) number);
 
-	return value;
+	info.GetReturnValue().Set(value);
 }
 
-void _length(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::AccessorInfo &info) {
+void _length(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<void> &info) {
 	int num = value->IntegerValue();
 	if (num < 0) { 
 		JS_RANGE_ERROR("ByteArray length cannot be negative"); 
@@ -173,9 +179,10 @@ void _length(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v
 } /* end namespace */
 
 void ByteArray_init(v8::Handle<v8::FunctionTemplate> binaryTemplate) {
-	byteArrayTemplate = v8::Persistent<v8::FunctionTemplate>::New(v8::FunctionTemplate::New(_ByteArray));
+	v8::Local<v8::FunctionTemplate> byteArrayTemplate = v8::FunctionTemplate::New(JS_ISOLATE, _ByteArray);
 	byteArrayTemplate->Inherit(binaryTemplate);
 	byteArrayTemplate->SetClassName(JS_STR("ByteArray"));
+	_byteArrayTemplate.Reset(JS_ISOLATE, byteArrayTemplate);
 
 	v8::Handle<v8::ObjectTemplate> byteArrayObject = byteArrayTemplate->InstanceTemplate();
 	byteArrayObject->SetInternalFieldCount(1);	
@@ -183,23 +190,23 @@ void ByteArray_init(v8::Handle<v8::FunctionTemplate> binaryTemplate) {
 	byteArrayObject->SetIndexedPropertyHandler(_get, _set);
 
 	v8::Handle<v8::ObjectTemplate> byteArrayPrototype = byteArrayTemplate->PrototypeTemplate();
-	byteArrayPrototype->Set(JS_STR("slice"), v8::FunctionTemplate::New(_slice));
-	byteArrayPrototype->Set(JS_STR("splice"), v8::FunctionTemplate::New(_splice));
-	byteArrayPrototype->Set(JS_STR("displace"), v8::FunctionTemplate::New(_displace));
-	byteArrayPrototype->Set(JS_STR("pop"), v8::FunctionTemplate::New(_pop));
-	byteArrayPrototype->Set(JS_STR("shift"), v8::FunctionTemplate::New(_shift));
-	byteArrayPrototype->Set(JS_STR("push"), v8::FunctionTemplate::New(_push));
-	byteArrayPrototype->Set(JS_STR("unshift"), v8::FunctionTemplate::New(_unshift));
-	byteArrayPrototype->Set(JS_STR("reverse"), v8::FunctionTemplate::New(_reverse));
-	byteArrayPrototype->Set(JS_STR("concat"), v8::FunctionTemplate::New(_concat));
+	byteArrayPrototype->Set(JS_STR("slice"), v8::FunctionTemplate::New(JS_ISOLATE, _slice));
+	byteArrayPrototype->Set(JS_STR("splice"), v8::FunctionTemplate::New(JS_ISOLATE, _splice));
+	byteArrayPrototype->Set(JS_STR("displace"), v8::FunctionTemplate::New(JS_ISOLATE, _displace));
+	byteArrayPrototype->Set(JS_STR("pop"), v8::FunctionTemplate::New(JS_ISOLATE, _pop));
+	byteArrayPrototype->Set(JS_STR("shift"), v8::FunctionTemplate::New(JS_ISOLATE, _shift));
+	byteArrayPrototype->Set(JS_STR("push"), v8::FunctionTemplate::New(JS_ISOLATE, _push));
+	byteArrayPrototype->Set(JS_STR("unshift"), v8::FunctionTemplate::New(JS_ISOLATE, _unshift));
+	byteArrayPrototype->Set(JS_STR("reverse"), v8::FunctionTemplate::New(JS_ISOLATE, _reverse));
+	byteArrayPrototype->Set(JS_STR("concat"), v8::FunctionTemplate::New(JS_ISOLATE, _concat));
 
-	byteArray = v8::Persistent<v8::Function>::New(byteArrayTemplate->GetFunction());
+	_byteArray.Reset(JS_ISOLATE, byteArrayTemplate->GetFunction());
 }
 
-v8::Handle<v8::Function> ByteArray_function() {
-	return byteArray;
+v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function> > ByteArray_function() {
+	return _byteArray;
 }
 
-v8::Handle<v8::FunctionTemplate> ByteArray_template() {
-	return byteArrayTemplate;
+v8::Persistent<v8::FunctionTemplate, v8::CopyablePersistentTraits<v8::FunctionTemplate> > ByteArray_template() {
+	return _byteArrayTemplate;
 }

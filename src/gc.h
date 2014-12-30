@@ -15,10 +15,10 @@ public:
 
 	typedef void (*dtor_t) (v8::Handle<v8::Object>);
 
-	typedef std::list<std::pair<v8::Persistent<v8::Value>, dtor_t> > objlist;
+	typedef std::list<std::pair<v8::Persistent<v8::Value, v8::CopyablePersistentTraits<v8::Value> >, dtor_t> > objlist;
 
 	/* this method is called by V8 when persistent handle gets weak */
-	static void handler(v8::Persistent<v8::Value> object, void * ptr);
+	static void handler(const v8::WeakCallbackData<v8::Value, void>& data);
 
 	/* objects subscribe by calling this method */
 	virtual void add(v8::Handle<v8::Value> object, dtor_t);

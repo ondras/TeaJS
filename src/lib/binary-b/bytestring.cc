@@ -11,8 +11,8 @@
 
 namespace {
 
-v8::Persistent<v8::FunctionTemplate> byteStringTemplate;
-v8::Persistent<v8::Function> byteString;
+v8::Persistent<v8::FunctionTemplate, v8::CopyablePersistentTraits<v8::FunctionTemplate> > _byteStringTemplate;
+v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function> > _byteString;
 
 /**
  * ByteString constructor
@@ -37,10 +37,12 @@ JS_METHOD(_ByteString) {
 					if (IS_BINARY(obj)) {
 						SAVE_PTR(0, new ByteStorageB(BS_OTHER(obj)));
 					} else {
-						return WRONG_CTOR;
+						WRONG_CTOR;
+						return;
 					}
 				} else {
-					return WRONG_CTOR;
+					WRONG_CTOR;
+					return;
 				}
 			} break;
 			case 2: {
@@ -52,17 +54,19 @@ JS_METHOD(_ByteString) {
 				SAVE_PTR(0, bs);
 			} break;
 			default:
-				return WRONG_CTOR;
+				WRONG_CTOR;
+				return;
 			break;
 		}
 	} catch (std::string e) {
-		return JS_ERROR(e.c_str());
+		JS_ERROR(e.c_str());
+		return;
 	}
 
 	GC * gc = GC_PTR;
 	gc->add(args.This(), Binary_destroy);
 
-	return args.This();
+	args.GetReturnValue().Set(args.This());
 }
 
 JS_METHOD(_slice) {
@@ -75,36 +79,38 @@ JS_METHOD(_slice) {
 	size_t end = (end_ < 0 ? 0 : end_);
 	
 	ByteStorageB * bs2 = new ByteStorageB(bs, start, end);
-	v8::Handle<v8::Value> newargs[] = { v8::External::New((void*)bs2) };
+	v8::Handle<v8::Value> newargs[] = { v8::External::New(JS_ISOLATE, (void*)bs2) };
 
-	return byteString->NewInstance(1, newargs);
+	v8::Local<v8::Function> byteString = v8::Local<v8::Function>::New(JS_ISOLATE, _byteString);
+	args.GetReturnValue().Set(byteString->NewInstance(1, newargs));
 }
 
 JS_METHOD(_concat) {
 	v8::Handle<v8::Value> newargs[]= { args.This() };
-	v8::Handle<v8::Object> result = ByteString_function()->NewInstance(1, newargs);
+	v8::Local<v8::Function> byteString = v8::Local<v8::Function>::New(JS_ISOLATE, _byteString);
+	v8::Handle<v8::Object> result = byteString->NewInstance(1, newargs);
 	Binary_concat(result, args, true);
-	return result;
 }
 
-v8::Handle<v8::Value> _get(uint32_t index, const v8::AccessorInfo &info) {
+void _get(uint32_t index, const v8::PropertyCallbackInfo<v8::Value>& info) {
 	ByteStorageB * bs = BS_OTHER(info.This());
 	size_t len = bs->getLength();
-	if (index < 0 || index >= len) { return v8::Undefined(); }
+	if (index < 0 || index >= len) { info.GetReturnValue().SetUndefined(); return; }
 	
 	ByteStorageB * bs2 = new ByteStorageB(bs, index, index+1);
-	v8::Handle<v8::Value> newargs[] = { v8::External::New((void*)bs2) };
-	
-	return byteString->NewInstance(1, newargs);
+	v8::Handle<v8::Value> newargs[] = { v8::External::New(JS_ISOLATE, (void*)bs2) };
+	v8::Local<v8::Function> byteString = v8::Local<v8::Function>::New(JS_ISOLATE, _byteString);
+	info.GetReturnValue().Set(byteString->NewInstance(1, newargs));
 }
 
 
 } /* end namespace */
 
 void ByteString_init(v8::Handle<v8::FunctionTemplate> binaryTemplate) {
-	byteStringTemplate = v8::Persistent<v8::FunctionTemplate>::New(v8::FunctionTemplate::New(_ByteString));
+	v8::Local<v8::FunctionTemplate> byteStringTemplate = v8::FunctionTemplate::New(JS_ISOLATE, _ByteString);
 	byteStringTemplate->Inherit(binaryTemplate);
 	byteStringTemplate->SetClassName(JS_STR("ByteString"));
+	_byteStringTemplate.Reset(JS_ISOLATE, byteStringTemplate);
 	
 	v8::Handle<v8::ObjectTemplate> byteStringObject = byteStringTemplate->InstanceTemplate();
 	byteStringObject->SetInternalFieldCount(1);	
@@ -112,16 +118,16 @@ void ByteString_init(v8::Handle<v8::FunctionTemplate> binaryTemplate) {
 	byteStringObject->SetIndexedPropertyHandler(_get);
 
 	v8::Handle<v8::ObjectTemplate> byteStringPrototype = byteStringTemplate->PrototypeTemplate();
-	byteStringPrototype->Set(JS_STR("slice"), v8::FunctionTemplate::New(_slice));
-	byteStringPrototype->Set(JS_STR("concat"), v8::FunctionTemplate::New(_concat));
+	byteStringPrototype->Set(JS_STR("slice"), v8::FunctionTemplate::New(JS_ISOLATE, _slice));
+	byteStringPrototype->Set(JS_STR("concat"), v8::FunctionTemplate::New(JS_ISOLATE, _concat));
 
-	byteString = v8::Persistent<v8::Function>::New(byteStringTemplate->GetFunction());
+	_byteString.Reset(JS_ISOLATE, byteStringTemplate->GetFunction());
 }
 
-v8::Handle<v8::Function> ByteString_function() {
-	return byteString;
+v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function> > ByteString_function() {
+	return _byteString;
 }
 
-v8::Handle<v8::FunctionTemplate> ByteString_template() {
-	return byteStringTemplate;
+v8::Persistent<v8::FunctionTemplate, v8::CopyablePersistentTraits<v8::FunctionTemplate> > ByteString_template() {
+	return _byteStringTemplate;
 }

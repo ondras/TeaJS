@@ -21,7 +21,7 @@
 ByteStorage::ByteStorage(size_t length) {
 	this->length = length;
 	this->storage = new ByteStorageData(length);
-	v8::V8::AdjustAmountOfExternalAllocatedMemory(length);
+	JS_ISOLATE->AdjustAmountOfExternalAllocatedMemory(length);
 	this->data = this->storage->getData();
 }
 
@@ -31,7 +31,7 @@ ByteStorage::ByteStorage(size_t length) {
 ByteStorage::ByteStorage(char * data, size_t length) {
 	this->length = length;
 	this->storage = new ByteStorageData(length);
-	v8::V8::AdjustAmountOfExternalAllocatedMemory(length);
+	JS_ISOLATE->AdjustAmountOfExternalAllocatedMemory(length);
 	this->data = this->storage->getData();
 	
 	if (length) { memcpy(this->data, data, length); }
@@ -50,8 +50,8 @@ ByteStorage::~ByteStorage() {
 	inst--;
 	this->storage->setInstances(inst);
 	if (!inst) { 
-		delete this->storage; 
-		v8::V8::AdjustAmountOfExternalAllocatedMemory(-length);
+		delete this->storage;
+		JS_ISOLATE->AdjustAmountOfExternalAllocatedMemory(-length);
 	} /* last reference */
 	
 	this->storage = NULL;

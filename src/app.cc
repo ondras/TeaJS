@@ -34,9 +34,11 @@ JS_METHOD(_require) {
 	std::string root = *(v8::String::Utf8Value(args.Data()));
 	
 	try {
-		return app->require(*file, root);
+		v8::Persistent<v8::Value> required;
+		required.Reset(JS_ISOLATE, app->require(*file, root));
+		args.GetReturnValue().Set(required);
 	} catch (std::string e) {
-		return JS_ERROR(e.c_str());
+		JS_ERROR(e.c_str());
 	}
 }
 
@@ -45,10 +47,11 @@ JS_METHOD(_require) {
  */
 JS_METHOD(_onexit) {
 	TeaJS_App * app = APP_PTR;
-	if (!args[0]->IsFunction()) { return JS_TYPE_ERROR("Non-function passed to onexit()"); }
-	v8::Persistent<v8::Function> fun = v8::Persistent<v8::Function>::New(v8::Handle<v8::Function>::Cast(args[0]));
+	if (!args[0]->IsFunction()) { JS_TYPE_ERROR("Non-function passed to onexit()"); return; }
+	v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function> > fun;
+	fun.Reset(JS_ISOLATE, v8::Handle<v8::Function>::Cast(args[0]));
 	app->onexit.push_back(fun);
-	return v8::Undefined();
+	args.GetReturnValue().SetUndefined();
 }
 
 /**
@@ -62,10 +65,10 @@ JS_METHOD(_exit) {
 		app->exit_code = 1;
 	}
 
-	v8::V8::TerminateExecution();
+	v8::V8::TerminateExecution(JS_ISOLATE);
 	/* do something at least a bit complex so the stack guard can throw the termination exception */
 	v8::Script::Compile(JS_STR("(function(){})()"))->Run();
-	return v8::Undefined();
+	args.GetReturnValue().SetUndefined();
 }
 
 /**
@@ -75,29 +78,37 @@ void TeaJS_App::init() {
 	this->cfgfile = STRING(CONFIG_PATH);
 	this->show_errors = false;
 	this->exit_code = 0;
+
+	v8::V8::InitializeICU();
+	v8::V8::Initialize();
+
+	this->isolate = v8::Isolate::New();
+	this->isolate->Enter();
 }
 
 /**
  * Initialize and setup the context. Executed during every request, prior to executing main request file.
  */
 void TeaJS_App::prepare(char ** envp) {
-	v8::HandleScope handle_scope;
+	v8::HandleScope handle_scope(JS_ISOLATE);
 	v8::Handle<v8::Object> g = JS_GLOBAL;
 
 	std::string root = path_getcwd();
 	/* FIXME it might be better NOT to expose this to global
 	g->Set(JS_STR("require"), v8::FunctionTemplate::New(_require, JS_STR(root.c_str()))->GetFunction());
 	*/
-	g->Set(JS_STR("onexit"), v8::FunctionTemplate::New(_onexit)->GetFunction());
-	g->Set(JS_STR("exit"), v8::FunctionTemplate::New(_exit)->GetFunction());
+	g->Set(JS_STR("onexit"), v8::FunctionTemplate::New(JS_ISOLATE, _onexit)->GetFunction());
+	g->Set(JS_STR("exit"), v8::FunctionTemplate::New(JS_ISOLATE, _exit)->GetFunction());
 	g->Set(JS_STR("global"), g);
 
-	this->paths = v8::Persistent<v8::Array>::New(v8::Array::New());
+	this->paths.Reset(JS_ISOLATE, v8::Array::New(JS_ISOLATE));
+	v8::Local<v8::Array> paths = v8::Local<v8::Array>::New(JS_ISOLATE, this->paths);
 
 	/* config file */
-	v8::Handle<v8::Object> config = this->require(path_normalize(this->cfgfile), path_getcwd());
+	v8::Local<v8::Object> config =
+			v8::Local<v8::Object>::New(JS_ISOLATE, this->require(path_normalize(this->cfgfile), path_getcwd()));
 
-	if (!this->paths->Length()) { 
+	if (!paths->Length()) {
 		std::string error = "require.paths is empty, have you forgotten to push some data there?";
 		throw error;
 	}
@@ -113,12 +124,12 @@ void TeaJS_App::prepare(char ** envp) {
  * @param {char**} envp Environment
  */
 void TeaJS_App::execute(char ** envp) {
-	v8::Locker locker;
-	v8::HandleScope handle_scope;
+	v8::Locker locker(JS_ISOLATE);
+	v8::HandleScope handle_scope(JS_ISOLATE);
 
 	std::string caught;
 	this->create_context();
-	this->mainModule = v8::Object::New();
+	this->mainModule.Reset(JS_ISOLATE, v8::Object::New(JS_ISOLATE));
 
 	try {
 		v8::TryCatch tc;
@@ -151,9 +162,9 @@ void TeaJS_App::finish() {
 
 	/* user callbacks */
 	for (unsigned int i=0; i<this->onexit.size(); i++) {
-		this->onexit[i]->Call(JS_GLOBAL, 0, NULL);
-		this->onexit[i].Dispose();
-		this->onexit[i].Clear();
+		v8::Local<v8::Function> onexit = v8::Local<v8::Function>::New(JS_ISOLATE, this->onexit[i]);
+		onexit->Call(JS_GLOBAL, 0, NULL);
+		this->onexit[i].Reset();
 	}
 	this->onexit.clear();
 
@@ -171,8 +182,8 @@ void TeaJS_App::finish() {
  * @param {std::string} name
  * @param {std::string} relativeRoot module root for relative includes
  */
-v8::Handle<v8::Object> TeaJS_App::require(std::string name, std::string relativeRoot) {
-	v8::HandleScope hs;
+v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> > TeaJS_App::require(std::string name, std::string relativeRoot) {
+	v8::HandleScope hs(JS_ISOLATE);
 #ifdef VERBOSE
 	printf("[require] looking for '%s'\n", name.c_str()); 
 #endif	
@@ -192,8 +203,8 @@ v8::Handle<v8::Object> TeaJS_App::require(std::string name, std::string relative
 	/* module name is the first component => hybrid modules are indexed by their native part */
 	std::string modulename = files[0];
 	modulename = modulename.substr(0,  modulename.find_last_of('.'));
-	
-	v8::Handle<v8::Object> exports = this->cache.getExports(modulename);
+
+	v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> > exports = this->cache.getExports(modulename);
 	/* check if exports are cached */
 	if (!exports.IsEmpty()) { return exports; }
 	
@@ -201,11 +212,12 @@ v8::Handle<v8::Object> TeaJS_App::require(std::string name, std::string relative
 	v8::Handle<v8::Function> require = this->build_require(modulename, _require);
 
 	/* add new blank exports to cache */
-	exports = v8::Object::New();
-	this->cache.addExports(modulename, exports);
+	v8::Handle<v8::Object> _exports = v8::Object::New(JS_ISOLATE);
+	this->cache.addExports(modulename, _exports);
 
 	/* create/use the "module" variable" */
-	v8::Handle<v8::Object> module = (name == this->mainfile ? this->mainModule : v8::Object::New());
+	v8::Handle<v8::Object> module =
+			(name == this->mainfile ? v8::Local<v8::Object>::New(JS_ISOLATE, this->mainModule) : v8::Object::New(JS_ISOLATE));
 	module->Set(JS_STR("id"), JS_STR(modulename.c_str()));
 
 	int status = 0;
@@ -213,28 +225,30 @@ v8::Handle<v8::Object> TeaJS_App::require(std::string name, std::string relative
 		std::string file = files[i];
 		std::string ext = file.substr(file.find_last_of('.')+1, std::string::npos);
 		if (ext == STRING(DSO_EXT)) {
-			this->load_dso(file, require, exports, module);
+			this->load_dso(file, require, _exports, module);
 		} else {
-			status = this->load_js(file, require, exports, module);
+			status = this->load_js(file, require, _exports, module);
 			if (status != 0) {
 				this->cache.removeExports(modulename);
-				return hs.Close(exports);
+				exports.Reset(JS_ISOLATE, _exports);
+				return exports;
 			}
 		}
 		
 	}
 
-	return hs.Close(exports);
+	exports.Reset(JS_ISOLATE, _exports);
+	return exports;
 }
 
 /**
  * Include a js module
  */
 int TeaJS_App::load_js(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module) {
-	v8::HandleScope handle_scope;
+	v8::HandleScope handle_scope(JS_ISOLATE);
 
 	/* compiled script wrapped in anonymous function */
-	v8::Handle<v8::Script> script = this->cache.getScript(filename);
+	v8::Local<v8::Script> script = v8::Local<v8::Script>::New(JS_ISOLATE, this->cache.getScript(filename));
 
 	if (script.IsEmpty()) { return 1; } /* compilation error? */
 	/* run the script, no error should happen here */
@@ -251,7 +265,7 @@ int TeaJS_App::load_js(std::string filename, v8::Handle<v8::Function> require, v
  * Include a DSO module
  */
 void TeaJS_App::load_dso(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module) {
-	v8::HandleScope handle_scope;
+	v8::HandleScope handle_scope(JS_ISOLATE);
 	void * handle = this->cache.getHandle(filename);;
 	
 	typedef void (*init_t)(v8::Handle<v8::Function>, v8::Handle<v8::Object>, v8::Handle<v8::Object>);
@@ -290,7 +304,7 @@ TeaJS_App::modulefiles TeaJS_App::resolve_module(std::string name, std::string r
 		return this->resolve_extension(path);
 	} else {
 		/* convert to array of search paths */
-		v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(this->paths);
+		v8::Local<v8::Array> arr = v8::Local<v8::Array>::New(JS_ISOLATE, this->paths);
 		int length = arr->Length();
 		v8::Handle<v8::Value> prefix;
 		modulefiles result;
@@ -345,7 +359,7 @@ TeaJS_App::modulefiles TeaJS_App::resolve_extension(std::string path) {
  * Convert JS exception to c string 
  */
 std::string TeaJS_App::format_exception(v8::TryCatch* try_catch) {
-	v8::HandleScope handle_scope;
+	v8::HandleScope handle_scope(JS_ISOLATE);
 	v8::String::Utf8Value exception(try_catch->Exception());
 	v8::Handle<v8::Message> message = try_catch->Message();
 	std::string msgstring = "";
@@ -378,25 +392,33 @@ std::string TeaJS_App::format_exception(v8::TryCatch* try_catch) {
  * Creates a new context
  */
 void TeaJS_App::create_context() {
-	v8::HandleScope handle_scope;
-	
+	v8::HandleScope handle_scope(JS_ISOLATE);
+
 	if (this->global.IsEmpty()) { /* first time */
-		this->globalt = v8::Persistent<v8::ObjectTemplate>::New(v8::ObjectTemplate::New());
-		this->globalt->SetInternalFieldCount(2);
-		this->context = v8::Context::New(NULL, this->globalt);
-		this->context->Enter();
-		this->global = v8::Persistent<v8::Value>::New(JS_GLOBAL);
+		v8::Local<v8::ObjectTemplate> globalt = v8::ObjectTemplate::New(JS_ISOLATE);
+		globalt->SetInternalFieldCount(2);
+		this->globalt.Reset(JS_ISOLATE, globalt);
+
+		v8::Local<v8::Context> context = v8::Context::New(JS_ISOLATE, NULL, globalt);
+		context->Enter();
+		this->context.Reset(JS_ISOLATE, context);
+
+		this->global.Reset(JS_ISOLATE, JS_GLOBAL);
 	} else { /* Nth time */
 #ifdef REUSE_CONTEXT
-		this->context->Enter();
+		v8::Local<v8::Context> context = v8::Local<v8::Context>::New(JS_ISOLATE, this->context);
+		context->Enter();
 		this->clear_global(); /* reuse - just clear */
 #else
-		this->context = v8::Context::New(NULL, this->globalt, this->global);
-		this->context->Enter();
+		v8::Local<v8::ObjectTemplate> globalt = v8::Local<v8::ObjectTemplate>::New(JS_ISOLATE, this->globalt);
+		v8::Local<v8::Value> global = v8::Local<v8::Value>::New(JS_ISOLATE, this->global);
+		v8::Local<v8::Context> context = v8::Context::New(JS_ISOLATE, NULL, globalt, global);
+		context->Enter();
+		this->context.Reset(JS_ISOLATE, context);
 #endif
 	}
-	GLOBAL_PROTO->SetInternalField(0, v8::External::New((void *) this)); 
-	GLOBAL_PROTO->SetInternalField(1, v8::External::New((void *) &(this->gc))); 
+	GLOBAL_PROTO->SetInternalField(0, v8::External::New(JS_ISOLATE, (void *) this));
+	GLOBAL_PROTO->SetInternalField(1, v8::External::New(JS_ISOLATE, (void *) &(this->gc)));
 
 }
 
@@ -404,10 +426,10 @@ void TeaJS_App::create_context() {
  * Deletes the existing context
  */
 void TeaJS_App::delete_context() {
-	this->context->Exit();
+	v8::Local<v8::Context> context = v8::Local<v8::Context>::New(JS_ISOLATE, this->context);
+	context->Exit();
 #ifndef REUSE_CONTEXT
-	this->context.Dispose();
-	this->context.Clear();
+	this->context.Reset();
 #endif
 }
 
@@ -435,19 +457,21 @@ v8::Handle<v8::Value> TeaJS_App::get_config(std::string name) {
 /**
  * Build module-specific require
  */
-v8::Handle<v8::Function> TeaJS_App::build_require(std::string path, v8::Handle<v8::Value> (*func) (const v8::Arguments&)) {
+v8::Handle<v8::Function> TeaJS_App::build_require(std::string path, void (*func) (const v8::FunctionCallbackInfo<v8::Value>&)) {
 	std::string root = path_dirname(path);
-	v8::Handle<v8::FunctionTemplate> requiretemplate = v8::FunctionTemplate::New(func, JS_STR(root.c_str()));
+	v8::Handle<v8::FunctionTemplate> requiretemplate = v8::FunctionTemplate::New(JS_ISOLATE, func, JS_STR(root.c_str()));
 	v8::Handle<v8::Function> require = requiretemplate->GetFunction();
-	require->Set(JS_STR("paths"), this->paths);
-	require->Set(JS_STR("main"), this->mainModule);
+	v8::Local<v8::Array> paths = v8::Local<v8::Array>::New(JS_ISOLATE, this->paths);
+	require->Set(JS_STR("paths"), paths);
+	v8::Local<v8::Object> mainModule = v8::Local<v8::Object>::New(JS_ISOLATE, this->mainModule);
+	require->Set(JS_STR("main"), mainModule);
 	return require;
 }
 
 void TeaJS_App::setup_teajs(v8::Handle<v8::Object> target) {
-	v8::HandleScope handle_scope;
+	v8::HandleScope handle_scope(JS_ISOLATE);
 	
-	v8::Handle<v8::Object> teajs = v8::Object::New();
+	v8::Handle<v8::Object> teajs = v8::Object::New(JS_ISOLATE);
 	teajs->Set(JS_STR("version"), JS_STR(STRING(VERSION)));
 	teajs->Set(JS_STR("instanceType"), JS_STR(this->instanceType()));
 	teajs->Set(JS_STR("executableName"), JS_STR(this->executableName()));

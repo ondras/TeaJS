@@ -54,7 +54,7 @@ void Cache::erase(std::string filename) {
 	
 	ScriptValue::iterator it3 = scripts.find(filename);
 	if (it3 != scripts.end()) { 
-		it3->second.Dispose();
+		it3->second.Reset();
 		scripts.erase(it3); 
 	}
 }
@@ -149,7 +149,7 @@ void * Cache::getHandle(std::string filename) {
 /**
  * Return compiled script from a given file
  */
-v8::Handle<v8::Script> Cache::getScript(std::string filename) {
+v8::Persistent<v8::Script, v8::CopyablePersistentTraits<v8::Script> > Cache::getScript(std::string filename) {
 #ifdef VERBOSE
 	printf("[getScript] cache try for '%s' .. ", filename.c_str()); 
 #endif	
@@ -165,21 +165,23 @@ v8::Handle<v8::Script> Cache::getScript(std::string filename) {
 #endif
 		std::string source = this->getSource(filename);
 		/* context-independent compiled script */
-		v8::Handle<v8::Script> script = v8::Script::New(JS_STR(source.c_str()), JS_STR(filename.c_str()));
+		v8::Handle<v8::Script> script = v8::Script::Compile(JS_STR(source.c_str()), JS_STR(filename.c_str()));
+		v8::Persistent<v8::Script, v8::CopyablePersistentTraits<v8::Script> > _script;
+		_script.Reset(JS_ISOLATE, script);
+
 		if (!script.IsEmpty()) {
 			this->mark(filename); /* mark as cached */
-			v8::Persistent<v8::Script> result = v8::Persistent<v8::Script>::New(script);
-			scripts[filename] = result;
-			return result;
+			scripts[filename] = _script;
+			return _script;
 		}
-		return script;
+		return _script;
 	}
 }
 
 /**
  * Return exports object for a given file
  */
-v8::Handle<v8::Object> Cache::getExports(std::string filename) {
+v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> > Cache::getExports(std::string filename) {
 	ExportsValue::iterator it = exports.find(filename);
 	if (it != exports.end()) { 
 #ifdef VERBOSE
@@ -189,8 +191,8 @@ v8::Handle<v8::Object> Cache::getExports(std::string filename) {
 	} else {
 #ifdef VERBOSE
 		printf("[getExports] '%s' has no cached exports\n", filename.c_str()); 
-#endif	
-		return v8::Handle<v8::Object>();
+#endif
+		return v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> >();
 	}
 }
 
@@ -201,7 +203,8 @@ void Cache::addExports(std::string filename, v8::Handle<v8::Object> obj) {
 #ifdef VERBOSE
 		printf("[addExports] caching exports for '%s'\n", filename.c_str()); 
 #endif	
-	exports[filename] = v8::Persistent<v8::Object>::New(obj);
+	exports[filename] = v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> >();
+	exports[filename].Reset(JS_ISOLATE, obj);
 }
 
 /**
@@ -213,8 +216,7 @@ void Cache::removeExports(std::string filename) {
 #endif	
 	ExportsValue::iterator it = exports.find(filename);
 	if (it != exports.end()) { 
-		it->second.Dispose();
-		it->second.Clear();
+		it->second.Reset();
 		exports.erase(it);
 	}
 }
@@ -225,8 +227,7 @@ void Cache::removeExports(std::string filename) {
 void Cache::clearExports() {
 	ExportsValue::iterator it;
 	for (it=exports.begin(); it != exports.end(); it++) {
-		it->second.Dispose();
-		it->second.Clear();
+		it->second.Reset();
 	}
 	exports.clear();
 }

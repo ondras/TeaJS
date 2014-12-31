@@ -10,23 +10,25 @@ void callbackTimerFunc(int value) {
     timerData * elem = persistentTimers[value];
     if(elem != NULL) {
       //define handle scope
-      HandleScope scope;
+      HandleScope scope(v8::Isolate::GetCurrent());
       Handle<Value> args[1];
-      args[0] = Integer::New(elem->value);
-      Persistent<Function> timer = elem->timerFunc;
-      timer->Call(GlutFactory::glut_persistent_context->Global(), 1, args);
+      args[0] = Integer::New(v8::Isolate::GetCurrent(), elem->value);
+      Local<Function> timer = Local<Function>::New(v8::Isolate::GetCurrent(), elem->timerFunc);
+      Local<Context> glut_persistent_context = Local<Context>::New(v8::Isolate::GetCurrent(), GlutFactory::glut_persistent_context);
+      timer->Call(glut_persistent_context->Global(), 1, args);
 
-      timer.Dispose();
       delete elem;
       persistentTimers[value] = NULL;
     }
 }
 
-Handle<Value> GLUTTimerFuncCallback(const Arguments& args) {
+void GLUTTimerFuncCallback(const FunctionCallbackInfo<Value>& args) {
   //if less that nbr of formal parameters then do nothing
-  if (args.Length() < 3) return v8::Undefined();
+  if (args.Length() < 3) {
+    args.GetReturnValue().SetUndefined();
+  }
   //define handle scope
-  HandleScope scope;
+  HandleScope scope(v8::Isolate::GetCurrent());
   //get arguments
   unsigned int millisec = args[0]->Uint32Value();
   int timerId = args[2]->IntegerValue();
@@ -38,11 +40,10 @@ Handle<Value> GLUTTimerFuncCallback(const Arguments& args) {
       if(persistentTimers[i] == NULL) {
           //get the function
           Handle<Function> value = Handle<Function>::Cast(args[1]);
-          Persistent<Function> persistentValue = Persistent<Function>::New(value);
           //assign callback and value values.
           timerData * structElem = new timerData;
           structElem->value = timerId;
-          structElem->timerFunc = persistentValue;
+          structElem->timerFunc.Reset(v8::Isolate::GetCurrent(), value);
           persistentTimers[i] = structElem;
           found = true;
           break;
@@ -50,10 +51,13 @@ Handle<Value> GLUTTimerFuncCallback(const Arguments& args) {
   }
 
   //TODO add dynamic resize for persistent Timers
-  if(!found) return v8::Undefined();
+  if(!found) {
+    args.GetReturnValue().SetUndefined();
+    return;
+  }
 
   //make call
   //Don't pass the actual *value*, but an id to our persistent Function
   glutTimerFunc(( unsigned int ) millisec, (  void (* )( int )) callbackTimerFunc, ( int ) i);
-  return v8::Undefined();
+  args.GetReturnValue().SetUndefined();
 }

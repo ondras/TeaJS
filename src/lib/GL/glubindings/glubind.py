@@ -61,8 +61,6 @@ def make_main_gl_function(constants, functions, void_stars):
     text_out_begin = """
 
 Handle<ObjectTemplate> createGlu(void) {
-      HandleScope handle_scope;
-
       Handle<ObjectTemplate> Glu = ObjectTemplate::New();
       Glu->SetInternalFieldCount(1);
 
@@ -71,7 +69,7 @@ Handle<ObjectTemplate> createGlu(void) {
     text_out_end = """
 
       // Again, return the result through the current handle scope.
-      return handle_scope.Close(Glu);
+      return Glu;
 }    
 """
     fnt = [bind_font(name) for name in void_stars]    
@@ -82,11 +80,11 @@ Handle<ObjectTemplate> createGlu(void) {
     
 
 def make_constant(prefix, name):
-    return_val = "return Uint32::New(GLU_"+ name +");"
+    return_val = "info.GetReturnValue().Set(Uint32::New(v8::Isolate::GetCurrent(), GLU_"+ name +"));"
     text_out = """
 
-Handle<Value> GetGLU_%%(Local<String> property,
-                      const AccessorInfo &info) {
+void GetGLU_%%(Local<String> property,
+                      const PropertyCallbackInfo<Value>& info) {
     ##
 }
 
@@ -101,16 +99,16 @@ Handle<Value> GetGLU_%%(Local<String> property,
 def make_function(prefix, name, params, return_val):
     text_out = """
 
-Handle<Value> GLU<name>Callback(const Arguments& args) {
+void GLU<name>Callback(const FunctionCallbackInfo<Value>& args) {
   //if less that nbr of formal parameters then do nothing
-  if (args.Length() < <len_params>) return v8::Undefined();
+  if (args.Length() < <len_params>) { args.GetReturnValue().SetUndefined(); return; }
   //define handle scope
-  HandleScope scope;
+  HandleScope scope(v8::Isolate::GetCurrent());
   //get arguments
 <args>
   //make call
   <call>
-  return v8::Undefined();
+  args.GetReturnValue().SetUndefined();
 }
 
 """
@@ -186,10 +184,10 @@ def make_call(name, params_list, nb):
     return name + "(" + ", ".join([get_type(params_list[i]) + "arg" + str(i) for i in range(nb)]) + ");"
             
 def bind_accessor(prefix, name):
-    return "     " + prefix + "->SetAccessor(String::NewSymbol(\"" + name + "\"), GetGLU_" + name + ");\n"
+    return "     " + prefix + "->SetAccessor(String::NewFromUtf8(v8::Isolate::GetCurrent(), \"" + name + "\"), GetGLU_" + name + ");\n"
 
 def bind_function(prefix, name):
-    return "     " + prefix + "->Set(String::NewSymbol(\"" + name + "\"), FunctionTemplate::New(GLU" + name + "Callback));\n"
+    return "     " + prefix + "->Set(String::NewFromUtf8(v8::Isolate::GetCurrent(), \"" + name + "\"), FunctionTemplate::New(v8::Isolate::GetCurrent(), GLU" + name + "Callback));\n"
 
 def bind_font(name):
     return "     font_[\""+ name +"\"] = GLUT_" + name + ";\n"
@@ -217,7 +215,7 @@ def make_array_expression(type, i):
   Handle<Array> arrHandle##1 = Handle<Array>::Cast(args[##1]);
   ##2 arg##1 = new ##3[arrHandle##1->Length()];
   for (unsigned j = 0; j < arrHandle##1->Length(); j++) {
-      Handle<Value> arg(arrHandle##1->Get(Integer::New(j)));
+      Handle<Value> arg(arrHandle##1->Get(Integer::New(v8::Isolate::GetCurrent(), j)));
       ##3 aux = (##3)arg->##4;
       arg##1[j] = aux; 
   }

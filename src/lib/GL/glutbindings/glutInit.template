@@ -1,5 +1,5 @@
 
-Handle<Value> GLUTInitCallback(const Arguments& args) {
+void GLUTInitCallback(const FunctionCallbackInfo<Value>& args) {
   glutInit(( int* ) pargc_, ( char** ) argv_);
-  return v8::Undefined();
+  args.GetReturnValue().SetUndefined();
 }

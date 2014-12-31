@@ -10,6 +10,8 @@
 
 #include <v8.h>
 
+
+
 class GlFactory {
 public:
 	static v8::Handle<v8::ObjectTemplate> createGl(void);

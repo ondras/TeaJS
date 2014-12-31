@@ -105,10 +105,12 @@ def make_constant(prefix, name):
     
     text_out = """
 
+#ifdef %%
 void GetGLUT_%%(Local<String> property,
                       const PropertyCallbackInfo<Value> &info) {
     ##
 }
+#endif
 
 """
     return multiple_replace({
@@ -121,6 +123,7 @@ void GetGLUT_%%(Local<String> property,
 def make_function(prefix, name, params_list, count, return_val):
     text_out = """
 
+#ifdef <name>
 void GLUT<name>Callback(const FunctionCallbackInfo<Value>& args) {
   //if less that nbr of formal parameters then do nothing
   if (args.Length() < <len_params>) {
@@ -135,6 +138,7 @@ void GLUT<name>Callback(const FunctionCallbackInfo<Value>& args) {
   <call>
   args.GetReturnValue().SetUndefined();
 }
+#endif
 
 """
     return multiple_replace({
@@ -149,6 +153,7 @@ def make_function_with_callback(prefix, name, params_list, return_val):
     
     text_out = """
 
+#ifdef <name>
 Persistent<Function> persistent<name>;
 
 <prototype> {
@@ -184,6 +189,7 @@ void GLUT<name>Callback(const FunctionCallbackInfo<Value>& args) {
   glut<name>((<signature>) func<name>);
   args.GetReturnValue().SetUndefined();
 }
+#endif
 
 """
     nformalparams, prototype = make_prototype(name, params_list[0])
@@ -290,10 +296,10 @@ def make_call(name, params_list, nb):
     return name + "(" + ", ".join([get_type(params_list[i]) + "arg" + str(i) for i in range(nb)]) + ");"
             
 def bind_accessor(prefix, name):
-    return "     " + prefix + "->SetAccessor(String::NewFromUtf8(v8::Isolate::GetCurrent(), \"" + name + "\"), GetGLUT_" + name + ");\n"
+    return "#ifdef " + name + "\n     " + prefix + "->SetAccessor(String::NewFromUtf8(v8::Isolate::GetCurrent(), \"" + name + "\"), GetGLUT_" + name + ");\n#endif\n"
 
 def bind_function(prefix, name):
-    return "     " + prefix + "->Set(String::NewFromUtf8(v8::Isolate::GetCurrent(), \"" + name + "\"), FunctionTemplate::New(v8::Isolate::GetCurrent(), GLUT" + name + "Callback));\n"
+    return "#ifdef " + name + "\n     " + prefix + "->Set(String::NewFromUtf8(v8::Isolate::GetCurrent(), \"" + name + "\"), FunctionTemplate::New(v8::Isolate::GetCurrent(), GLUT" + name + "Callback));\n#endif\n"
 
 def bind_font(name):
     return "     font_[\""+ name +"\"] = GLUT_" + name + ";\n"

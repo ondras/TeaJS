@@ -43,7 +43,7 @@ namespace xdom {
   bool initialized = 0;
 
   //using namespace std;
-  using namespace xercesc_3_0;
+  using namespace xercesc_3_1;
   using namespace v8;
   //XERCES_CPP_NAMESPACE_USE;
 
@@ -302,7 +302,7 @@ namespace xdom {
       return JS_ERROR("[_domsource()] ERROR: Incorrect number of input parameters");
     ASSERT_CONSTRUCTOR;
     if (xdom::initialized!=true) {
-      xercesc_3_0::XMLPlatformUtils::Initialize();
+      xercesc_3_1::XMLPlatformUtils::Initialize();
       xdom::initialized=true;
     }
     SAVE_PTR(0, NULL);
@@ -329,7 +329,7 @@ namespace xdom {
       return JS_ERROR("[_domsourcegetdomimplementation()] ERROR: Incorrect number of input parameters");
     }
     if (xdom::initialized!=true) {
-      xercesc_3_0::XMLPlatformUtils::Initialize();
+      xercesc_3_1::XMLPlatformUtils::Initialize();
       xdom::initialized=true;
     }
     DOMSOURCE;
@@ -352,7 +352,7 @@ namespace xdom {
       return JS_ERROR("[_domsourcegetdomimplementationlist()] ERROR: Incorrect number of input parameters");
     }
     if (xdom::initialized!=true) {
-      xercesc_3_0::XMLPlatformUtils::Initialize();
+      xercesc_3_1::XMLPlatformUtils::Initialize();
       xdom::initialized=true;
     }
     DOMSOURCE;
@@ -386,7 +386,7 @@ namespace xdom {
       return JS_ERROR("[_domreg()] ERROR: Incorrect number of input parameters");
     ASSERT_CONSTRUCTOR;
     if (xdom::initialized!=true) {
-      xercesc_3_0::XMLPlatformUtils::Initialize();
+      xercesc_3_1::XMLPlatformUtils::Initialize();
       xdom::initialized=true;
     }
     SAVE_PTR(0, NULL);
@@ -421,7 +421,7 @@ namespace xdom {
     }
     //DOMREG;
     if (xdom::initialized!=true) {
-      xercesc_3_0::XMLPlatformUtils::Initialize();
+      xercesc_3_1::XMLPlatformUtils::Initialize();
       xdom::initialized=true;
     }
     DOMImplementation * dom = NULL;
@@ -447,7 +447,7 @@ namespace xdom {
     }
     //DOMREG;
     if (xdom::initialized!=true) {
-      xercesc_3_0::XMLPlatformUtils::Initialize();
+      xercesc_3_1::XMLPlatformUtils::Initialize();
       xdom::initialized=true;
     }
     DOMImplementationList * domlist = NULL;
@@ -471,7 +471,7 @@ namespace xdom {
       return JS_ERROR("[_domregaddsource()] ERROR: Incorrect number of input parameters");
     }
     if (xdom::initialized!=true) {
-      xercesc_3_0::XMLPlatformUtils::Initialize();
+      xercesc_3_1::XMLPlatformUtils::Initialize();
       xdom::initialized=true;
     }
     DOMREG;
@@ -1466,7 +1466,7 @@ namespace xdom {
     }
     ASSERT_CONSTRUCTOR;
     if (xdom::initialized!=true) {
-      xercesc_3_0::XMLPlatformUtils::Initialize();
+      xercesc_3_1::XMLPlatformUtils::Initialize();
       xdom::initialized=true;
     }
     SAVE_PTR(0, NULL);
@@ -1507,7 +1507,7 @@ namespace xdom {
     *adopt = false;
     ASSERT_CONSTRUCTOR;
     if (xdom::initialized!=true) {
-      xercesc_3_0::XMLPlatformUtils::Initialize();
+      xercesc_3_1::XMLPlatformUtils::Initialize();
       xdom::initialized=true;
     }
     SAVE_PTR(0, NULL);
@@ -1579,7 +1579,7 @@ namespace xdom {
     }
     ASSERT_CONSTRUCTOR;
     if (xdom::initialized!=true) {
-      xercesc_3_0::XMLPlatformUtils::Initialize();
+      xercesc_3_1::XMLPlatformUtils::Initialize();
       xdom::initialized=true;
     }
     SAVE_PTR(0, NULL);
@@ -1618,7 +1618,7 @@ namespace xdom {
     }
     ASSERT_CONSTRUCTOR;
     if (xdom::initialized!=true) {
-      xercesc_3_0::XMLPlatformUtils::Initialize();
+      xercesc_3_1::XMLPlatformUtils::Initialize();
       xdom::initialized=true;
     }
     SAVE_PTR(0, NULL);
@@ -1854,7 +1854,7 @@ namespace xdom {
     }
     ASSERT_CONSTRUCTOR;
     if (xdom::initialized!=true) {
-      xercesc_3_0::XMLPlatformUtils::Initialize();
+      xercesc_3_1::XMLPlatformUtils::Initialize();
       xdom::initialized=true;
     }
     SAVE_PTR(0, NULL);
@@ -2332,7 +2332,7 @@ namespace xdom {
     }
     ASSERT_CONSTRUCTOR;
     if (xdom::initialized!=true) {
-      xercesc_3_0::XMLPlatformUtils::Initialize();
+      xercesc_3_1::XMLPlatformUtils::Initialize();
       xdom::initialized=true;
     }
     SAVE_PTR(0, NULL);
@@ -2366,7 +2366,7 @@ namespace xdom {
       return JS_ERROR("[_domuserdatahandlerhandle()] ERROR: Incorrect number of input parameters");
     }
     if (xdom::initialized!=true) {
-      xercesc_3_0::XMLPlatformUtils::Initialize();
+      xercesc_3_1::XMLPlatformUtils::Initialize();
       xdom::initialized=true;
     }
     USERDATAHANDLER;
@@ -2419,7 +2419,7 @@ namespace xdom {
     }
     ASSERT_CONSTRUCTOR;
     if (xdom::initialized!=true) {
-      xercesc_3_0::XMLPlatformUtils::Initialize();
+      xercesc_3_1::XMLPlatformUtils::Initialize();
       xdom::initialized=true;
     }
     GC * gc = GC_PTR;
@@ -2588,7 +2588,7 @@ namespace xdom {
     ASSERT_CONSTRUCTOR;
     // initialize the XML library
     if (xdom::initialized!=true) {
-      xercesc_3_0::XMLPlatformUtils::Initialize();
+      xercesc_3_1::XMLPlatformUtils::Initialize();
       xdom::initialized=true;
     }
     GC * gc = GC_PTR;
@@ -2598,21 +2598,21 @@ namespace xdom {
     const XMLCh dfltSchemaType[] = {chLatin_L, chLatin_S, chNull};
     XMLCh * schemaType = (XMLCh *)dfltSchemaType;
     if (args.Length()==0) {
-      dom = xercesc_3_0::DOMImplementationRegistry::getDOMImplementation(schemaType);
+      dom = xercesc_3_1::DOMImplementationRegistry::getDOMImplementation(schemaType);
     }
     else {
       SS attr("");
       if (args[0]->IsExternal()) {
-        dom = RECAST(args[0],xercesc_3_0::DOMImplementation *);
+        dom = RECAST(args[0],xercesc_3_1::DOMImplementation *);
       }
       else if (args[0]->IsString()) {
-	XTRY( dom = xercesc_3_0::DOMImplementationRegistry::getDOMImplementation((XMLCh *) *String::Utf8Value(args[0]->ToString())); );
+	XTRY( dom = xercesc_3_1::DOMImplementationRegistry::getDOMImplementation((XMLCh *) *String::Utf8Value(args[0]->ToString())); );
       }
       else if (args[0]->IsObject()) {
 	if (args[0]->ToObject()->Has(JS_STR("_domtype_"))) {
 	  std::string domtype( *USTR(args[0]->ToObject()->Get(JS_STR("_domtype_"))->ToString()) );
 	  if (domtype=="DOMImplementation") {
-	    dom = RECAST(args[0]->ToObject()->GetInternalField(0),xercesc_3_0::DOMImplementation *);
+	    dom = RECAST(args[0]->ToObject()->GetInternalField(0),xercesc_3_1::DOMImplementation *);
 	  }
 	}
 	if (dom==NULL) {
@@ -2633,7 +2633,7 @@ namespace xdom {
 	    if (args[0]->ToObject()->Has(JS_STR("schema"))) {
 	      schemaType = (XMLCh *) *String::Utf8Value( args[0]->ToObject()->Get(JS_STR("schema"))->ToString() );
 	    }
-	    XTRY( dom = xercesc_3_0::DOMImplementationRegistry::getDOMImplementation((const XMLCh *)schemaType); );
+	    XTRY( dom = xercesc_3_1::DOMImplementationRegistry::getDOMImplementation((const XMLCh *)schemaType); );
 	  }
 	}
       }
@@ -2701,8 +2701,8 @@ namespace xdom {
     }
     DOMLSParser * parser = NULL;
     XLSTRY(
-	parser = ((DOMImplementationLS *)dom)->createLSParser(xercesc_3_0::DOMImplementationLS::MODE_SYNCHRONOUS, schemaType);
-//	parser = ((DOMImplementationLS *)dom)->createLSParser(xercesc_3_0::DOMImplementationLS::MODE_ASYNCHRONOUS, schemaType);
+	parser = ((DOMImplementationLS *)dom)->createLSParser(xercesc_3_1::DOMImplementationLS::MODE_SYNCHRONOUS, schemaType);
+//	parser = ((DOMImplementationLS *)dom)->createLSParser(xercesc_3_1::DOMImplementationLS::MODE_ASYNCHRONOUS, schemaType);
 	//DOMConfiguration* dc = parser->getDomConfig();
 	//dc->setParameter(XMLUni::fgXercesSchema, true);
 	//dc->setParameter(XMLUni::fgXercesCacheGrammarFromParse, true);
@@ -3064,7 +3064,7 @@ namespace xdom {
 
   JS_METHOD(_serializerfiltergetwhattoshow) {
     SERIALIZERFILTER;
-    xercesc_3_0::DOMNodeFilter::ShowType ret = 0;
+    xercesc_3_1::DOMNodeFilter::ShowType ret = 0;
     XTRY( ret = filter->getWhatToShow(); );
     return JS_INT(ret);
   }
@@ -3111,7 +3111,7 @@ namespace xdom {
 
   JS_METHOD(_nodefilteracceptnode) {
     NODEFILTER;
-    xercesc_3_0::DOMNodeFilter::ShowType ret = 0;
+    xercesc_3_1::DOMNodeFilter::ShowType ret = 0;
     DOMNode * node = NULL;
     if (args[0]->IsExternal()) {
       node = RECAST(args[0],DOMNode *);
@@ -3369,7 +3369,7 @@ namespace xdom {
     }
     else {
       int action = args[2]->ToInteger()->IntegerValue();
-      XLSTRY( parser->parseWithContext((const DOMLSInput *)inv,context,(xercesc_3_0::DOMLSParser::ActionType)action); );
+      XLSTRY( parser->parseWithContext((const DOMLSInput *)inv,context,(xercesc_3_1::DOMLSParser::ActionType)action); );
       return args.This();
     }
   }
@@ -3488,7 +3488,7 @@ namespace xdom {
 
   JS_METHOD(_parserfilterstartelement) {
     PARSERFILTER;
-    xercesc_3_0::DOMLSParserFilter::FilterAction ret;
+    xercesc_3_1::DOMLSParserFilter::FilterAction ret;
     DOMElement * el = NULL;
     if (args[0]->IsExternal()) {
       el = RECAST(args[0],DOMElement *);
@@ -3502,7 +3502,7 @@ namespace xdom {
 
   JS_METHOD(_parserfiltergetwhattoshow) {
     PARSERFILTER;
-    xercesc_3_0::DOMNodeFilter::ShowType ret = 0;
+    xercesc_3_1::DOMNodeFilter::ShowType ret = 0;
     XTRY( ret = filter->getWhatToShow(); );
     return JS_INT(ret);
   }
@@ -3644,37 +3644,37 @@ namespace xdom {
 	}
       }
     }
-    xercesc_3_0::DOMNode::NodeType nodeType = node->getNodeType();
+    xercesc_3_1::DOMNode::NodeType nodeType = node->getNodeType();
     Handle<Value> fargs[] = { External::New((void *)node) };
-    if (nodeType==xercesc_3_0::DOMNode::ELEMENT_NODE) {
+    if (nodeType==xercesc_3_1::DOMNode::ELEMENT_NODE) {
       Handle<Object> ret( xdom::felement->GetFunction()->NewInstance(1, fargs) );
       return ret;
     }
-    else if (nodeType==xercesc_3_0::DOMNode::DOCUMENT_TYPE_NODE) {
+    else if (nodeType==xercesc_3_1::DOMNode::DOCUMENT_TYPE_NODE) {
       Handle<Object> ret( xdom::fdocumenttype->GetFunction()->NewInstance(1, fargs) );
       return ret;
     }
-    else if (nodeType==xercesc_3_0::DOMNode::DOCUMENT_NODE) {
+    else if (nodeType==xercesc_3_1::DOMNode::DOCUMENT_NODE) {
       Handle<Object> ret( xdom::fdocument->GetFunction()->NewInstance(1, fargs) );
       return ret;
     }
-    else if (nodeType==xercesc_3_0::DOMNode::DOCUMENT_FRAGMENT_NODE) {
+    else if (nodeType==xercesc_3_1::DOMNode::DOCUMENT_FRAGMENT_NODE) {
       Handle<Object> ret( xdom::fdocumentfragment->GetFunction()->NewInstance(1, fargs) );
       return ret;
     }
-    else if (nodeType==xercesc_3_0::DOMNode::ATTRIBUTE_NODE) {
+    else if (nodeType==xercesc_3_1::DOMNode::ATTRIBUTE_NODE) {
       Handle<Object> ret( xdom::fattribute->GetFunction()->NewInstance(1, fargs) );
       return ret;
     }
-    else if (nodeType==xercesc_3_0::DOMNode::TEXT_NODE) {
+    else if (nodeType==xercesc_3_1::DOMNode::TEXT_NODE) {
       Handle<Object> ret( xdom::ftext->GetFunction()->NewInstance(1, fargs) );
       return ret;
     }
-    else if (nodeType==xercesc_3_0::DOMNode::COMMENT_NODE) {
+    else if (nodeType==xercesc_3_1::DOMNode::COMMENT_NODE) {
       Handle<Object> ret( xdom::fcomment->GetFunction()->NewInstance(1, fargs) );
       return ret;
     }
-    else if (nodeType==xercesc_3_0::DOMNode::CDATA_SECTION_NODE) {
+    else if (nodeType==xercesc_3_1::DOMNode::CDATA_SECTION_NODE) {
       Handle<Object> ret( xdom::fcdatasection->GetFunction()->NewInstance(1, fargs) );
       return ret;
     }
@@ -6562,7 +6562,7 @@ namespace xdom {
     TYPEINFO;
     int derivationMethod = (int)args[2]->ToInteger()->IntegerValue();
     bool ret = false;
-    XTRY( ret = typeinfo->isDerivedFrom(ARGSTR(0),ARGSTR(1),(xercesc_3_0::DOMTypeInfo::DerivationMethods)derivationMethod); );
+    XTRY( ret = typeinfo->isDerivedFrom(ARGSTR(0),ARGSTR(1),(xercesc_3_1::DOMTypeInfo::DerivationMethods)derivationMethod); );
     return JS_BOOL(ret);
   }
 
@@ -6964,7 +6964,7 @@ namespace xdom {
       try {
 	val = nodemap->item(idx);
       }
-      catch( xercesc_3_0::DOMException& e ) {
+      catch( xercesc_3_1::DOMException& e ) {
 	char * msg = X(e.getMessage());
 	JS_ERROR(msg);
       }
@@ -6983,7 +6983,7 @@ namespace xdom {
       try {
 	val = nodelist->item(idx);
       }
-      catch( xercesc_3_0::DOMException& e ) {
+      catch( xercesc_3_1::DOMException& e ) {
 	char * msg = X(e.getMessage());
 	JS_ERROR(msg);
       }
@@ -7017,7 +7017,7 @@ namespace xdom {
           nodemap->removeNamedItem(name);
 	}      
       }
-      catch( xercesc_3_0::DOMException& e ) {
+      catch( xercesc_3_1::DOMException& e ) {
 	char * msg = X(e.getMessage());
 	JS_ERROR(msg);
       }
@@ -7265,11 +7265,11 @@ namespace xdom {
     XS idx( X(tmp.str().c_str()) );
     if (objtype=="namednodemap") {
       DOMNamedNodeMap * nodemap = reinterpret_cast<DOMNamedNodeMap *>(v8::Handle<v8::External>::Cast(This->GetInternalField(0))->Value());
-      try { nodemap->removeNamedItem(idx); } catch( xercesc_3_0::DOMException& e ) { char * msg = X(e.getMessage()); JS_ERROR(msg); }
+      try { nodemap->removeNamedItem(idx); } catch( xercesc_3_1::DOMException& e ) { char * msg = X(e.getMessage()); JS_ERROR(msg); }
     }
     else if (objtype=="element") {
       DOMElement * el = reinterpret_cast<DOMElement *>(v8::Handle<v8::External>::Cast(This->GetInternalField(0))->Value());
-      try { el->removeAttribute(idx); } catch( xercesc_3_0::DOMException& e ) { char * msg = X(e.getMessage()); JS_ERROR(msg); }
+      try { el->removeAttribute(idx); } catch( xercesc_3_1::DOMException& e ) { char * msg = X(e.getMessage()); JS_ERROR(msg); }
     }
     else {
       JS_ERROR("[named_property_delete()] ERROR: unrecognized object type");
@@ -7354,23 +7354,23 @@ SHARED_INIT() {
 
     xdom::fdomexcpt = v8::Persistent<v8::FunctionTemplate>::New(v8::FunctionTemplate::New(xdom::_domexcpt));
     xdom::fdomexcpt->SetClassName(JS_STR("DOMException"));
-    xdom::fdomexcpt->Set(JS_STR("INDEX_SIZE_ERR"),JS_INT((unsigned int)xercesc_3_0::DOMException::INDEX_SIZE_ERR));
-    xdom::fdomexcpt->Set(JS_STR("DOMSTRING_SIZE_ERR"),JS_INT((unsigned int)xercesc_3_0::DOMException::DOMSTRING_SIZE_ERR));
-    xdom::fdomexcpt->Set(JS_STR("HIERARCHY_REQUEST_ERR"),JS_INT((unsigned int)xercesc_3_0::DOMException::HIERARCHY_REQUEST_ERR));
-    xdom::fdomexcpt->Set(JS_STR("WRONG_DOCUMENT_ERR"),JS_INT((unsigned int)xercesc_3_0::DOMException::WRONG_DOCUMENT_ERR));
-    xdom::fdomexcpt->Set(JS_STR("INVALID_CHARACTER_ERR"),JS_INT((unsigned int)xercesc_3_0::DOMException::INVALID_CHARACTER_ERR));
-    xdom::fdomexcpt->Set(JS_STR("NO_DATA_ALLOWED_ERR"),JS_INT((unsigned int)xercesc_3_0::DOMException::NO_DATA_ALLOWED_ERR));
-    xdom::fdomexcpt->Set(JS_STR("NO_MODIFICATION_ALLOWED_ERR"),JS_INT((unsigned int)xercesc_3_0::DOMException::NO_MODIFICATION_ALLOWED_ERR));
-    xdom::fdomexcpt->Set(JS_STR("NOT_FOUND_ERR"),JS_INT((unsigned int)xercesc_3_0::DOMException::NOT_FOUND_ERR));
-    xdom::fdomexcpt->Set(JS_STR("NOT_SUPPORTED_ERR"),JS_INT((unsigned int)xercesc_3_0::DOMException::NOT_SUPPORTED_ERR));
-    xdom::fdomexcpt->Set(JS_STR("INUSE_ATTRIBUTE_ERR"),JS_INT((unsigned int)xercesc_3_0::DOMException::INUSE_ATTRIBUTE_ERR));
-    xdom::fdomexcpt->Set(JS_STR("INVALID_STATE_ERR"),JS_INT((unsigned int)xercesc_3_0::DOMException::INVALID_STATE_ERR));
-    xdom::fdomexcpt->Set(JS_STR("SYNTAX_ERR"),JS_INT((unsigned int)xercesc_3_0::DOMException::SYNTAX_ERR));
-    xdom::fdomexcpt->Set(JS_STR("INVALID_MODIFICATION_ERR"),JS_INT((unsigned int)xercesc_3_0::DOMException::INVALID_MODIFICATION_ERR));
-    xdom::fdomexcpt->Set(JS_STR("NAMESPACE_ERR"),JS_INT((unsigned int)xercesc_3_0::DOMException::NAMESPACE_ERR));
-    xdom::fdomexcpt->Set(JS_STR("INVALID_ACCESS_ERR"),JS_INT((unsigned int)xercesc_3_0::DOMException::INVALID_ACCESS_ERR));
-    xdom::fdomexcpt->Set(JS_STR("VALIDATION_ERR"),JS_INT((unsigned int)xercesc_3_0::DOMException::VALIDATION_ERR));
-    xdom::fdomexcpt->Set(JS_STR("TYPE_MISMATCH_ERR"),JS_INT((unsigned int)xercesc_3_0::DOMException::TYPE_MISMATCH_ERR));
+    xdom::fdomexcpt->Set(JS_STR("INDEX_SIZE_ERR"),JS_INT((unsigned int)xercesc_3_1::DOMException::INDEX_SIZE_ERR));
+    xdom::fdomexcpt->Set(JS_STR("DOMSTRING_SIZE_ERR"),JS_INT((unsigned int)xercesc_3_1::DOMException::DOMSTRING_SIZE_ERR));
+    xdom::fdomexcpt->Set(JS_STR("HIERARCHY_REQUEST_ERR"),JS_INT((unsigned int)xercesc_3_1::DOMException::HIERARCHY_REQUEST_ERR));
+    xdom::fdomexcpt->Set(JS_STR("WRONG_DOCUMENT_ERR"),JS_INT((unsigned int)xercesc_3_1::DOMException::WRONG_DOCUMENT_ERR));
+    xdom::fdomexcpt->Set(JS_STR("INVALID_CHARACTER_ERR"),JS_INT((unsigned int)xercesc_3_1::DOMException::INVALID_CHARACTER_ERR));
+    xdom::fdomexcpt->Set(JS_STR("NO_DATA_ALLOWED_ERR"),JS_INT((unsigned int)xercesc_3_1::DOMException::NO_DATA_ALLOWED_ERR));
+    xdom::fdomexcpt->Set(JS_STR("NO_MODIFICATION_ALLOWED_ERR"),JS_INT((unsigned int)xercesc_3_1::DOMException::NO_MODIFICATION_ALLOWED_ERR));
+    xdom::fdomexcpt->Set(JS_STR("NOT_FOUND_ERR"),JS_INT((unsigned int)xercesc_3_1::DOMException::NOT_FOUND_ERR));
+    xdom::fdomexcpt->Set(JS_STR("NOT_SUPPORTED_ERR"),JS_INT((unsigned int)xercesc_3_1::DOMException::NOT_SUPPORTED_ERR));
+    xdom::fdomexcpt->Set(JS_STR("INUSE_ATTRIBUTE_ERR"),JS_INT((unsigned int)xercesc_3_1::DOMException::INUSE_ATTRIBUTE_ERR));
+    xdom::fdomexcpt->Set(JS_STR("INVALID_STATE_ERR"),JS_INT((unsigned int)xercesc_3_1::DOMException::INVALID_STATE_ERR));
+    xdom::fdomexcpt->Set(JS_STR("SYNTAX_ERR"),JS_INT((unsigned int)xercesc_3_1::DOMException::SYNTAX_ERR));
+    xdom::fdomexcpt->Set(JS_STR("INVALID_MODIFICATION_ERR"),JS_INT((unsigned int)xercesc_3_1::DOMException::INVALID_MODIFICATION_ERR));
+    xdom::fdomexcpt->Set(JS_STR("NAMESPACE_ERR"),JS_INT((unsigned int)xercesc_3_1::DOMException::NAMESPACE_ERR));
+    xdom::fdomexcpt->Set(JS_STR("INVALID_ACCESS_ERR"),JS_INT((unsigned int)xercesc_3_1::DOMException::INVALID_ACCESS_ERR));
+    xdom::fdomexcpt->Set(JS_STR("VALIDATION_ERR"),JS_INT((unsigned int)xercesc_3_1::DOMException::VALIDATION_ERR));
+    xdom::fdomexcpt->Set(JS_STR("TYPE_MISMATCH_ERR"),JS_INT((unsigned int)xercesc_3_1::DOMException::TYPE_MISMATCH_ERR));
 
     v8::Handle<v8::ObjectTemplate> domexcptt = xdom::fdomexcpt->InstanceTemplate();
     domexcptt->SetInternalFieldCount(1);
@@ -7394,8 +7394,8 @@ SHARED_INIT() {
     xdom::fdomlsexcpt = v8::Persistent<v8::FunctionTemplate>::New(v8::FunctionTemplate::New(xdom::_domlsexcpt));
     xdom::fdomlsexcpt->Inherit(xdom::fdomexcpt);
     xdom::fdomlsexcpt->SetClassName(JS_STR("DOMLSException"));
-    xdom::fdomlsexcpt->Set(JS_STR("PARSE_ERR"),JS_INT((unsigned int)xercesc_3_0::DOMLSException::PARSE_ERR));
-    xdom::fdomlsexcpt->Set(JS_STR("SERIALIZE_ERR"),JS_INT((unsigned int)xercesc_3_0::DOMLSException::SERIALIZE_ERR));
+    xdom::fdomlsexcpt->Set(JS_STR("PARSE_ERR"),JS_INT((unsigned int)xercesc_3_1::DOMLSException::PARSE_ERR));
+    xdom::fdomlsexcpt->Set(JS_STR("SERIALIZE_ERR"),JS_INT((unsigned int)xercesc_3_1::DOMLSException::SERIALIZE_ERR));
 
     v8::Handle<v8::ObjectTemplate> domlsexcptt = xdom::fdomlsexcpt->InstanceTemplate();
     domlsexcptt->SetInternalFieldCount(1);
@@ -7568,8 +7568,8 @@ SHARED_INIT() {
     xdom::fdomls = v8::Persistent<v8::FunctionTemplate>::New(v8::FunctionTemplate::New(xdom::_implls));
     xdom::fdomls->Inherit(xdom::fdom);
     xdom::fdomls->SetClassName(JS_STR("DOMImplementationLS"));
-    xdom::fdomls->Set(JS_STR("MODE_ASYNCHRONOUS"),JS_INT((unsigned int)xercesc_3_0::DOMImplementationLS::MODE_ASYNCHRONOUS));
-    xdom::fdomls->Set(JS_STR("MODE_SYNCHRONOUS"),JS_INT((unsigned int)xercesc_3_0::DOMImplementationLS::MODE_SYNCHRONOUS));
+    xdom::fdomls->Set(JS_STR("MODE_ASYNCHRONOUS"),JS_INT((unsigned int)xercesc_3_1::DOMImplementationLS::MODE_ASYNCHRONOUS));
+    xdom::fdomls->Set(JS_STR("MODE_SYNCHRONOUS"),JS_INT((unsigned int)xercesc_3_1::DOMImplementationLS::MODE_SYNCHRONOUS));
 
     v8::Handle<v8::ObjectTemplate> domlst = xdom::fdomls->InstanceTemplate();
     domlst->SetInternalFieldCount(1);
@@ -8003,11 +8003,11 @@ SHARED_INIT() {
 
     xdom::fuserdatahandler = v8::Persistent<v8::FunctionTemplate>::New(v8::FunctionTemplate::New(xdom::_domuserdatahandler));
     xdom::fuserdatahandler->SetClassName(JS_STR("DOMUserDataHandler"));
-    xdom::fuserdatahandler->Set(JS_STR("NODE_CLONED"), JS_INT(xercesc_3_0::DOMUserDataHandler::NODE_CLONED));
-    xdom::fuserdatahandler->Set(JS_STR("NODE_IMPORTED"), JS_INT(xercesc_3_0::DOMUserDataHandler::NODE_IMPORTED));
-    xdom::fuserdatahandler->Set(JS_STR("NODE_DELETED"), JS_INT(xercesc_3_0::DOMUserDataHandler::NODE_DELETED));
-    xdom::fuserdatahandler->Set(JS_STR("NODE_RENAMED"), JS_INT(xercesc_3_0::DOMUserDataHandler::NODE_RENAMED));
-    xdom::fuserdatahandler->Set(JS_STR("NODE_ADOPTED"), JS_INT(xercesc_3_0::DOMUserDataHandler::NODE_ADOPTED));
+    xdom::fuserdatahandler->Set(JS_STR("NODE_CLONED"), JS_INT(xercesc_3_1::DOMUserDataHandler::NODE_CLONED));
+    xdom::fuserdatahandler->Set(JS_STR("NODE_IMPORTED"), JS_INT(xercesc_3_1::DOMUserDataHandler::NODE_IMPORTED));
+    xdom::fuserdatahandler->Set(JS_STR("NODE_DELETED"), JS_INT(xercesc_3_1::DOMUserDataHandler::NODE_DELETED));
+    xdom::fuserdatahandler->Set(JS_STR("NODE_RENAMED"), JS_INT(xercesc_3_1::DOMUserDataHandler::NODE_RENAMED));
+    xdom::fuserdatahandler->Set(JS_STR("NODE_ADOPTED"), JS_INT(xercesc_3_1::DOMUserDataHandler::NODE_ADOPTED));
 
     v8::Handle<v8::ObjectTemplate> userdatahandlert = xdom::fuserdatahandler->InstanceTemplate();
     userdatahandlert->SetInternalFieldCount(2);
@@ -8076,25 +8076,25 @@ SHARED_INIT() {
 	*	(see "http://xerces.apache.org/xerces-c/apiDocs-3/classDOMTypeInfo.html" for enumerated values)
      *	*/
       // "NodeType":
-    xdom::fnode->Set(JS_STR("ELEMENT_NODE"), JS_INT(xercesc_3_0::DOMNode::ELEMENT_NODE));
-    xdom::fnode->Set(JS_STR("ATTRIBUTE_NODE"), JS_INT(xercesc_3_0::DOMNode::ATTRIBUTE_NODE));
-    xdom::fnode->Set(JS_STR("TEXT_NODE"), JS_INT(xercesc_3_0::DOMNode::TEXT_NODE));
-    xdom::fnode->Set(JS_STR("CDATA_SECTION_NODE"), JS_INT(xercesc_3_0::DOMNode::CDATA_SECTION_NODE));
-    xdom::fnode->Set(JS_STR("ENTITY_REFERENCE_NODE"), JS_INT(xercesc_3_0::DOMNode::ENTITY_REFERENCE_NODE));
-    xdom::fnode->Set(JS_STR("ENTITY_NODE"), JS_INT(xercesc_3_0::DOMNode::ENTITY_NODE));
-    xdom::fnode->Set(JS_STR("PROCESSING_INSTRUCTION_NODE"), JS_INT(xercesc_3_0::DOMNode::PROCESSING_INSTRUCTION_NODE));
-    xdom::fnode->Set(JS_STR("COMMENT_NODE"), JS_INT(xercesc_3_0::DOMNode::COMMENT_NODE));
-    xdom::fnode->Set(JS_STR("DOCUMENT_NODE"), JS_INT(xercesc_3_0::DOMNode::DOCUMENT_NODE));
-    xdom::fnode->Set(JS_STR("DOCUMENT_TYPE_NODE"), JS_INT(xercesc_3_0::DOMNode::DOCUMENT_TYPE_NODE));
-    xdom::fnode->Set(JS_STR("DOCUMENT_FRAGMENT_NODE"), JS_INT(xercesc_3_0::DOMNode::DOCUMENT_FRAGMENT_NODE));
-    xdom::fnode->Set(JS_STR("NOTATION_NODE"), JS_INT(xercesc_3_0::DOMNode::NOTATION_NODE));
+    xdom::fnode->Set(JS_STR("ELEMENT_NODE"), JS_INT(xercesc_3_1::DOMNode::ELEMENT_NODE));
+    xdom::fnode->Set(JS_STR("ATTRIBUTE_NODE"), JS_INT(xercesc_3_1::DOMNode::ATTRIBUTE_NODE));
+    xdom::fnode->Set(JS_STR("TEXT_NODE"), JS_INT(xercesc_3_1::DOMNode::TEXT_NODE));
+    xdom::fnode->Set(JS_STR("CDATA_SECTION_NODE"), JS_INT(xercesc_3_1::DOMNode::CDATA_SECTION_NODE));
+    xdom::fnode->Set(JS_STR("ENTITY_REFERENCE_NODE"), JS_INT(xercesc_3_1::DOMNode::ENTITY_REFERENCE_NODE));
+    xdom::fnode->Set(JS_STR("ENTITY_NODE"), JS_INT(xercesc_3_1::DOMNode::ENTITY_NODE));
+    xdom::fnode->Set(JS_STR("PROCESSING_INSTRUCTION_NODE"), JS_INT(xercesc_3_1::DOMNode::PROCESSING_INSTRUCTION_NODE));
+    xdom::fnode->Set(JS_STR("COMMENT_NODE"), JS_INT(xercesc_3_1::DOMNode::COMMENT_NODE));
+    xdom::fnode->Set(JS_STR("DOCUMENT_NODE"), JS_INT(xercesc_3_1::DOMNode::DOCUMENT_NODE));
+    xdom::fnode->Set(JS_STR("DOCUMENT_TYPE_NODE"), JS_INT(xercesc_3_1::DOMNode::DOCUMENT_TYPE_NODE));
+    xdom::fnode->Set(JS_STR("DOCUMENT_FRAGMENT_NODE"), JS_INT(xercesc_3_1::DOMNode::DOCUMENT_FRAGMENT_NODE));
+    xdom::fnode->Set(JS_STR("NOTATION_NODE"), JS_INT(xercesc_3_1::DOMNode::NOTATION_NODE));
       // "DocumentPosition":
-    xdom::fnode->Set(JS_STR("DOCUMENT_POSITION_DISCONNECTED"), JS_INT(xercesc_3_0::DOMNode::DOCUMENT_POSITION_DISCONNECTED));
-    xdom::fnode->Set(JS_STR("DOCUMENT_POSITION_PRECEDING"), JS_INT(xercesc_3_0::DOMNode::DOCUMENT_POSITION_PRECEDING));
-    xdom::fnode->Set(JS_STR("DOCUMENT_POSITION_FOLLOWING"), JS_INT(xercesc_3_0::DOMNode::DOCUMENT_POSITION_FOLLOWING));
-    xdom::fnode->Set(JS_STR("DOCUMENT_POSITION_CONTAINS"), JS_INT(xercesc_3_0::DOMNode::DOCUMENT_POSITION_CONTAINS));
-    xdom::fnode->Set(JS_STR("DOCUMENT_POSITION_CONTAINED_BY"), JS_INT(xercesc_3_0::DOMNode::DOCUMENT_POSITION_CONTAINED_BY));
-    xdom::fnode->Set(JS_STR("DOCUMENT_POSITION_IMPLEMENTATION_SPECIFIC"), JS_INT(xercesc_3_0::DOMNode::DOCUMENT_POSITION_IMPLEMENTATION_SPECIFIC));
+    xdom::fnode->Set(JS_STR("DOCUMENT_POSITION_DISCONNECTED"), JS_INT(xercesc_3_1::DOMNode::DOCUMENT_POSITION_DISCONNECTED));
+    xdom::fnode->Set(JS_STR("DOCUMENT_POSITION_PRECEDING"), JS_INT(xercesc_3_1::DOMNode::DOCUMENT_POSITION_PRECEDING));
+    xdom::fnode->Set(JS_STR("DOCUMENT_POSITION_FOLLOWING"), JS_INT(xercesc_3_1::DOMNode::DOCUMENT_POSITION_FOLLOWING));
+    xdom::fnode->Set(JS_STR("DOCUMENT_POSITION_CONTAINS"), JS_INT(xercesc_3_1::DOMNode::DOCUMENT_POSITION_CONTAINS));
+    xdom::fnode->Set(JS_STR("DOCUMENT_POSITION_CONTAINED_BY"), JS_INT(xercesc_3_1::DOMNode::DOCUMENT_POSITION_CONTAINED_BY));
+    xdom::fnode->Set(JS_STR("DOCUMENT_POSITION_IMPLEMENTATION_SPECIFIC"), JS_INT(xercesc_3_1::DOMNode::DOCUMENT_POSITION_IMPLEMENTATION_SPECIFIC));
 
     /**
      * prototype property accessors
@@ -9054,10 +9054,10 @@ SHARED_INIT() {
 	*	for this class on its FunctionTemplate:
 	*	(see "http://xerces.apache.org/xerces-c/apiDocs-3/classDOMTypeInfo.html" for enumerated values)
      *	*/
-    xdom::ftypeinfo->Set(JS_STR("DERIVATION_EXTENSION"), JS_INT(xercesc_3_0::DOMTypeInfo::DERIVATION_EXTENSION));
-    xdom::ftypeinfo->Set(JS_STR("DERIVATION_LIST"), JS_INT(xercesc_3_0::DOMTypeInfo::DERIVATION_LIST));
-    xdom::ftypeinfo->Set(JS_STR("DERIVATION_RESTRICTION"), JS_INT(xercesc_3_0::DOMTypeInfo::DERIVATION_RESTRICTION));
-    xdom::ftypeinfo->Set(JS_STR("DERIVATION_UNION"), JS_INT(xercesc_3_0::DOMTypeInfo::DERIVATION_UNION));
+    xdom::ftypeinfo->Set(JS_STR("DERIVATION_EXTENSION"), JS_INT(xercesc_3_1::DOMTypeInfo::DERIVATION_EXTENSION));
+    xdom::ftypeinfo->Set(JS_STR("DERIVATION_LIST"), JS_INT(xercesc_3_1::DOMTypeInfo::DERIVATION_LIST));
+    xdom::ftypeinfo->Set(JS_STR("DERIVATION_RESTRICTION"), JS_INT(xercesc_3_1::DOMTypeInfo::DERIVATION_RESTRICTION));
+    xdom::ftypeinfo->Set(JS_STR("DERIVATION_UNION"), JS_INT(xercesc_3_1::DOMTypeInfo::DERIVATION_UNION));
 
     /**
      * DOMTypeInfo prototype methods

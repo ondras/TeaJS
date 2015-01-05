@@ -26,13 +26,14 @@ void finalize(v8::Handle<v8::Object> obj) {
 JS_METHOD(_memcached) {
   ASSERT_CONSTRUCTOR;
   if (args.Length() != 0) {
-    return JS_TYPE_ERROR("Invalid arguments. Use 'new Memcached()'");
+    JS_TYPE_ERROR("Invalid arguments. Use 'new Memcached()'");
+    return;
   }
   memcached_st *memc = memcached_create(NULL);
   SAVE_PTR(0, memc);
   GC * gc = GC_PTR;
   gc->add(args.This(), finalize);
-  return args.This();
+  args.GetReturnValue().Set(args.This());
 }
 
 /**
@@ -44,13 +45,14 @@ JS_METHOD(_reset) {
   MEMCACHED_PTR;
 
   if (args.Length() != 0) {
-    return JS_TYPE_ERROR("Invalid arguments. Use 'reset()'");
+    JS_TYPE_ERROR("Invalid arguments. Use 'reset()'");
+    return;
   }
 
   memcached_free(memc);
   SAVE_PTR(0, memcached_create(NULL));
 
-  return args.This();
+  args.GetReturnValue().Set(args.This());
 }
 
 /**
@@ -65,7 +67,8 @@ JS_METHOD(_setPrefixKey) {
 
   if (args.Length() != 1 ||
       !args[0]->IsString()) {
-    return JS_TYPE_ERROR("Invalid arguments. Use 'setPrefixKey(key{String})'");
+    JS_TYPE_ERROR("Invalid arguments. Use 'setPrefixKey(key{String})'");
+    return;
   }
 
   v8::String::Utf8Value key(args[0]);
@@ -73,10 +76,11 @@ JS_METHOD(_setPrefixKey) {
   memcached_return rc =
       memcached_callback_set(memc, MEMCACHED_CALLBACK_PREFIX_KEY, *key);
   if (rc != MEMCACHED_SUCCESS) {
-    return JS_ERROR(memcached_strerror(memc, rc));
+    JS_ERROR(memcached_strerror(memc, rc));
+    return;
   }
 
-  return args.This();
+  args.GetReturnValue().Set(args.This());
 }
 
 /**
@@ -86,20 +90,22 @@ JS_METHOD(_getPrefixKey) {
   MEMCACHED_PTR;
 
   if (args.Length() > 0) {
-    return JS_TYPE_ERROR("Invalid arguments. Use 'getPrefixKey()'");
+    JS_TYPE_ERROR("Invalid arguments. Use 'getPrefixKey()'");
+    return;
   }
 
   memcached_return rc;
   char *value = (char *)memcached_callback_get(memc, MEMCACHED_CALLBACK_PREFIX_KEY, &rc);
   if (rc != MEMCACHED_SUCCESS) {
-    return JS_ERROR(memcached_strerror(memc, rc));
+    JS_ERROR(memcached_strerror(memc, rc));
+    return;
   }
 
-  v8::HandleScope handle_scope;
+  v8::HandleScope handle_scope(JS_ISOLATE);
 
-  v8::Handle<v8::String> result = v8::String::New(value, strlen(value));
+  v8::Handle<v8::String> result = JS_STR_LEN(value, strlen(value));
 
-  return handle_scope.Close(result);
+  args.GetReturnValue().Set(result);
 }
 
 /**
@@ -109,16 +115,18 @@ JS_METHOD(_clearPrefixKey) {
   MEMCACHED_PTR;
 
   if (args.Length() > 0) {
-    return JS_TYPE_ERROR("Invalid arguments. Use 'clearPrefixKey()'");
+    JS_TYPE_ERROR("Invalid arguments. Use 'clearPrefixKey()'");
+    return;
   }
 
   memcached_return rc =
       memcached_callback_set(memc, MEMCACHED_CALLBACK_PREFIX_KEY, NULL);
   if (rc != MEMCACHED_SUCCESS) {
-    return JS_ERROR(memcached_strerror(memc, rc));
+    JS_ERROR(memcached_strerror(memc, rc));
+    return;
   }
 
-  return args.This();
+  args.GetReturnValue().Set(args.This());
 }
 
 
@@ -133,7 +141,8 @@ JS_METHOD(_addServerWithWeight) {
       !args[0]->IsString() ||
       !args[1]->IsInt32() ||
       !args[2]->IsInt32()) {
-    return JS_TYPE_ERROR("Invalid arguments. Use addServerWithWeight(host{String}, port{Integer}, weight{Integer}).'");
+    JS_TYPE_ERROR("Invalid arguments. Use addServerWithWeight(host{String}, port{Integer}, weight{Integer}).'");
+    return;
   }
 
   v8::String::Utf8Value host(args[0]);
@@ -143,10 +152,11 @@ JS_METHOD(_addServerWithWeight) {
   memcached_return rc =
       memcached_server_add_with_weight(memc, *host, port, weight);
   if (rc != MEMCACHED_SUCCESS) {
-    return JS_ERROR(memcached_strerror(memc, rc));
+    JS_ERROR(memcached_strerror(memc, rc));
+    return;
   }
 
-  return args.This();
+  args.GetReturnValue().Set(args.This());
 }
 
 /**
@@ -160,17 +170,19 @@ JS_METHOD(_flush) {
   MEMCACHED_PTR;
 
   if (args.Length() != 1 || !args[0]->IsInt32()) {
-    return JS_TYPE_ERROR("Invalid arguments. Use flush(expiration{Integer}).");
+    JS_TYPE_ERROR("Invalid arguments. Use flush(expiration{Integer}).");
+    return;
   }
 
   uint32_t expiration = args[0]->Uint32Value();
 
   memcached_return rc = memcached_flush(memc, expiration);
   if (rc != MEMCACHED_SUCCESS) {
-    return JS_ERROR(memcached_strerror(memc, rc));
+    JS_ERROR(memcached_strerror(memc, rc));
+    return;
   }
 
-  return args.This();
+  args.GetReturnValue().Set(args.This());
 }
 
 /**
@@ -186,7 +198,8 @@ JS_METHOD(_set) {
       !args[1]->IsString() ||
       !args[2]->IsInt32() ||
       !args[3]->IsInt32()) {
-    return JS_TYPE_ERROR("Invalid arguments. Use set(key{String}, value{String}, expiration{Integer}, flags{Integer})");
+    JS_TYPE_ERROR("Invalid arguments. Use set(key{String}, value{String}, expiration{Integer}, flags{Integer})");
+    return;
   }
 
   v8::String::Utf8Value key(args[0]);
@@ -201,10 +214,11 @@ JS_METHOD(_set) {
       expiration,
       flags);
   if (rc != MEMCACHED_SUCCESS) {
-    return JS_ERROR(memcached_strerror(memc, rc));
+    JS_ERROR(memcached_strerror(memc, rc));
+    return;
   }
 
-  return args.This();
+  args.GetReturnValue().Set(args.This());
 }
 
 /**
@@ -219,7 +233,8 @@ JS_METHOD(_replace) {
       !args[1]->IsString() ||
       !args[2]->IsInt32() ||
       !args[3]->IsInt32()) {
-    return JS_TYPE_ERROR("Invalid arguments. Use replace(key{String}, value{String}, expiration{Integer}, flags{Integer})");
+    JS_TYPE_ERROR("Invalid arguments. Use replace(key{String}, value{String}, expiration{Integer}, flags{Integer})");
+    return;
   }
 
   v8::String::Utf8Value key(args[0]);
@@ -234,10 +249,11 @@ JS_METHOD(_replace) {
       expiration,
       flags);
   if (rc != MEMCACHED_SUCCESS) {
-    return JS_ERROR(memcached_strerror(memc, rc));
+    JS_ERROR(memcached_strerror(memc, rc));
+    return;
   }
 
-  return args.This();
+  args.GetReturnValue().Set(args.This());
 }
 
 /**
@@ -252,7 +268,8 @@ JS_METHOD(_add) {
       !args[1]->IsString() ||
       !args[2]->IsInt32() ||
       !args[3]->IsInt32()) {
-    return JS_TYPE_ERROR("Invalid arguments. Use add(key{String}, value{String}, expiration{Integer}, flags{Integer})");
+    JS_TYPE_ERROR("Invalid arguments. Use add(key{String}, value{String}, expiration{Integer}, flags{Integer})");
+    return;
   }
 
   v8::String::Utf8Value key(args[0]);
@@ -267,10 +284,11 @@ JS_METHOD(_add) {
       expiration,
       flags);
   if (rc != MEMCACHED_SUCCESS) {
-    return JS_ERROR(memcached_strerror(memc, rc));
+    JS_ERROR(memcached_strerror(memc, rc));
+    return;
   }
 
-  return args.This();
+  args.GetReturnValue().Set(args.This());
 }
 
 /**
@@ -289,7 +307,8 @@ JS_METHOD(_remove) {
   if (args.Length() != 2 ||
       !args[0]->IsString() ||
       !args[1]->IsInt32()) {
-    return JS_TYPE_ERROR("Invalid arguments. Use delete(key{String}, expiration{Integer})");
+    JS_TYPE_ERROR("Invalid arguments. Use delete(key{String}, expiration{Integer})");
+    return;
   }
 
   v8::String::Utf8Value key(args[0]);
@@ -297,10 +316,11 @@ JS_METHOD(_remove) {
 
   memcached_return rc = memcached_delete(memc, *key, key.length(), expiration);
   if (rc != MEMCACHED_SUCCESS) {
-    return JS_ERROR(memcached_strerror(memc, rc));
+    JS_ERROR(memcached_strerror(memc, rc));
+    return;
   }
 
-  return args.This();
+  args.GetReturnValue().Set(args.This());
 }
 
 /**
@@ -315,7 +335,8 @@ JS_METHOD(_get) {
 
   if (args.Length() != 1 ||
       !args[0]->IsString()) {
-    return JS_TYPE_ERROR("Invalid arguments. Use get(key{String})");
+    JS_TYPE_ERROR("Invalid arguments. Use get(key{String})");
+    return;
   }
 
   v8::String::Utf8Value key(args[0]);
@@ -325,19 +346,21 @@ JS_METHOD(_get) {
   memcached_return rc;
   char *rvalue = memcached_get(memc, *key, key.length(), &rlength, &rflags, &rc);
   if (rc == MEMCACHED_NOTFOUND) {
-    return v8::Undefined();
+    args.GetReturnValue().SetUndefined();
+    return;
   } else if (rc != MEMCACHED_SUCCESS) {
-    return JS_ERROR(memcached_strerror(memc, rc));
+    JS_ERROR(memcached_strerror(memc, rc));
+    return;
   }
 
-  v8::HandleScope handle_scope;
-  v8::Handle<v8::Array> js_array = v8::Array::New(2);
-  js_array->Set(JS_INT(0), v8::String::New(rvalue, rlength));
+  v8::HandleScope handle_scope(JS_ISOLATE);
+  v8::Handle<v8::Array> js_array = v8::Array::New(JS_ISOLATE, 2);
+  js_array->Set(JS_INT(0), JS_STR_LEN(rvalue, rlength));
   js_array->Set(JS_INT(1), JS_INT(rflags));
 
   free(rvalue);
 
-  return handle_scope.Close(js_array);
+  args.GetReturnValue().Set(js_array);
 }
 
 /**
@@ -355,7 +378,8 @@ JS_METHOD(_cas) {
       !args[2]->IsInt32() ||
       !args[3]->IsInt32() ||
       !args[4]->IsArray()) {
-    return JS_MEMCACHED_CAS_ERROR;
+    JS_MEMCACHED_CAS_ERROR;
+    return;
   }
 
   v8::String::Utf8Value key(args[0]);
@@ -364,13 +388,15 @@ JS_METHOD(_cas) {
   uint32_t flags = args[3]->Uint32Value();
   v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(args[4]);
   if (arr->Length() != 2) {
-    return JS_MEMCACHED_CAS_ERROR;
+    JS_MEMCACHED_CAS_ERROR;
+    return;
   }
   v8::Local<v8::Value> arr0 = arr->Get(JS_INT(0));
   v8::Local<v8::Value> arr1 = arr->Get(JS_INT(1));
   if (!arr0->IsInt32() ||
       !arr1->IsInt32()) {
-    return JS_MEMCACHED_CAS_ERROR;
+    JS_MEMCACHED_CAS_ERROR;
+    return;
   }
   uint64_t cas =
       (((uint64_t)arr0->Uint32Value()) << 32) + ((uint64_t)arr1->Uint32Value());
@@ -378,10 +404,11 @@ JS_METHOD(_cas) {
   memcached_return_t rc = memcached_cas(
       memc, *key, key.length(), *value, value.length(), expiration, flags, cas);
   if (rc != MEMCACHED_SUCCESS) {
-    return JS_ERROR(memcached_strerror(memc, rc));
+    JS_ERROR(memcached_strerror(memc, rc));
+    return;
   }
 
-  return args.This();
+  args.GetReturnValue().Set(args.This());
 }
 
 /**
@@ -394,7 +421,8 @@ JS_METHOD(_mget) {
 
   if (args.Length() != 1 ||
       !args[0]->IsArray()) {
-    return JS_TYPE_ERROR("Invalid arguments. Use mget(keys{Array<String>})");
+    JS_TYPE_ERROR("Invalid arguments. Use mget(keys{Array<String>})");
+    return;
   }
 
   v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(args[0]);
@@ -404,7 +432,8 @@ JS_METHOD(_mget) {
   for (unsigned int i = 0; i < key_count; i++) {
     v8::Local<v8::Value> value = arr->Get(JS_INT(i));
     if (!value->IsString()) {
-      return JS_TYPE_ERROR("Invalid arguments. All keys must be Strings.");
+      JS_TYPE_ERROR("Invalid arguments. All keys must be Strings.");
+      return;
     }
     // Copying the strings was the only way I could figure out how to get
     // an array of string pointers for the memcached_mget call. There may be
@@ -419,7 +448,8 @@ JS_METHOD(_mget) {
   memcached_return_t rc;
   rc = memcached_mget(memc, keys, key_lengths, key_count);
   if (rc != MEMCACHED_SUCCESS) {
-    return JS_ERROR(memcached_strerror(memc, rc));
+    JS_ERROR(memcached_strerror(memc, rc));
+    return;
   }
 
   for (unsigned int i = 0; i < key_count; i++) {
@@ -449,8 +479,8 @@ JS_METHOD(_mget) {
     }
   }
 
-  v8::HandleScope handle_scope;
-  v8::Handle<v8::Array> js_array = v8::Array::New();
+  v8::HandleScope handle_scope(JS_ISOLATE);
+  v8::Handle<v8::Array> js_array = v8::Array::New(JS_ISOLATE);
 
   // It is more efficient to use memcached_fetch_result than memcached_fetch
   // because you can re-use the memory between invocations according to the
@@ -459,7 +489,8 @@ JS_METHOD(_mget) {
   unsigned int i = 0;
   while ((memcached_fetch_result(memc, &results, &rc)) != NULL) {
     if (rc != MEMCACHED_SUCCESS) {
-      return JS_ERROR(memcached_strerror(memc, rc));
+      JS_ERROR(memcached_strerror(memc, rc));
+      return;
     }
     return_key = memcached_result_key_value(&results) + prefix_key_offset;
     return_key_length = memcached_result_key_length(&results) - prefix_key_offset;
@@ -468,16 +499,16 @@ JS_METHOD(_mget) {
     flags = memcached_result_flags(&results);
     cas = memcached_result_cas(&results);
 
-    v8::Handle<v8::Array> js_return_value = v8::Array::New(4);
+    v8::Handle<v8::Array> js_return_value = v8::Array::New(JS_ISOLATE, 4);
 
     // Encode 64bit CAS value into two 32bit integers so they do not
     // exceed the 52bit integer range of Javascript integers.
-    v8::Handle<v8::Array> js_cas = v8::Array::New(2);
+    v8::Handle<v8::Array> js_cas = v8::Array::New(JS_ISOLATE, 2);
     js_cas->Set(JS_INT(0), JS_INT(cas >> 32));
     js_cas->Set(JS_INT(1), JS_INT(cas & 0xFFFFFFFF));
 
-    js_return_value->Set(JS_INT(0), v8::String::New(return_key, return_key_length));
-    js_return_value->Set(JS_INT(1), v8::String::New(return_value, return_value_length));
+    js_return_value->Set(JS_INT(0), JS_STR_LEN(return_key, return_key_length));
+    js_return_value->Set(JS_INT(1), JS_STR_LEN(return_value, return_value_length));
     js_return_value->Set(JS_INT(2), JS_INT(flags));
     js_return_value->Set(JS_INT(3), js_cas);
     js_array->Set(JS_INT(i), js_return_value);
@@ -493,7 +524,7 @@ JS_METHOD(_mget) {
   // Does this ensure that all the members of the array are also 'Close'd to the
   // parent handle_scope? It seems to based on similar usage in list_items of
   // fs.cc
-  return handle_scope.Close(js_array);
+  args.GetReturnValue().Set(js_array);
 }
 
 JS_METHOD(_behaviorSet) {
@@ -502,7 +533,8 @@ JS_METHOD(_behaviorSet) {
   if (args.Length() != 2 ||
       !args[0]->IsInt32() ||
       !args[1]->IsInt32()) {
-    return JS_TYPE_ERROR("Invalid arguments. Use behaviorSet(behavior{Int}, data{Int}).");
+    JS_TYPE_ERROR("Invalid arguments. Use behaviorSet(behavior{Int}, data{Int}).");
+    return;
   }
 
   memcached_behavior_t behavior = (memcached_behavior_t)args[0]->Uint32Value();
@@ -510,10 +542,11 @@ JS_METHOD(_behaviorSet) {
 
   memcached_return_t rc = memcached_behavior_set(memc, behavior, data);
   if (rc != MEMCACHED_SUCCESS) {
-    return JS_ERROR(memcached_strerror(memc, rc));
+    JS_ERROR(memcached_strerror(memc, rc));
+    return;
   }
 
-  return args.This();
+  args.GetReturnValue().Set(args.This());
 }
 
 JS_METHOD(_behaviorGet) {
@@ -521,20 +554,21 @@ JS_METHOD(_behaviorGet) {
 
   if (args.Length() != 1 ||
       !args[0]->IsInt32()) {
-    return JS_TYPE_ERROR("Invalid arguments. Use behaviorGet(behavior{Int})");
+    JS_TYPE_ERROR("Invalid arguments. Use behaviorGet(behavior{Int})");
+    return;
   }
 
   memcached_behavior_t behavior = (memcached_behavior_t)args[0]->Uint32Value();
 
   uint64_t data = memcached_behavior_get(memc, behavior);
-  return JS_INT(data);
+  args.GetReturnValue().Set(JS_INT(data));
 }
 
 } /* end namespace */
 
 SHARED_INIT() {
-  v8::HandleScope handle_scope;
-  v8::Handle<v8::FunctionTemplate> ft = v8::FunctionTemplate::New(_memcached);
+  v8::HandleScope handle_scope(JS_ISOLATE);
+  v8::Handle<v8::FunctionTemplate> ft = v8::FunctionTemplate::New(JS_ISOLATE, _memcached);
   ft->SetClassName(JS_STR("Memcached"));
 
   v8::Handle<v8::ObjectTemplate> ot = ft->InstanceTemplate();
@@ -545,21 +579,21 @@ SHARED_INIT() {
   /**
    * Memcached prototype methods (new Memcached().*)
    */
-  pt->Set(JS_STR("reset"), v8::FunctionTemplate::New(_reset));
-  pt->Set(JS_STR("getPrefixKey"), v8::FunctionTemplate::New(_getPrefixKey));
-  pt->Set(JS_STR("setPrefixKey"), v8::FunctionTemplate::New(_setPrefixKey));
-  pt->Set(JS_STR("clearPrefixKey"), v8::FunctionTemplate::New(_clearPrefixKey));
-  pt->Set(JS_STR("addServerWithWeight"), v8::FunctionTemplate::New(_addServerWithWeight));
-  pt->Set(JS_STR("flush"), v8::FunctionTemplate::New(_flush));
-  pt->Set(JS_STR("set"), v8::FunctionTemplate::New(_set));
-  pt->Set(JS_STR("replace"), v8::FunctionTemplate::New(_replace));
-  pt->Set(JS_STR("add"), v8::FunctionTemplate::New(_add));
-  pt->Set(JS_STR("remove"), v8::FunctionTemplate::New(_remove));
-  pt->Set(JS_STR("get"), v8::FunctionTemplate::New(_get));
-  pt->Set(JS_STR("cas"), v8::FunctionTemplate::New(_cas));
-  pt->Set(JS_STR("mget"), v8::FunctionTemplate::New(_mget));
-  pt->Set(JS_STR("behaviorSet"), v8::FunctionTemplate::New(_behaviorSet));
-  pt->Set(JS_STR("behaviorGet"), v8::FunctionTemplate::New(_behaviorGet));
+  pt->Set(JS_STR("reset"), v8::FunctionTemplate::New(JS_ISOLATE, _reset));
+  pt->Set(JS_STR("getPrefixKey"), v8::FunctionTemplate::New(JS_ISOLATE, _getPrefixKey));
+  pt->Set(JS_STR("setPrefixKey"), v8::FunctionTemplate::New(JS_ISOLATE, _setPrefixKey));
+  pt->Set(JS_STR("clearPrefixKey"), v8::FunctionTemplate::New(JS_ISOLATE, _clearPrefixKey));
+  pt->Set(JS_STR("addServerWithWeight"), v8::FunctionTemplate::New(JS_ISOLATE, _addServerWithWeight));
+  pt->Set(JS_STR("flush"), v8::FunctionTemplate::New(JS_ISOLATE, _flush));
+  pt->Set(JS_STR("set"), v8::FunctionTemplate::New(JS_ISOLATE, _set));
+  pt->Set(JS_STR("replace"), v8::FunctionTemplate::New(JS_ISOLATE, _replace));
+  pt->Set(JS_STR("add"), v8::FunctionTemplate::New(JS_ISOLATE, _add));
+  pt->Set(JS_STR("remove"), v8::FunctionTemplate::New(JS_ISOLATE, _remove));
+  pt->Set(JS_STR("get"), v8::FunctionTemplate::New(JS_ISOLATE, _get));
+  pt->Set(JS_STR("cas"), v8::FunctionTemplate::New(JS_ISOLATE, _cas));
+  pt->Set(JS_STR("mget"), v8::FunctionTemplate::New(JS_ISOLATE, _mget));
+  pt->Set(JS_STR("behaviorSet"), v8::FunctionTemplate::New(JS_ISOLATE, _behaviorSet));
+  pt->Set(JS_STR("behaviorGet"), v8::FunctionTemplate::New(JS_ISOLATE, _behaviorGet));
 
   /**
    * Memcached behavior values. These are copied from the

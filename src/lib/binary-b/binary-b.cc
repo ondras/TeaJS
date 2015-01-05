@@ -7,7 +7,7 @@
 #include "bytearray.h"
 #include "bytestorage-b.h"
 
-v8::Handle<v8::Value> commonIndexOf(const v8::Arguments& args, int direction) {
+void commonIndexOf(const v8::FunctionCallbackInfo<v8::Value>& args, int direction) {
 	ByteStorageB * bs = BS_THIS;
 	int len = args.Length();
 
@@ -17,53 +17,55 @@ v8::Handle<v8::Value> commonIndexOf(const v8::Arguments& args, int direction) {
 	size_t index1 = MIN(start, end);
 	size_t index2 = MAX(start, end);
 
-	return JS_INT(bs->indexOf(value, index1, index2, direction));
+	args.GetReturnValue().Set(JS_INT(bs->indexOf(value, index1, index2, direction)));
 }
 
-v8::Handle<v8::Value> Binary_length(v8::Local<v8::String> property, const v8::AccessorInfo &info) {
+void Binary_length(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
 	ByteStorageB * bs = BS_OTHER(info.This());
-	return JS_INT(bs->getLength());
+	info.GetReturnValue().Set(JS_INT(bs->getLength()));
 }
 
-v8::Handle<v8::Value> Binary_convertTo(const v8::Arguments &args, v8::Handle<v8::Function> ctor) {
+void Binary_convertTo(const v8::FunctionCallbackInfo<v8::Value> &args, v8::Handle<v8::Function> ctor) {
 	if (args.Length() == 0) {
 		/* no copying for ByteString->ByteString conversions */
-		if (INSTANCEOF(args.This(), ByteString_template()) && ctor == ByteString_function()) { 
-			return args.This(); 
+		v8::Local<v8::FunctionTemplate> byteString_template = v8::Local<v8::FunctionTemplate>::New(JS_ISOLATE, ByteString_template());
+		if (INSTANCEOF(args.This(), byteString_template) && ctor == ByteString_function()) {
+			args.GetReturnValue().Set(args.This());
+			return;
 		}
 		
 		v8::Handle<v8::Value> newargs[]= { args.This() };
-		return ctor->NewInstance(1, newargs);
+		args.GetReturnValue().Set(ctor->NewInstance(1, newargs));
 	} else {
 		ByteStorageB * bs = BS_THIS;
 		v8::String::Utf8Value from(args[0]);
 		v8::String::Utf8Value to(args[1]);
 		try {		
 			ByteStorageB * bs2 = bs->transcode(*from, *to);
-			v8::Handle<v8::Value> newargs[]= { v8::External::New((void*) bs2) };
-			return ctor->NewInstance(1, newargs);
+			v8::Handle<v8::Value> newargs[]= { v8::External::New(JS_ISOLATE, (void*) bs2) };
+			args.GetReturnValue().Set(ctor->NewInstance(1, newargs));
 		} catch (std::string e) {
-			return JS_ERROR(e.c_str());
+			JS_ERROR(e.c_str());
 		}
 	}
 	
 }
 
 JS_METHOD(Binary_indexOf) {
-	return commonIndexOf(args, 1);
+	commonIndexOf(args, 1);
 }
 
 JS_METHOD(Binary_lastIndexOf) {
-	return commonIndexOf(args, -1);
+	commonIndexOf(args, -1);
 }
 
 JS_METHOD(Binary_codeAt) {
 	ByteStorageB * bs = BS_THIS;
 	size_t len = bs->getLength();
 	size_t index = args[0]->IntegerValue();
-	if (index < 0 || index >= len) { return v8::Undefined(); }
+	if (index < 0 || index >= len) { args.GetReturnValue().SetUndefined(); return; }
 	
-	return JS_INT(bs->getByte(index));
+	args.GetReturnValue().Set(JS_INT(bs->getByte(index)));
 }
 
 JS_METHOD(Binary_decodeToString) {
@@ -71,22 +73,24 @@ JS_METHOD(Binary_decodeToString) {
 	v8::String::Utf8Value charset(args[0]);
 	try {
 		ByteStorageB bs_tmp(bs->transcode(*charset, "utf-8"));
-		return bs_tmp.toString();
+		args.GetReturnValue().Set(bs_tmp.toString());
 	} catch (std::string e) {
-		return JS_ERROR(e.c_str());
+		JS_ERROR(e.c_str());
 	}
 }
 
 JS_METHOD(Binary_toByteString) {
-	return Binary_convertTo(args, ByteString_function());
+	v8::Local<v8::Function> byteString = v8::Local<v8::Function>::New(JS_ISOLATE, ByteString_function());
+	Binary_convertTo(args, byteString);
 }
 
 JS_METHOD(Binary_toByteArray) {
-	return Binary_convertTo(args, ByteArray_function());
+	v8::Local<v8::Function> byteArray = v8::Local<v8::Function>::New(JS_ISOLATE, ByteArray_function());
+	Binary_convertTo(args, byteArray);
 }
 
 JS_METHOD(Binary_concat) {
-	return args.This();	
+	args.GetReturnValue().Set(args.This());
 }
 
 void Binary_destroy(v8::Handle<v8::Object> instance) {
@@ -94,7 +98,7 @@ void Binary_destroy(v8::Handle<v8::Object> instance) {
 	delete bs;
 }
 
-v8::Handle<v8::Value> Binary_concat(v8::Handle<v8::Object> obj, const v8::Arguments& args, bool right) {
+void Binary_concat(v8::Handle<v8::Object> obj, const v8::FunctionCallbackInfo<v8::Value>& args, bool right) {
 	ByteStorageB * bs = BS_OTHER(obj);
 	
 	v8::Handle<v8::Value> arg;
@@ -114,32 +118,34 @@ v8::Handle<v8::Value> Binary_concat(v8::Handle<v8::Object> obj, const v8::Argume
 		}
 	}
 	
-	return JS_INT(bs->getLength());
+	args.GetReturnValue().Set(JS_INT(bs->getLength()));
 }
 
 JS_METHOD(_Binary) {
-	return JS_ERROR("Binary function should never be called.");
+	JS_ERROR("Binary function should never be called.");
 }
 
 SHARED_INIT() {
-	v8::HandleScope handle_scope;
+	v8::HandleScope handle_scope(JS_ISOLATE);
 	
-	v8::Handle<v8::FunctionTemplate> binaryTemplate = v8::FunctionTemplate::New(_Binary);
+	v8::Handle<v8::FunctionTemplate> binaryTemplate = v8::FunctionTemplate::New(JS_ISOLATE, _Binary);
 	binaryTemplate->SetClassName(JS_STR("Binary"));
 	
 	v8::Handle<v8::ObjectTemplate> binaryPrototype = binaryTemplate->PrototypeTemplate();
-	binaryPrototype->Set(JS_STR("codeAt"), v8::FunctionTemplate::New(Binary_codeAt));
-	binaryPrototype->Set(JS_STR("indexOf"), v8::FunctionTemplate::New(Binary_indexOf));
-	binaryPrototype->Set(JS_STR("lastIndexOf"), v8::FunctionTemplate::New(Binary_lastIndexOf));
-	binaryPrototype->Set(JS_STR("toByteString"), v8::FunctionTemplate::New(Binary_toByteString));
-	binaryPrototype->Set(JS_STR("toByteArray"), v8::FunctionTemplate::New(Binary_toByteArray));
-	binaryPrototype->Set(JS_STR("decodeToString"), v8::FunctionTemplate::New(Binary_decodeToString));
-	binaryPrototype->Set(JS_STR("concat"), v8::FunctionTemplate::New(Binary_concat));
+	binaryPrototype->Set(JS_STR("codeAt"), v8::FunctionTemplate::New(JS_ISOLATE, Binary_codeAt));
+	binaryPrototype->Set(JS_STR("indexOf"), v8::FunctionTemplate::New(JS_ISOLATE, Binary_indexOf));
+	binaryPrototype->Set(JS_STR("lastIndexOf"), v8::FunctionTemplate::New(JS_ISOLATE, Binary_lastIndexOf));
+	binaryPrototype->Set(JS_STR("toByteString"), v8::FunctionTemplate::New(JS_ISOLATE, Binary_toByteString));
+	binaryPrototype->Set(JS_STR("toByteArray"), v8::FunctionTemplate::New(JS_ISOLATE, Binary_toByteArray));
+	binaryPrototype->Set(JS_STR("decodeToString"), v8::FunctionTemplate::New(JS_ISOLATE, Binary_decodeToString));
+	binaryPrototype->Set(JS_STR("concat"), v8::FunctionTemplate::New(JS_ISOLATE, Binary_concat));
 	exports->Set(JS_STR("Binary"), binaryTemplate->GetFunction());
 
 	ByteString_init(binaryTemplate);
-	exports->Set(JS_STR("ByteString"), ByteString_function());
+	v8::Local<v8::Function> byteString = v8::Local<v8::Function>::New(JS_ISOLATE, ByteString_function());
+	exports->Set(JS_STR("ByteString"), byteString);
 
 	ByteArray_init(binaryTemplate);
-	exports->Set(JS_STR("ByteArray"), ByteArray_function());
+	v8::Local<v8::Function> byteArray = v8::Local<v8::Function>::New(JS_ISOLATE, ByteArray_function());
+	exports->Set(JS_STR("ByteArray"), byteArray);
 }

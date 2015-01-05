@@ -12,15 +12,15 @@
 #include <map>
 
 #define MYSQL_ERROR mysql_error(conn)
-#define ASSERT_CONNECTED if (!conn) { return JS_ERROR("No connection established yet."); }
-#define ASSERT_RESULT if (!res) { return JS_ERROR("Result set already closed."); }
+#define ASSERT_CONNECTED if (!conn) { JS_ERROR("No connection established yet."); return; }
+#define ASSERT_RESULT if (!res) { JS_ERROR("Result set already closed."); return; }
 #define MYSQL_PTR MYSQL * conn = LOAD_PTR(0, MYSQL *)
 
 
 namespace {
 
-v8::Persistent<v8::FunctionTemplate> rest;
-v8::Persistent<v8::FunctionTemplate> mysqlt;
+v8::Persistent<v8::FunctionTemplate> _rest;
+v8::Persistent<v8::FunctionTemplate> _mysqlt;
 
 typedef std::map<std::string, void *> persistent_connection_t;
 persistent_connection_t persistent_connections;
@@ -38,17 +38,18 @@ void result_finalize(v8::Handle<v8::Object> obj) {
 	fun->Call(obj, 0, NULL);
 }
 
-v8::Handle<v8::Value> createResult(MYSQL * conn) {
+void createResult(MYSQL * conn, const v8::FunctionCallbackInfo<v8::Value>& args) {
 	MYSQL_RES * res = mysql_store_result(conn);
 	
 	if (res) {
-		v8::Handle<v8::Value> resargs[] = { v8::External::New((void *) res) };
-		return rest->GetFunction()->NewInstance(1, resargs);
+		v8::Handle<v8::Value> resargs[] = { v8::External::New(JS_ISOLATE, (void *) res) };
+		v8::Local<v8::FunctionTemplate> rest = v8::Local<v8::FunctionTemplate>::New(JS_ISOLATE, _rest);
+		args.GetReturnValue().Set(rest->GetFunction()->NewInstance(1, resargs));
 	} else {
 		if (mysql_field_count(conn)) {
-			return JS_ERROR(MYSQL_ERROR);
+			JS_ERROR(MYSQL_ERROR);
 		} else {
-			return JS_BOOL(true);
+			args.GetReturnValue().Set(JS_BOOL(true));
 		}
 	}
 }
@@ -64,7 +65,7 @@ JS_METHOD(_mysql) {
 
 	GC * gc = GC_PTR;
 	gc->add(args.This(), finalize);
-	return args.This();
+	args.GetReturnValue().Set(args.This());
 }
 
 /**
@@ -76,7 +77,7 @@ JS_METHOD(_close) {
 		mysql_close(conn);
 		SAVE_PTR(0, NULL);
 	}
-	return args.This();
+	args.GetReturnValue().Set(args.This());
 }
 
 /**
@@ -84,7 +85,8 @@ JS_METHOD(_close) {
  */ 
 JS_METHOD(_connect) {
 	if (args.Length() < 4) {
-		return JS_TYPE_ERROR("Invalid call format. Use 'mysql.connect(host, user, pass, db)'");
+		JS_TYPE_ERROR("Invalid call format. Use 'mysql.connect(host, user, pass, db)'");
+		return;
 	}
 	
 	MYSQL * conn;
@@ -108,11 +110,11 @@ JS_METHOD(_connect) {
 	
 	conn = mysql_init(NULL);
 	if (!mysql_real_connect(conn, onlyhost.c_str(), *user, *pass, *db, port, NULL, CLIENT_MULTI_STATEMENTS)) {
-		return JS_ERROR(MYSQL_ERROR);
+		JS_ERROR(MYSQL_ERROR);
 	} else {
 		mysql_query(conn, "SET NAMES 'utf8'");
 		SAVE_PTR(0, conn);
-		return args.This();
+		args.GetReturnValue().Set(args.This());
 	}
 }
 
@@ -123,17 +125,18 @@ JS_METHOD(_query) {
 	MYSQL_PTR;
 	ASSERT_CONNECTED;
 	if (args.Length() < 1) {
-		return JS_ERROR("No query specified");
+		JS_ERROR("No query specified");
+		return;
 	}
 	v8::String::Utf8Value q(args[0]);
 	
 	int code = mysql_real_query(conn, *q, q.length());
-	if (code != 0) { return JS_ERROR(MYSQL_ERROR); }
+	if (code != 0) { JS_ERROR(MYSQL_ERROR); return; }
 	
 	int qc = args.This()->Get(JS_STR("queryCount"))->ToInteger()->Int32Value();
 	args.This()->Set(JS_STR("queryCount"), JS_INT(qc+1));
 	
-	return createResult(conn);
+	createResult(conn, args);
 }
 
 /**
@@ -145,21 +148,21 @@ JS_METHOD(_nextresult) {
 	
 	int status = mysql_next_result(conn);
 	
-	if (status == -1) { return JS_NULL; }
-	if (status > 0) { return JS_ERROR(MYSQL_ERROR); }
-	return createResult(conn);
+	if (status == -1) { args.GetReturnValue().SetNull(); return; }
+	if (status > 0) { JS_ERROR(MYSQL_ERROR); return; }
+	createResult(conn, args);
 }
 
 JS_METHOD(_affectedrows) {
 	MYSQL_PTR;
 	ASSERT_CONNECTED;
-	return JS_INT(mysql_affected_rows(conn));
+	args.GetReturnValue().Set(JS_INT(mysql_affected_rows(conn)));
 }
 
 JS_METHOD(_insertid) {
 	MYSQL_PTR;
 	ASSERT_CONNECTED;
-	return JS_INT(mysql_insert_id(conn));
+	args.GetReturnValue().Set(JS_INT(mysql_insert_id(conn)));
 }
 
 JS_METHOD(_escape) {
@@ -167,7 +170,8 @@ JS_METHOD(_escape) {
 	ASSERT_CONNECTED;
 	
 	if (args.Length() < 1) {
-		return JS_TYPE_ERROR("Nothing to escape");
+		JS_TYPE_ERROR("Nothing to escape");
+		return;
 	}
 	v8::String::Utf8Value str(args[0]);
 	
@@ -176,14 +180,15 @@ JS_METHOD(_escape) {
 	
 
 	int length = mysql_real_escape_string(conn, result, *str, len);
-	v8::Handle<v8::Value> output = JS_STR(result, length);
+	v8::Handle<v8::Value> output = JS_STR_LEN(result, length);
 	delete[] result;
-	return output;
+	args.GetReturnValue().Set(output);
 }
 
 JS_METHOD(_qualify) {
 	if (args.Length() < 1) {
-		return JS_TYPE_ERROR("Nothing to qualify");
+		JS_TYPE_ERROR("Nothing to qualify");
+		return;
 	}
 
 	v8::String::Utf8Value str(args[0]);
@@ -192,7 +197,7 @@ JS_METHOD(_qualify) {
 	result += "`";
 	
 	v8::Handle<v8::Value> output = JS_STR(result.c_str());
-	return output;
+	args.GetReturnValue().Set(output);
 }
 
 JS_METHOD(_result) {
@@ -201,21 +206,21 @@ JS_METHOD(_result) {
 	GC * gc = GC_PTR;
 	gc->add(args.This(), result_finalize);
 
-	return args.This();
+	args.GetReturnValue().Set(args.This());
 }
 
 JS_METHOD(_numrows) {
 	MYSQL_RES * res = LOAD_PTR(0, MYSQL_RES *);
 	ASSERT_RESULT;
 
-	return JS_INT(mysql_num_rows(res));
+	args.GetReturnValue().Set(JS_INT(mysql_num_rows(res)));
 }
 
 JS_METHOD(_numfields) {
 	MYSQL_RES * res = LOAD_PTR(0, MYSQL_RES *);
 	ASSERT_RESULT;
 
-	return JS_INT(mysql_num_fields(res));
+	args.GetReturnValue().Set(JS_INT(mysql_num_fields(res)));
 }
 
 JS_METHOD(_fetchnames) {
@@ -224,13 +229,13 @@ JS_METHOD(_fetchnames) {
 
 	int cnt = mysql_num_fields(res);
 	MYSQL_FIELD * fields = mysql_fetch_fields(res);
-	v8::Handle<v8::Array> result = v8::Array::New(cnt);
+	v8::Handle<v8::Array> result = v8::Array::New(JS_ISOLATE, cnt);
 	
 	for(int i = 0; i < cnt; i++) {
 		result->Set(JS_INT(i), JS_STR(fields[i].name));
 	}
-	
-	return result;
+
+	args.GetReturnValue().Set(result);
 }
 
 /**
@@ -244,7 +249,7 @@ JS_METHOD(_fetchnames) {
  */
 v8::Handle<v8::Value> _mysqltojs(const char* mysql_value, const MYSQL_FIELD& field) {
 	if (mysql_value == NULL) {
-		return v8::Null();
+		return v8::Null(JS_ISOLATE);
 	}
 
         // For type list, see http://www.google.com/codesearch/p#RGCD84x9Jg0/trunk/xbmc/lib/libcmyth/Win32/include/mysql/mysql_com.h&q=enum_field_types
@@ -287,18 +292,18 @@ JS_METHOD(_fetcharrays) {
 	int y = mysql_num_rows(res);
 	MYSQL_FIELD * fields = mysql_fetch_fields(res);
 	MYSQL_ROW row;
-	v8::Handle<v8::Array> result = v8::Array::New(y);
+	v8::Handle<v8::Array> result = v8::Array::New(JS_ISOLATE, y);
 	
 	for (int i = 0; i < y; i++) {
 		row = mysql_fetch_row(res);
-		v8::Handle<v8::Array> item = v8::Array::New(x);
+		v8::Handle<v8::Array> item = v8::Array::New(JS_ISOLATE, x);
 		result->Set(JS_INT(i), item);
 		for (int j=0; j<x; j++) {
 			item->Set(JS_INT(j), _mysqltojs(row[j], fields[j]));
 			}
 		}
 	
-	return result;
+	args.GetReturnValue().Set(result);
 }
 
 /**
@@ -313,18 +318,18 @@ JS_METHOD(_fetchobjects) {
 	int y = mysql_num_rows(res);
 	MYSQL_FIELD * fields = mysql_fetch_fields(res);
 	MYSQL_ROW row;
-	v8::Handle<v8::Array> result = v8::Array::New(y);
+	v8::Handle<v8::Array> result = v8::Array::New(JS_ISOLATE, y);
 	
 	for (int i = 0; i < y; i++) {
 		row = mysql_fetch_row(res);
-		v8::Handle<v8::Object> item = v8::Object::New();
+		v8::Handle<v8::Object> item = v8::Object::New(JS_ISOLATE);
 		result->Set(JS_INT(i), item);
 		for (int j=0; j<x; j++) {
 			item->Set(JS_STR(fields[j].name), _mysqltojs(row[j], fields[j]));
 			}
 		}
 	
-	return result;
+	args.GetReturnValue().Set(result);
 }
 
 JS_METHOD(_result_close) {
@@ -332,9 +337,9 @@ JS_METHOD(_result_close) {
 	if (res) {
 		mysql_free_result(res);
 		SAVE_PTR(0, NULL);
-		return JS_BOOL(true);
+		args.GetReturnValue().Set(true);
 	} else {
-		return JS_BOOL(false);
+		args.GetReturnValue().Set(false);
 	}
 }
 
@@ -346,18 +351,19 @@ JS_METHOD(_storeConnection) {
 	persistent_connection_t::iterator it = persistent_connections.find(str_name);
 	if (args[1]->ToBoolean()->IsFalse()) { /* delete */
 		persistent_connections.erase(it);
-		return JS_UNDEFINED;
+		args.GetReturnValue().SetUndefined();
+		return;
 	}
 
-	if (!args[1]->IsObject()) { return JS_TYPE_ERROR("Invalid argument"); }	
+	if (!args[1]->IsObject()) { JS_TYPE_ERROR("Invalid argument"); return; }
 	v8::Handle<v8::Object> inst = v8::Handle<v8::Object>::Cast(args[1]);
-	if (inst->InternalFieldCount() < 1) { return JS_TYPE_ERROR("Invalid argument"); }
+	if (inst->InternalFieldCount() < 1) { JS_TYPE_ERROR("Invalid argument"); return; }
 
-	if (it != persistent_connections.end()) { return JS_ERROR("Connection name already used"); }
+	if (it != persistent_connections.end()) { JS_ERROR("Connection name already used"); return; }
 
 	persistent_connections[str_name] = LOAD_PTR_FROM(inst, 0, void *);
-	return JS_UNDEFINED;
 
+	args.GetReturnValue().SetUndefined();
 }
 
 JS_METHOD(_loadConnection) {
@@ -365,22 +371,23 @@ JS_METHOD(_loadConnection) {
 	std::string str_name(*name);
 
 	persistent_connection_t::iterator it = persistent_connections.find(str_name);
-	if (it == persistent_connections.end()) { return JS_NULL; }
+	if (it == persistent_connections.end()) { args.GetReturnValue().SetNull(); return; }
 
 	MYSQL * conn = (MYSQL *) (it->second);
 	
 	v8::Handle<v8::Value> newArgs[1] = {JS_BOOL(true)};
+	v8::Local<v8::FunctionTemplate> mysqlt = v8::Local<v8::FunctionTemplate>::New(JS_ISOLATE, _mysqlt);
 	v8::Handle<v8::Object> inst = mysqlt->GetFunction()->NewInstance(1, newArgs);
 	SAVE_PTR_TO(inst, 0, (void *)conn);
 
-	return inst;
+	args.GetReturnValue().Set(inst);
 }
 
 } /* end namespace */
 
 SHARED_INIT() {
-	v8::HandleScope handle_scope;
-	mysqlt = v8::Persistent<v8::FunctionTemplate>::New(v8::FunctionTemplate::New(_mysql));
+	v8::HandleScope handle_scope(JS_ISOLATE);
+	v8::Handle<v8::FunctionTemplate> mysqlt = v8::FunctionTemplate::New(JS_ISOLATE, _mysql);
 	mysqlt->SetClassName(JS_STR("MySQL"));
 
 	v8::Handle<v8::ObjectTemplate> ot = mysqlt->InstanceTemplate();
@@ -394,24 +401,26 @@ SHARED_INIT() {
 	/**
 	 * Persistent connection storage
 	 */
-	mysqlt->Set(JS_STR("storeConnection"), v8::FunctionTemplate::New(_storeConnection));
-	mysqlt->Set(JS_STR("loadConnection"), v8::FunctionTemplate::New(_loadConnection));
+	mysqlt->Set(JS_STR("storeConnection"), v8::FunctionTemplate::New(JS_ISOLATE, _storeConnection));
+	mysqlt->Set(JS_STR("loadConnection"), v8::FunctionTemplate::New(JS_ISOLATE, _loadConnection));
 		 
 	v8::Handle<v8::ObjectTemplate> pt = mysqlt->PrototypeTemplate();
+
+	_mysqlt.Reset(JS_ISOLATE, mysqlt);
 
 	/**
 	 * MySQL prototype methods (new MySQL().*)
 	 */
-	pt->Set(JS_STR("connect"), v8::FunctionTemplate::New(_connect));
-	pt->Set(JS_STR("close"), v8::FunctionTemplate::New(_close));
-	pt->Set(JS_STR("query"), v8::FunctionTemplate::New(_query));
-	pt->Set(JS_STR("nextResult"), v8::FunctionTemplate::New(_nextresult));
-	pt->Set(JS_STR("affectedRows"), v8::FunctionTemplate::New(_affectedrows));
-	pt->Set(JS_STR("escape"), v8::FunctionTemplate::New(_escape));
-	pt->Set(JS_STR("qualify"), v8::FunctionTemplate::New(_qualify));
-	pt->Set(JS_STR("insertId"), v8::FunctionTemplate::New(_insertid));
-	
-	rest = v8::Persistent<v8::FunctionTemplate>::New(v8::FunctionTemplate::New(_result));
+	pt->Set(JS_STR("connect"), v8::FunctionTemplate::New(JS_ISOLATE, _connect));
+	pt->Set(JS_STR("close"), v8::FunctionTemplate::New(JS_ISOLATE, _close));
+	pt->Set(JS_STR("query"), v8::FunctionTemplate::New(JS_ISOLATE, _query));
+	pt->Set(JS_STR("nextResult"), v8::FunctionTemplate::New(JS_ISOLATE, _nextresult));
+	pt->Set(JS_STR("affectedRows"), v8::FunctionTemplate::New(JS_ISOLATE, _affectedrows));
+	pt->Set(JS_STR("escape"), v8::FunctionTemplate::New(JS_ISOLATE, _escape));
+	pt->Set(JS_STR("qualify"), v8::FunctionTemplate::New(JS_ISOLATE, _qualify));
+	pt->Set(JS_STR("insertId"), v8::FunctionTemplate::New(JS_ISOLATE, _insertid));
+
+	v8::Handle<v8::FunctionTemplate> rest = v8::FunctionTemplate::New(JS_ISOLATE, _result);
 	rest->SetClassName(JS_STR("Result"));
 	
 	v8::Handle<v8::ObjectTemplate> resinst = rest->InstanceTemplate();
@@ -419,15 +428,17 @@ SHARED_INIT() {
 	
 	v8::Handle<v8::ObjectTemplate> resproto = rest->PrototypeTemplate();
 
+	_rest.Reset(JS_ISOLATE, rest);
+
 	/**
 	 * Result prototype methods (new MySQL().query().*)
 	 */
-	resproto->Set(JS_STR("numRows"), v8::FunctionTemplate::New(_numrows));
-	resproto->Set(JS_STR("numFields"), v8::FunctionTemplate::New(_numfields));
-	resproto->Set(JS_STR("fetchNames"), v8::FunctionTemplate::New(_fetchnames));
-	resproto->Set(JS_STR("fetchArrays"), v8::FunctionTemplate::New(_fetcharrays));
-	resproto->Set(JS_STR("fetchObjects"), v8::FunctionTemplate::New(_fetchobjects));
-	resproto->Set(JS_STR("close"), v8::FunctionTemplate::New(_result_close));
+	resproto->Set(JS_STR("numRows"), v8::FunctionTemplate::New(JS_ISOLATE, _numrows));
+	resproto->Set(JS_STR("numFields"), v8::FunctionTemplate::New(JS_ISOLATE, _numfields));
+	resproto->Set(JS_STR("fetchNames"), v8::FunctionTemplate::New(JS_ISOLATE, _fetchnames));
+	resproto->Set(JS_STR("fetchArrays"), v8::FunctionTemplate::New(JS_ISOLATE, _fetcharrays));
+	resproto->Set(JS_STR("fetchObjects"), v8::FunctionTemplate::New(JS_ISOLATE, _fetchobjects));
+	resproto->Set(JS_STR("close"), v8::FunctionTemplate::New(JS_ISOLATE, _result_close));
 
 	exports->Set(JS_STR("MySQL"), mysqlt->GetFunction());
 }

@@ -3,6 +3,8 @@
 
 #define RECAST(item, type) reinterpret_cast<type>(v8::Handle<v8::External>::Cast(item)->Value());
 
+#define JS_RETURN_ERROR(reason) { JS_ERROR(reason); return; }
+
 #define LOAD_DOMEXCEPTION(domerr)	DOMException * domerr = LOAD_PTR(0,DOMException *)
 #define DOM_EXCEPTION			LOAD_DOMEXCEPTION(domerr)
 #define DOMEXCPT			LOAD_DOMEXCEPTION(domerr)
@@ -206,16 +208,16 @@
 #define XML_STR(...)			XMLString::transcode(__VA_ARGS__)
 #define X(...)				XMLString::transcode(__VA_ARGS__)
 #define X_STR(item)			XMLString::transcode(item.str().c_str())
-#define ARGSTR(item)			X(*String::Utf8Value(args[item]))
+#define ARGSTR(item)			X(*v8::String::Utf8Value(args[item]))
 #define OLD2_ARGSTR(item)		*String::Value(args[item])
 #define OLD_ARGSTR(item)		*String::Value(args[item]->ToString())
-#define DOMOPTYPE			xercesc_3_0::DOMUserDataHandler::DOMOperationType
+#define DOMOPTYPE			xercesc_3_1::DOMUserDataHandler::DOMOperationType
 #define CSTR(sstream)			sstream.str().c_str()
 
-#define XTRY(...)			try{ __VA_ARGS__ }    catch( xercesc_3_0::DOMException& e ) { char * msg = X(e.getMessage()); return JS_ERROR(msg); }
-#define ZTRY(...)			try{ __VA_ARGS__ }    catch( xercesc_3_0::DOMException& e ) { char * msg = X(e.getMessage()); JS_ERROR(msg); }
-#define XLSTRY(...)			try{ __VA_ARGS__ }    catch( xercesc_3_0::DOMLSException& e ) { char * msg = X(e.getMessage()); return JS_ERROR(msg); }
-#define ZLSTRY(...)			try{ __VA_ARGS__ }    catch( xercesc_3_0::DOMLSException& e ) { char * msg = X(e.getMessage()); JS_ERROR(msg); }
+#define XTRY(...)			try{ __VA_ARGS__ }    catch( xercesc_3_1::DOMException& e ) { char * msg = X(e.getMessage()); JS_RETURN_ERROR(msg); }
+#define ZTRY(...)			try{ __VA_ARGS__ }    catch( xercesc_3_1::DOMException& e ) { char * msg = X(e.getMessage()); JS_ERROR(msg); }
+#define XLSTRY(...)			try{ __VA_ARGS__ }    catch( xercesc_3_1::DOMLSException& e ) { char * msg = X(e.getMessage()); JS_RETURN_ERROR(msg); }
+#define ZLSTRY(...)			try{ __VA_ARGS__ }    catch( xercesc_3_1::DOMLSException& e ) { char * msg = X(e.getMessage()); JS_ERROR(msg); }
 
 /*
  *	Function templates for each of the

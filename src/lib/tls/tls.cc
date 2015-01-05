@@ -76,17 +76,19 @@ void finalize(v8::Handle<v8::Object> obj) {
  */
 JS_METHOD(_tls) {
 	ASSERT_CONSTRUCTOR;
-	if (args.Length() < 1 || !args[0]->IsObject()) { return NOT_SOCKET; }
+	if (args.Length() < 1 || !args[0]->IsObject()) { NOT_SOCKET; return; }
 	
 	v8::Handle<v8::Value> socket = args[0];
 
 	try {
 		v8::Handle<v8::Value> socketproto = socket->ToObject()->GetPrototype();
-		v8::Handle<v8::Object> socketmodule = APP_PTR->require("socket", "");
+		v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> > required = APP_PTR->require("socket", "");
+		v8::Local<v8::Object> socketmodule = v8::Local<v8::Object>::New(JS_ISOLATE, required);
 		v8::Handle<v8::Value> prototype = socketmodule->Get(JS_STR("Socket"))->ToObject()->Get(JS_STR("prototype"));
-		if (!prototype->Equals(socketproto)) { return NOT_SOCKET; }
+		if (!prototype->Equals(socketproto)) { NOT_SOCKET; return; }
 	} catch (std::string e) { /* for some reasons, the socket module is not available */
-		return JS_ERROR("Socket module not available");
+		JS_ERROR("Socket module not available");
+		return;
 	}
 
 	SAVE_VALUE(0, socket);
@@ -98,25 +100,25 @@ JS_METHOD(_tls) {
 	GC * gc = GC_PTR;
 	gc->add(args.This(), finalize);
 
-	return args.This();
+	args.GetReturnValue().Set(args.This());
 }
 
 JS_METHOD(_getSocket) {
-	return LOAD_VALUE(0);
+	args.GetReturnValue().Set(LOAD_VALUE(0));
 }
 
 JS_METHOD(_verifyCertificate) {
-	return JS_INT(SSL_get_verify_result(LOAD_SSL));
+	args.GetReturnValue().Set(JS_INT(SSL_get_verify_result(LOAD_SSL)));
 }
 
 JS_METHOD(_useCertificate) {
 	v8::String::Utf8Value file(args[0]);
-	return JS_INT(SSL_use_certificate_file(LOAD_SSL, *file, SSL_FILETYPE_PEM));
+	args.GetReturnValue().Set(JS_INT(SSL_use_certificate_file(LOAD_SSL, *file, SSL_FILETYPE_PEM)));
 }
 
 JS_METHOD(_usePrivateKey) {
 	v8::String::Utf8Value file(args[0]);
-	return JS_INT(SSL_use_PrivateKey_file(LOAD_SSL, *file, SSL_FILETYPE_PEM));
+	args.GetReturnValue().Set(JS_INT(SSL_use_PrivateKey_file(LOAD_SSL, *file, SSL_FILETYPE_PEM)));
 }
 
 JS_METHOD(_accept) {
@@ -124,11 +126,11 @@ JS_METHOD(_accept) {
 	int result = SSL_accept(ssl);
 	
 	if (result == 1) {
-		return args.This();
+		args.GetReturnValue().Set(args.This());
 	} else if (result == -1 && SSL_get_error(ssl, result) == SSL_ERROR_WANT_READ) { /* blocking socket */
-		return JS_BOOL(false);
+		args.GetReturnValue().Set(JS_BOOL(false));
 	} else {
-		return SSL_ERROR(ssl, result);
+		SSL_ERROR(ssl, result);
 	}
 }
 
@@ -137,9 +139,9 @@ JS_METHOD(_connect) {
 	int result = SSL_connect(ssl);
 	
 	if (result == 1) {
-		return args.This();
+		args.GetReturnValue().Set(args.This());
 	} else {
-		return SSL_ERROR(ssl, result);
+		SSL_ERROR(ssl, result);
 	}
 }
 
@@ -154,24 +156,25 @@ JS_METHOD(_receive) {
 			int ret = SSL_get_error(ssl, result);
 			if (ret != SSL_ERROR_ZERO_RETURN)  {
 				delete[] data;
-				return SSL_ERROR(ssl, result);
+				SSL_ERROR(ssl, result);
+				return;
 			}
 		}
 		v8::Handle<v8::Value> buffer = JS_BUFFER(data, result);
 		delete[] data;
-		return buffer;
+		args.GetReturnValue().Set(buffer);
 	} else {
 		delete[] data;
 		if (SSL_get_error(ssl, result) == SSL_ERROR_WANT_READ) { /* blocking socket */
-			return JS_BOOL(false);
+			args.GetReturnValue().Set(JS_BOOL(false));
 		} else {
-			return SSL_ERROR(ssl, result);
+			SSL_ERROR(ssl, result);
 		}
 	}
 }
 
 JS_METHOD(_send) {
-	if (args.Length() < 1) { return JS_TYPE_ERROR("Bad argument count. Use 'tls.send(data)'"); }
+	if (args.Length() < 1) { JS_TYPE_ERROR("Bad argument count. Use 'tls.send(data)'"); return; }
 	
 	SSL * ssl = LOAD_SSL;
 	ssize_t result;
@@ -186,25 +189,25 @@ JS_METHOD(_send) {
 	}
 	
 	if (result > 0) {
-		return args.This();
+		args.GetReturnValue().Set(args.This());
 	} else if (SSL_get_error(ssl, result) == SSL_ERROR_WANT_WRITE) { /* blocking socket */
-		return JS_BOOL(false);
+		args.GetReturnValue().Set(JS_BOOL(false));
 	} else {
-		return SSL_ERROR(ssl, result);
+		SSL_ERROR(ssl, result);
 	}
 }
 
 JS_METHOD(_close) {
 	SSL * ssl = LOAD_SSL;
 	int result = SSL_shutdown(ssl);
-	if (result == 0) { return _close(args); }
+	if (result == 0) { _close(args); return; }
 
 	if (result > 0) {
-		return args.This();
+		args.GetReturnValue().Set(args.This());
 	} else if (SSL_get_error(ssl, result) == SSL_ERROR_SYSCALL && result == -1 && CONN_RESET) { /* connection reset */
-		return args.This();
+		args.GetReturnValue().Set(args.This());
 	} else {
-		return SSL_ERROR(ssl, result);
+		SSL_ERROR(ssl, result);
 	}
 }
 
@@ -215,9 +218,9 @@ SHARED_INIT() {
 	SSL_load_error_strings();
 	ctx = SSL_CTX_new(TLSv1_method());
 
-	v8::HandleScope handle_scope;
+	v8::HandleScope handle_scope(JS_ISOLATE);
 
-	v8::Handle<v8::FunctionTemplate> ft = v8::FunctionTemplate::New(_tls);
+	v8::Handle<v8::FunctionTemplate> ft = v8::FunctionTemplate::New(JS_ISOLATE, _tls);
 	ft->SetClassName(JS_STR("TLS"));
 	
 	v8::Handle<v8::ObjectTemplate> it = ft->InstanceTemplate();
@@ -228,15 +231,15 @@ SHARED_INIT() {
 	/**
 	 * Prototype methods (new TLS().*)
 	 */
-	pt->Set("getSocket", v8::FunctionTemplate::New(_getSocket));
-	pt->Set("verifyCertificate", v8::FunctionTemplate::New(_verifyCertificate));	
-	pt->Set("useCertificate", v8::FunctionTemplate::New(_useCertificate));	
-	pt->Set("usePrivateKey", v8::FunctionTemplate::New(_usePrivateKey));	
-	pt->Set("accept", v8::FunctionTemplate::New(_accept));
-	pt->Set("connect", v8::FunctionTemplate::New(_connect));
-	pt->Set("receive", v8::FunctionTemplate::New(_receive));
-	pt->Set("send", v8::FunctionTemplate::New(_send));
-	pt->Set("close", v8::FunctionTemplate::New(_close));
+	pt->Set(JS_STR("getSocket"), v8::FunctionTemplate::New(JS_ISOLATE, _getSocket));
+	pt->Set(JS_STR("verifyCertificate"), v8::FunctionTemplate::New(JS_ISOLATE, _verifyCertificate));
+	pt->Set(JS_STR("useCertificate"), v8::FunctionTemplate::New(JS_ISOLATE, _useCertificate));
+	pt->Set(JS_STR("usePrivateKey"), v8::FunctionTemplate::New(JS_ISOLATE, _usePrivateKey));
+	pt->Set(JS_STR("accept"), v8::FunctionTemplate::New(JS_ISOLATE, _accept));
+	pt->Set(JS_STR("connect"), v8::FunctionTemplate::New(JS_ISOLATE, _connect));
+	pt->Set(JS_STR("receive"), v8::FunctionTemplate::New(JS_ISOLATE, _receive));
+	pt->Set(JS_STR("send"), v8::FunctionTemplate::New(JS_ISOLATE, _send));
+	pt->Set(JS_STR("close"), v8::FunctionTemplate::New(JS_ISOLATE, _close));
 
 	exports->Set(JS_STR("TLS"), ft->GetFunction());
 }

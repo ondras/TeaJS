@@ -33,10 +33,11 @@ v8::Persistent<v8::Function> file;
  * Generic directory lister
  * @param {char *} name Directory name
  * @param {int} type Type constant - do we list files or directories?
+ * @param {args} the function callback args
  */
-v8::Handle<v8::Value> list_items(char * name, int type) {
-	v8::HandleScope handle_scope;
-	v8::Handle<v8::Array> result = v8::Array::New();
+void list_items(char * name, int type, const v8::FunctionCallbackInfo<v8::Value>& args) {
+	v8::HandleScope handle_scope(JS_ISOLATE);
+	v8::Handle<v8::Array> result = v8::Array::New(JS_ISOLATE);
 	int cnt = 0;
 
 	DIR * dp;
@@ -46,7 +47,7 @@ v8::Handle<v8::Value> list_items(char * name, int type) {
 	unsigned int cond = (type == TYPE_FILE ? 0 : S_IFDIR);
 	
 	dp = opendir(name);
-	if (dp == NULL) { return JS_ERROR("Directory cannot be opened"); }
+	if (dp == NULL) { JS_ERROR("Directory cannot be opened"); return; }
 	while ((ep = readdir(dp))) { 
 		path = name;
 		path += "/";
@@ -63,13 +64,13 @@ v8::Handle<v8::Value> list_items(char * name, int type) {
 		}
 	}
 	closedir(dp);
-	return handle_scope.Close(result);
+	args.GetReturnValue().Set(result);
 }
 
 JS_METHOD(_directory) {
 	ASSERT_CONSTRUCTOR;
 	SAVE_VALUE(0, args[0]);
-	return args.This();
+	args.GetReturnValue().Set(args.This());
 }
 
 JS_METHOD(_create) {
@@ -83,25 +84,26 @@ JS_METHOD(_create) {
 
 	int result = MKDIR(*name, mode);
 	if (result != 0) {
-		return JS_ERROR("Cannot create directory");
+		JS_ERROR("Cannot create directory");
+		return;
 	}
-	
-	return args.This();
+
+	args.GetReturnValue().Set(args.This());
 }
 
 JS_METHOD(_listfiles) {
 	v8::String::Utf8Value name(LOAD_VALUE(0));
-	return list_items(*name, TYPE_FILE);
+	list_items(*name, TYPE_FILE, args);
 }
 
 JS_METHOD(_listdirectories) {
 	v8::String::Utf8Value name(LOAD_VALUE(0));
-	return list_items(*name, TYPE_DIR);
+	list_items(*name, TYPE_DIR, args);
 }
 
 JS_METHOD(_isdirectory) {
 	v8::String::Utf8Value name(LOAD_VALUE(0));
-	return JS_BOOL(path_dir_exists(*name));
+	args.GetReturnValue().Set(JS_BOOL(path_dir_exists(*name)));
 }
 
 JS_METHOD(_file) {
@@ -109,63 +111,69 @@ JS_METHOD(_file) {
 	
 	SAVE_VALUE(0, args[0]);
 	SAVE_VALUE(1, JS_BOOL(false));
-	return args.This();
+	args.GetReturnValue().Set(args.This());
 }
 
 JS_METHOD(_open) {
 	if (args.Length() < 1) {
-		return JS_TYPE_ERROR("Bad argument count. Use 'file.open(mode)'");
+		JS_TYPE_ERROR("Bad argument count. Use 'file.open(mode)'");
+		return;
 	}
 	v8::String::Utf8Value mode(args[0]);
 	v8::String::Utf8Value name(LOAD_VALUE(0));
 	v8::Handle<v8::Value> file = LOAD_VALUE(1);
 	if (!file->IsFalse()) {
-		return JS_ERROR("File already opened");
+		JS_ERROR("File already opened");
+		return;
 	}
 	
 	FILE * f;
 	f = fopen(*name, *mode);
 	
 	if (!f) {
-		return JS_ERROR("Cannot open file");
+		JS_ERROR("Cannot open file");
+		return;
 	}
 	
 	SAVE_PTR(1, f);
-	return args.This();
+	args.GetReturnValue().Set(args.This());
 }
 		
 JS_METHOD(_close) {
 	v8::Handle<v8::Value> file = LOAD_VALUE(1);
 	
 	if (file->IsFalse()) {
-		return JS_ERROR("Cannot close non-opened file");
+		JS_ERROR("Cannot close non-opened file");
+		return;
 	}
 	
 	FILE * f = LOAD_PTR(1, FILE *);
 	
 	fclose(f);
 	SAVE_VALUE(1, JS_BOOL(false));
-	return args.This();
+	args.GetReturnValue().Set(args.This());
 }
 
 JS_METHOD(_flush) {
 	v8::Handle<v8::Value> file = LOAD_VALUE(1);
 
 	if (file->IsFalse()) {
-		return JS_ERROR("Cannot flush non-opened file");
+		JS_ERROR("Cannot flush non-opened file");
+		return;
 	}
 
 	FILE * f = LOAD_PTR(1, FILE *);
 
 	fflush(f);
-	return args.This();
+	args.GetReturnValue().Set(args.This());
 }
 
 JS_METHOD(_read) {
 	v8::Handle<v8::Value> file = LOAD_VALUE(1);
 	
 	if (file->IsFalse()) {
-		return JS_ERROR("File must be opened before reading");
+		JS_ERROR("File must be opened before reading");
+		return;
 	}
 	FILE * f = LOAD_PTR(1, FILE *);
 	
@@ -174,96 +182,103 @@ JS_METHOD(_read) {
 		count = args[0]->IntegerValue();
 	}
 	
-	return READ(f, count);
+	READ(f, count, args);
 }
 
 JS_METHOD(_readline) {
 	v8::Handle<v8::Value> file = LOAD_VALUE(1);
 	
 	if (file->IsFalse()) {
-		return JS_ERROR("File must be opened before reading");
+		JS_ERROR("File must be opened before reading");
+		return;
 	}
 	FILE * f = LOAD_PTR(1, FILE *);
 	
 	int size = args[1]->IntegerValue();
 	if (size < 1) { size = 0xFFFF; }
 	
-	return READ_LINE(f, size);
+	READ_LINE(f, size, args);
 }
 
 JS_METHOD(_rewind) {
 	v8::Handle<v8::Value> file = LOAD_VALUE(1);
 	if (file->IsFalse()) {
-		return JS_ERROR("File must be opened before rewinding");
+		JS_ERROR("File must be opened before rewinding");
+		return;
 	}
 	
 	FILE * f = LOAD_PTR(1, FILE *);
 	rewind(f);
 
-	return args.This();
+	args.GetReturnValue().Set(args.This());
 }
 
 JS_METHOD(_iseof) {
 	v8::Handle<v8::Value> file = LOAD_VALUE(1);
 	if (file->IsFalse()) {
-		return JS_ERROR("File must be opened before an EOF check");
+		JS_ERROR("File must be opened before an EOF check");
+		return;
 	}
 	FILE * f = LOAD_PTR(1, FILE *);
 
-	return JS_BOOL(feof(f) != 0);
+	args.GetReturnValue().Set(JS_BOOL(feof(f) != 0));
 }
 
 JS_METHOD(_write) {
 	v8::Handle<v8::Value> file = LOAD_VALUE(1);
 	
 	if (file->IsFalse()) {
-		return JS_ERROR("File must be opened before writing");
+		JS_ERROR("File must be opened before writing");
+		return;
 	}
 	
 	FILE * f = LOAD_PTR(1, FILE *);
 	
 	WRITE(f, args[0]);
-	return args.This();
+	args.GetReturnValue().Set(args.This());
 }
 
 JS_METHOD(_writeline) {
 	v8::Handle<v8::Value> file = LOAD_VALUE(1);
 	
 	if (file->IsFalse()) {
-		return JS_ERROR("File must be opened before writing");
+		JS_ERROR("File must be opened before writing");
+		return;
 	}
 	
 	FILE * f = LOAD_PTR(1, FILE *);
 	
 	WRITE_LINE(f, args[0]);
-	return args.This();
+	args.GetReturnValue().Set(args.This());
 }
 
 JS_METHOD(_removefile) {
 	v8::String::Utf8Value name(LOAD_VALUE(0));
 	
 	if (remove(*name) != 0) {
-		return JS_ERROR("Cannot remove file");
+		JS_ERROR("Cannot remove file");
+		return;
 	}
-	
-	return args.This();
+
+	args.GetReturnValue().Set(args.This());
 }
 
 JS_METHOD(_removedirectory) {
 	v8::String::Utf8Value name(LOAD_VALUE(0));
 	
 	if (rmdir(*name) != 0) {
-		return JS_ERROR("Cannot remove directory");
+		JS_ERROR("Cannot remove directory");
+		return;
 	}
-	
-	return args.This();
+
+	args.GetReturnValue().Set(args.This());
 }
 
 JS_METHOD(_stat) {
 	v8::String::Utf8Value name(LOAD_VALUE(0));
 	struct stat st;
 	if (stat(*name, &st) == 0) {
-		v8::Handle<v8::Object> obj = v8::Object::New();
+		v8::Handle<v8::Object> obj = v8::Object::New(JS_ISOLATE);
 		obj->Set(JS_STR("size"), JS_INT(st.st_size));
 		obj->Set(JS_STR("mtime"), JS_INT(st.st_mtime));
 		obj->Set(JS_STR("atime"), JS_INT(st.st_atime));
@@ -271,27 +286,28 @@ JS_METHOD(_stat) {
 		obj->Set(JS_STR("mode"), JS_INT(st.st_mode));
 		obj->Set(JS_STR("uid"), JS_INT(st.st_uid));
 		obj->Set(JS_STR("gid"), JS_INT(st.st_gid));
-		return obj;
+		args.GetReturnValue().Set(obj);
 	} else {
-		return JS_BOOL(false);
+		args.GetReturnValue().Set(JS_BOOL(false));
 	}
 }
 
-v8::Handle<v8::Value> _copy(char * name1, char * name2) {
+bool _copy(char * name1, char * name2) {
 	size_t size = 0;
 	void * data = mmap_read(name1, &size);
-	if (data == NULL) { return JS_ERROR("Cannot open source file"); }
+	if (data == NULL) { JS_ERROR("Cannot open source file"); return false; }
 	
 	int result = mmap_write(name2, data, size);
 	mmap_free((char *)data, size);
 	
-	if (result == -1) { return JS_ERROR("Cannot open target file"); }
-	return JS_BOOL(true);
+	if (result == -1) { JS_ERROR("Cannot open target file"); return false; }
+	return true;
 }
 
 JS_METHOD(_movefile) {
 	if (args.Length() < 1) {
-		return JS_TYPE_ERROR("Bad argument count. Use 'file.rename(newname)'");
+		JS_TYPE_ERROR("Bad argument count. Use 'file.rename(newname)'");
+		return;
 	}
 	
 	v8::String::Utf8Value name(LOAD_VALUE(0));
@@ -300,57 +316,55 @@ JS_METHOD(_movefile) {
 	int renres = rename(*name, *newname);
 
 	if (renres != 0) {
-		v8::Handle<v8::Value> result = _copy(*name, *newname);
-		if (result->IsTrue()) {
-			remove(*name);
-		} else {
-			return result;
+		if (!_copy(*name, *newname)) {
+			return;
 		}
+		remove(*name);
 	}
 	
 	SAVE_VALUE(0, args[0]);
-	return args.This();
+	args.GetReturnValue().Set(args.This());
 }
 
 JS_METHOD(_copyfile) {
 	if (args.Length() < 1) {
-		return JS_TYPE_ERROR("Bad argument count. Use 'file.copy(newname)'");
+		JS_TYPE_ERROR("Bad argument count. Use 'file.copy(newname)'");
+		return;
 	}
 	
 	v8::String::Utf8Value name(LOAD_VALUE(0));
 	v8::String::Utf8Value newname(args[0]);
 
-	v8::Handle<v8::Value> result = _copy(*name, *newname);
-	if (result->IsTrue()) {
-		v8::Handle<v8::Value> fargs[] = { args[0] };
-		return file->NewInstance(1, fargs);
-	} else {
-		return result;
+	if (!_copy(*name, *newname)) {
+		return;
 	}
+	v8::Handle<v8::Value> fargs[] = { args[0] };
+	v8::Local<v8::Function> _file = v8::Local<v8::Function>::New(JS_ISOLATE, file);
+	args.GetReturnValue().Set(_file->NewInstance(1, fargs));
 }
 
 JS_METHOD(_tostring) {
-	return LOAD_VALUE(0);
+	args.GetReturnValue().Set(LOAD_VALUE(0));
 }
 
 JS_METHOD(_exists) {
 	v8::String::Utf8Value name(LOAD_VALUE(0));
 	int result = access(*name, F_OK);
-	return JS_BOOL(result == 0);
+	args.GetReturnValue().Set(JS_BOOL(result == 0));
 }
 
 JS_METHOD(_isfile) {
 	v8::String::Utf8Value name(LOAD_VALUE(0));
-	return JS_BOOL(path_file_exists(*name));
+	args.GetReturnValue().Set(JS_BOOL(path_file_exists(*name)));
 }
 
 
 }
 
 SHARED_INIT() {
-	v8::HandleScope handle_scope;
+	v8::HandleScope handle_scope(JS_ISOLATE);
 	
-	v8::Handle<v8::FunctionTemplate> ft = v8::FunctionTemplate::New(_file);
+	v8::Handle<v8::FunctionTemplate> ft = v8::FunctionTemplate::New(JS_ISOLATE, _file);
 	ft->SetClassName(JS_STR("File"));
 	v8::Handle<v8::ObjectTemplate> ot = ft->InstanceTemplate();
 	/* filename, handle */
@@ -360,27 +374,28 @@ SHARED_INIT() {
 	/**
 	 * File prototype methods (new File().*)
 	 */
-	pt->Set("open", v8::FunctionTemplate::New(_open));
-	pt->Set("read", v8::FunctionTemplate::New(_read));
-	pt->Set("readLine", v8::FunctionTemplate::New(_readline));
-	pt->Set("rewind", v8::FunctionTemplate::New(_rewind));
-	pt->Set("close", v8::FunctionTemplate::New(_close));
-	pt->Set("flush", v8::FunctionTemplate::New(_flush));
-	pt->Set("write", v8::FunctionTemplate::New(_write));
-	pt->Set("writeLine", v8::FunctionTemplate::New(_writeline));
-	pt->Set("remove", v8::FunctionTemplate::New(_removefile));
-	pt->Set("toString", v8::FunctionTemplate::New(_tostring));
-	pt->Set("exists", v8::FunctionTemplate::New(_exists));
-	pt->Set("move", v8::FunctionTemplate::New(_movefile));
-	pt->Set("copy", v8::FunctionTemplate::New(_copyfile));
-	pt->Set("stat", v8::FunctionTemplate::New(_stat));
-	pt->Set("isFile", v8::FunctionTemplate::New(_isfile));
-	pt->Set("isEOF", v8::FunctionTemplate::New(_iseof));
+	pt->Set(JS_STR("open"), v8::FunctionTemplate::New(JS_ISOLATE, _open));
+	pt->Set(JS_STR("read"), v8::FunctionTemplate::New(JS_ISOLATE, _read));
+	pt->Set(JS_STR("readLine"), v8::FunctionTemplate::New(JS_ISOLATE, _readline));
+	pt->Set(JS_STR("rewind"), v8::FunctionTemplate::New(JS_ISOLATE, _rewind));
+	pt->Set(JS_STR("close"), v8::FunctionTemplate::New(JS_ISOLATE, _close));
+	pt->Set(JS_STR("flush"), v8::FunctionTemplate::New(JS_ISOLATE, _flush));
+	pt->Set(JS_STR("write"), v8::FunctionTemplate::New(JS_ISOLATE, _write));
+	pt->Set(JS_STR("writeLine"), v8::FunctionTemplate::New(JS_ISOLATE, _writeline));
+	pt->Set(JS_STR("remove"), v8::FunctionTemplate::New(JS_ISOLATE, _removefile));
+	pt->Set(JS_STR("toString"), v8::FunctionTemplate::New(JS_ISOLATE, _tostring));
+	pt->Set(JS_STR("exists"), v8::FunctionTemplate::New(JS_ISOLATE, _exists));
+	pt->Set(JS_STR("move"), v8::FunctionTemplate::New(JS_ISOLATE, _movefile));
+	pt->Set(JS_STR("copy"), v8::FunctionTemplate::New(JS_ISOLATE, _copyfile));
+	pt->Set(JS_STR("stat"), v8::FunctionTemplate::New(JS_ISOLATE, _stat));
+	pt->Set(JS_STR("isFile"), v8::FunctionTemplate::New(JS_ISOLATE, _isfile));
+	pt->Set(JS_STR("isEOF"), v8::FunctionTemplate::New(JS_ISOLATE, _iseof));
+
 
 	exports->Set(JS_STR("File"), ft->GetFunction());			
-	file = v8::Persistent<v8::Function>::New(ft->GetFunction());
+	file.Reset(JS_ISOLATE, ft->GetFunction());
 	
-	v8::Handle<v8::FunctionTemplate> dt = v8::FunctionTemplate::New(_directory);
+	v8::Handle<v8::FunctionTemplate> dt = v8::FunctionTemplate::New(JS_ISOLATE, _directory);
 	dt->SetClassName(JS_STR("Directory"));
 	ot = dt->InstanceTemplate();
 	/* dirname */
@@ -391,14 +406,14 @@ SHARED_INIT() {
 	/**
 	 * Directory prototype methods (new File().*)
 	 */
-	pt->Set("create", v8::FunctionTemplate::New(_create));
-	pt->Set("listFiles", v8::FunctionTemplate::New(_listfiles));
-	pt->Set("listDirectories", v8::FunctionTemplate::New(_listdirectories));
-	pt->Set("toString", v8::FunctionTemplate::New(_tostring));
-	pt->Set("exists", v8::FunctionTemplate::New(_exists));
-	pt->Set("remove", v8::FunctionTemplate::New(_removedirectory));
-	pt->Set("stat", v8::FunctionTemplate::New(_stat));
-	pt->Set("isDirectory", v8::FunctionTemplate::New(_isdirectory));
+	pt->Set(JS_STR("create"), v8::FunctionTemplate::New(JS_ISOLATE, _create));
+	pt->Set(JS_STR("listFiles"), v8::FunctionTemplate::New(JS_ISOLATE, _listfiles));
+	pt->Set(JS_STR("listDirectories"), v8::FunctionTemplate::New(JS_ISOLATE, _listdirectories));
+	pt->Set(JS_STR("toString"), v8::FunctionTemplate::New(JS_ISOLATE, _tostring));
+	pt->Set(JS_STR("exists"), v8::FunctionTemplate::New(JS_ISOLATE, _exists));
+	pt->Set(JS_STR("remove"), v8::FunctionTemplate::New(JS_ISOLATE, _removedirectory));
+	pt->Set(JS_STR("stat"), v8::FunctionTemplate::New(JS_ISOLATE, _stat));
+	pt->Set(JS_STR("isDirectory"), v8::FunctionTemplate::New(JS_ISOLATE, _isdirectory));
 
 	exports->Set(JS_STR("Directory"), dt->GetFunction());
 }

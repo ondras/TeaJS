@@ -13,7 +13,7 @@
  */
 class TeaJS_App {
 public:
-	typedef std::vector<v8::Persistent<v8::Function> > funcvector;
+	typedef std::vector<v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function> > > funcvector;
 	
 	/* resolved native module, resolved js module */
 	typedef std::vector<std::string> modulefiles;
@@ -23,7 +23,7 @@ public:
 	virtual void init(); 
 	/* once per request */
 	void execute(char ** envp); 
-	v8::Handle<v8::Object> require(std::string name, std::string moduleId);
+	v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> > require(std::string name, std::string moduleId);
 	
 	/* list of "onexit" functions */
 	funcvector onexit;
@@ -49,11 +49,14 @@ protected:
 	void setup_teajs(v8::Handle<v8::Object> target);
 
 private:
+	/* current active isolate */
+	v8::Isolate *isolate;
+
 	/* current active context */
-	v8::Persistent<v8::Context> context; 
+	v8::Persistent<v8::Context, v8::CopyablePersistentTraits<v8::Context> > context;
 	
-	v8::Persistent<v8::Value> global;
-	v8::Persistent<v8::ObjectTemplate> globalt;
+	v8::Persistent<v8::Value, v8::CopyablePersistentTraits<v8::Value> > global;
+	v8::Persistent<v8::ObjectTemplate, v8::CopyablePersistentTraits<v8::ObjectTemplate> > globalt;
 	
 	/* get configuration option */
 	v8::Handle<v8::Value> get_config(std::string name);
@@ -77,10 +80,10 @@ private:
 	modulefiles resolve_extension(std::string path);
 	int load_js(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module);
 	void load_dso(std::string filename, v8::Handle<v8::Function> require, v8::Handle<v8::Object> exports, v8::Handle<v8::Object> module);
-	v8::Handle<v8::Function> build_require(std::string path, v8::Handle<v8::Value> (*func) (const v8::Arguments&));
+	v8::Handle<v8::Function> build_require(std::string path, void (*func) (const v8::FunctionCallbackInfo<v8::Value>&));
 	
-	v8::Persistent<v8::Array> paths; /* require.paths */
-	v8::Local<v8::Object> mainModule;
+	v8::Persistent<v8::Array, v8::CopyablePersistentTraits<v8::Array> > paths; /* require.paths */
+	v8::Persistent<v8::Object> mainModule;
 };
 
 #endif

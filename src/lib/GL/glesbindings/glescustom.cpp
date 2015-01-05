@@ -1,134 +1,147 @@
-#include "js_macros.h"
-
 // glGenBuffers uses an output parameter to return an array of ints.
-//Handle<Value> GLESglGenBuffersCallback(const Arguments& args) {
-JS_METHOD(GLESglGenBuffersCallback) {
-  if (args.Length() != 1)
-	return v8::Undefined();
+void GLESglGenBuffersCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
+  if (args.Length() != 1) {
+    args.GetReturnValue().SetUndefined();
+    return;
+  }
 
-  HandleScope handle_scope;
+  HandleScope handle_scope(v8::Isolate::GetCurrent());
   GLsizei num_buffers = args[0]->Int32Value();
 
   GLuint* buffers = new GLuint[num_buffers];
   glGenBuffers(num_buffers, buffers);
 
   // TODO(deanm): There should be a way to initialize the array faster.
-  Local<Array> res = Array::New(num_buffers);
+  Local<Array> res = Array::New(v8::Isolate::GetCurrent(), num_buffers);
   for (int i = 0; i < num_buffers; ++i) {
-    res->Set(Integer::New(i), Integer::New(buffers[i]));
+    res->Set(Integer::New(v8::Isolate::GetCurrent(), i), Integer::New(v8::Isolate::GetCurrent(), buffers[i]));
   }
 
   delete[] buffers;
 
-  return handle_scope.Close(res);
+  args.GetReturnValue().Set(res);
 }
 
 
-Handle<Value> GLESglGenRenderbuffersCallback(const Arguments& args) {
-	  if (args.Length() != 1)
-		return v8::Undefined();
+void GLESglGenRenderbuffersCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
+      if (args.Length() != 1) {
+        args.GetReturnValue().SetUndefined();
+        return;
+      }
 
-	  HandleScope handle_scope;
+      HandleScope handle_scope(v8::Isolate::GetCurrent());
 	  GLsizei num_buffers = args[0]->Int32Value();
 
 	  GLuint* buffers = new GLuint[num_buffers];
 	  glGenRenderbuffers(num_buffers, buffers);
 
 	  // TODO(deanm): There should be a way to initialize the array faster.
-	  Local<Array> res = Array::New(num_buffers);
+	  Local<Array> res = Array::New(v8::Isolate::GetCurrent(), num_buffers);
 	  for (int i = 0; i < num_buffers; ++i) {
-	    res->Set(Integer::New(i), Integer::New(buffers[i]));
+	    res->Set(Integer::New(v8::Isolate::GetCurrent(), i), Integer::New(v8::Isolate::GetCurrent(), buffers[i]));
 	  }
 
 	  delete[] buffers;
 
-	  return handle_scope.Close(res);
+	  args.GetReturnValue().Set(res);
 }
 
 
-Handle<Value> GLESglGenFramebuffersCallback(const Arguments& args) {
-	  if (args.Length() != 1)
-		return v8::Undefined();
+void GLESglGenFramebuffersCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
+      if (args.Length() != 1) {
+        args.GetReturnValue().SetUndefined();
+        return;
+      }
 
-	  HandleScope handle_scope;
+	  HandleScope handle_scope(v8::Isolate::GetCurrent());
 	  GLsizei num_buffers = args[0]->Int32Value();
 
 	  GLuint* buffers = new GLuint[num_buffers];
 	  glGenFramebuffers(num_buffers, buffers);
 
 	  // TODO(deanm): There should be a way to initialize the array faster.
-	  Local<Array> res = Array::New(num_buffers);
+	  Local<Array> res = Array::New(v8::Isolate::GetCurrent(), num_buffers);
 	  for (int i = 0; i < num_buffers; ++i) {
-	    res->Set(Integer::New(i), Integer::New(buffers[i]));
+	    res->Set(Integer::New(v8::Isolate::GetCurrent(), i), Integer::New(v8::Isolate::GetCurrent(), buffers[i]));
 	  }
 
 	  delete[] buffers;
 
-	  return handle_scope.Close(res);
+	  args.GetReturnValue().Set(res);
 }
 
-Handle<Value> GLESglGenTexturesCallback(const Arguments& args) {
-  if (args.Length() != 1)
-	return v8::Undefined();
+void GLESglGenTexturesCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
+  if (args.Length() != 1) {
+    args.GetReturnValue().SetUndefined();
+    return;
+  }
 
-  HandleScope handle_scope;
+  HandleScope handle_scope(v8::Isolate::GetCurrent());
   GLsizei num_textures = args[0]->Int32Value();
 
   GLuint* textures = new GLuint[num_textures];
   glGenTextures(num_textures, textures);
 
-  Local<Array> res = Array::New(num_textures);
+  Local<Array> res = Array::New(v8::Isolate::GetCurrent(), num_textures);
   for (int i = 0; i < num_textures; ++i) {
-    res->Set(Integer::New(i), Integer::New(textures[i]));
+    res->Set(Integer::New(v8::Isolate::GetCurrent(), i), Integer::New(v8::Isolate::GetCurrent(), textures[i]));
   }
 
   delete[] textures;
 
-  return handle_scope.Close(res);
+  args.GetReturnValue().Set(res);
 }
 
 
 // glGetShaderiv uses an output parameter to return an int.
-Handle<Value> GLESglGetShaderivCallback(const Arguments& args) {
-  if (args.Length() < 2)
-    return v8::Undefined();
-  HandleScope handle_scope;
+void GLESglGetShaderivCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
+  if (args.Length() < 2) {
+    args.GetReturnValue().SetUndefined();
+    return;
+  }
+  HandleScope handle_scope(v8::Isolate::GetCurrent());
   unsigned int arg0 = args[0]->Uint32Value();
   int arg1 = args[1]->IntegerValue();
 
   int out;
   glGetShaderiv((GLuint) arg0, (GLenum) arg1, (GLint*)&out);
-  v8::Local<v8::Value> val = v8::Integer::New(out);
-  return handle_scope.Close(val);
+  v8::Local<v8::Value> val = v8::Integer::New(v8::Isolate::GetCurrent(), out);
+  args.GetReturnValue().Set(val);
 }
 
 
 // We expect to be called with a shader id and a single string.
-Handle<Value> GLESglShaderSourceCallback(const Arguments& args) {
-  if (args.Length() != 2)
-    return v8::Undefined();
+void GLESglShaderSourceCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
+  if (args.Length() != 2) {
+    args.GetReturnValue().SetUndefined();
+    return;
+  }
 
-  HandleScope handle_scope;
+  HandleScope handle_scope(v8::Isolate::GetCurrent());
   GLuint shader_id = args[0]->Uint32Value();
   // GLSL source is defined as an ASCII subset.
-  v8::String::AsciiValue code_ascii(args[1]);
-  if (!*code_ascii)
-    return v8::Undefined();
+  v8::String::Utf8Value code_ascii(args[1]);
+  if (!*code_ascii){
+    args.GetReturnValue().SetUndefined();
+    return;
+  }
 
   const char* code_str = *code_ascii;
   GLsizei code_len = code_ascii.length();
   glShaderSource(shader_id, 1, &code_str, &code_len);
 
-  Handle<Object> res(GlesFactory::self_);
-  return res;
+  Handle<Object> res(Local<Object>::New(v8::Isolate::GetCurrent(), GlesFactory::self_));
+  args.GetReturnValue().Set(res);
 }
 
 
-Handle<Value> GLESglVertexAttribPointerCallback(const Arguments& args) {
-  if (args.Length() != 6)
-    return v8::Undefined();
+void GLESglVertexAttribPointerCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
+  if (args.Length() != 6) {
+    args.GetReturnValue().SetUndefined();
+    return;
+  }
 
-  HandleScope handle_scope;
+  HandleScope handle_scope(v8::Isolate::GetCurrent());
 
   unsigned int index = args[0]->Uint32Value();
   unsigned int size = args[1]->Uint32Value();
@@ -144,7 +157,7 @@ Handle<Value> GLESglVertexAttribPointerCallback(const Arguments& args) {
 //		  case GL_BYTE:
 //			  GLbyte* arg1 = new  GLbyte[data->Length()];
 //			  for (unsigned j = 0; j < data->Length(); j++) {
-//			      Handle<Value> arg(data->Get(Integer::New(j)));
+//			      Handle<Value> arg(data->Get(Integer::New(v8::Isolate::GetCurrent(), j)));
 //			      arg1[j] = (GLbyte)arg->IntegerValue();
 //			  }
 //			  ans = (void *)arg1;
@@ -153,7 +166,7 @@ Handle<Value> GLESglVertexAttribPointerCallback(const Arguments& args) {
 //		  case GL_UNSIGNED_BYTE:
 //			  GLubyte* arg1 = new  GLubyte[data->Length()];
 //			  for (unsigned j = 0; j < data->Length(); j++) {
-//			      Handle<Value> arg(data->Get(Integer::New(j)));
+//			      Handle<Value> arg(data->Get(Integer::New(v8::Isolate::GetCurrent(), j)));
 //			      arg1[j] = (GLubyte)arg->Uint32Value();
 //			  }
 //			  ans = (void *)arg1;
@@ -163,7 +176,7 @@ Handle<Value> GLESglVertexAttribPointerCallback(const Arguments& args) {
 		  {
 			  GLshort* arg1 = new  GLshort[data->Length()];
 			  for (unsigned j = 0; j < data->Length(); j++) {
-			      Handle<Value> arg(data->Get(Integer::New(j)));
+			      Handle<Value> arg(data->Get(Integer::New(v8::Isolate::GetCurrent(), j)));
 			      arg1[j] = (GLshort)arg->IntegerValue();
 			  }
 			  ans = (void *)arg1;
@@ -173,7 +186,7 @@ Handle<Value> GLESglVertexAttribPointerCallback(const Arguments& args) {
 		  {
 			  GLushort* arg1 = new  GLushort[data->Length()];
 			  for (unsigned j = 0; j < data->Length(); j++) {
-			      Handle<Value> arg(data->Get(Integer::New(j)));
+			      Handle<Value> arg(data->Get(Integer::New(v8::Isolate::GetCurrent(), j)));
 			      arg1[j] = (GLushort)arg->Uint32Value();
 			  }
 			  ans = (void *)arg1;
@@ -184,7 +197,7 @@ Handle<Value> GLESglVertexAttribPointerCallback(const Arguments& args) {
 		  {
 			  GLfloat* arg1 = new  GLfloat[data->Length()];
 			  for (unsigned j = 0; j < data->Length(); j++) {
-			      Handle<Value> arg(data->Get(Integer::New(j)));
+			      Handle<Value> arg(data->Get(Integer::New(v8::Isolate::GetCurrent(), j)));
 			      arg1[j] = (GLfloat)arg->NumberValue();
 			  }
 			  ans = (void *)arg1;
@@ -195,14 +208,16 @@ Handle<Value> GLESglVertexAttribPointerCallback(const Arguments& args) {
 //		  {
 //			  GLfixed* arg1 = new  GLfixed[data->Length()];
 //			  for (unsigned j = 0; j < data->Length(); j++) {
-//			      Handle<Value> arg(data->Get(Integer::New(j)));
+//			      Handle<Value> arg(data->Get(Integer::New(v8::Isolate::GetCurrent(), j)));
 //			      arg1[j] = (GLfixed)arg->IntegerValue();
 //			  }
 //			  ans = (void *)arg1;
 //		  }
 //		  break;
 
-		  default: return v8::Undefined();
+		  default:
+            args.GetReturnValue().SetUndefined();
+            return;
 	  }
   } else {
 	  ans = (void *)args[5]->IntegerValue();
@@ -217,15 +232,17 @@ Handle<Value> GLESglVertexAttribPointerCallback(const Arguments& args) {
 
   //should I delete[] ans?
 
-  Handle<Object> res(GlesFactory::self_);
-  return res;
+  Handle<Object> res(Local<Object>::New(v8::Isolate::GetCurrent(), GlesFactory::self_));
+  args.GetReturnValue().Set(res);
 }
 
-Handle<Value> GLESglDrawElementsCallback(const Arguments& args) {
-  if (args.Length() != 4)
-    return v8::Undefined();
+void GLESglDrawElementsCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
+  if (args.Length() != 4) {
+    args.GetReturnValue().SetUndefined();
+    return;
+  }
 
-  HandleScope handle_scope;
+  HandleScope handle_scope(v8::Isolate::GetCurrent());
   unsigned int mode  = args[0]->Uint32Value();
   int count = args[1]->IntegerValue();
   unsigned int type  = args[2]->Uint32Value();
@@ -238,14 +255,16 @@ Handle<Value> GLESglDrawElementsCallback(const Arguments& args) {
 		  {
 			  GLushort* arg1 = new  GLushort[data->Length()];
 			  for (unsigned j = 0; j < data->Length(); j++) {
-			      Handle<Value> arg(data->Get(Integer::New(j)));
+			      Handle<Value> arg(data->Get(Integer::New(v8::Isolate::GetCurrent(), j)));
 			      arg1[j] = (GLushort)arg->Uint32Value();
 			  }
 			  ans = (void *)arg1;
 		  }
 		  break;
 
-		  default: return v8::Undefined();
+		  default:
+            args.GetReturnValue().SetUndefined();
+            return;
 	  }
   } else {
 	  ans = (void *)args[3]->IntegerValue();
@@ -258,15 +277,17 @@ Handle<Value> GLESglDrawElementsCallback(const Arguments& args) {
 
   //should I delete[] ans?
 
-  Handle<Object> res(GlesFactory::self_);
-  return res;
+  Handle<Object> res(Local<Object>::New(v8::Isolate::GetCurrent(), GlesFactory::self_));
+  args.GetReturnValue().Set(res);
 }
 
 //Accepts GL_UNSIGNED_SHORT and GL_FLOAT as types
 //TODO(nico): deal with interleaved data
-Handle<Value> GLESglBufferDataCallback(const Arguments& args) {
-  if (args.Length() != 4 || !args[1]->IsArray())
-    return v8::Undefined();
+void GLESglBufferDataCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
+  if (args.Length() != 4 || !args[1]->IsArray()) {
+    args.GetReturnValue().SetUndefined();
+    return;
+  }
 
   unsigned int target  = args[0]->Uint32Value();
   unsigned int type = args[2]->Uint32Value();
@@ -277,7 +298,7 @@ Handle<Value> GLESglBufferDataCallback(const Arguments& args) {
   if (type == GL_FLOAT) {
     GLfloat* arg1 = new GLfloat[len];
     for (unsigned j = 0; j < len; j++) {
-        Handle<Value> arg(data->Get(Integer::New(j)));
+        Handle<Value> arg(data->Get(Integer::New(v8::Isolate::GetCurrent(), j)));
         arg1[j] = (GLfloat)arg->NumberValue();
     }
     glBufferData((GLenum)target,
@@ -288,7 +309,7 @@ Handle<Value> GLESglBufferDataCallback(const Arguments& args) {
   } else if (type == GL_UNSIGNED_SHORT) {
     GLushort* arg1 = new GLushort[len];
     for (unsigned j = 0; j < len; j++) {
-      Handle<Value> arg(data->Get(Integer::New(j)));
+      Handle<Value> arg(data->Get(Integer::New(v8::Isolate::GetCurrent(), j)));
       arg1[j] = (GLushort)arg->Uint32Value();
     }
     glBufferData((GLenum)target,
@@ -298,18 +319,20 @@ Handle<Value> GLESglBufferDataCallback(const Arguments& args) {
     delete[] arg1;
   }
 
-  Handle<Object> res(GlesFactory::self_);
-  return res;
+  Handle<Object> res(Local<Object>::New(v8::Isolate::GetCurrent(), GlesFactory::self_));
+  args.GetReturnValue().Set(res);
 }
 
 
 //Accepts GL_UNSIGNED_SHORT and GL_FLOAT as types
 //TODO(nico): deal with interleaved data
-Handle<Value> GLESglBufferSubDataCallback(const Arguments& args) {
-  if (args.Length() != 4)
-    return v8::Undefined();
+void GLESglBufferSubDataCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
+  if (args.Length() != 4) {
+    args.GetReturnValue().SetUndefined();
+    return;
+  }
 
-  HandleScope handle_scope;
+  HandleScope handle_scope(v8::Isolate::GetCurrent());
   unsigned int target  = args[0]->Uint32Value();
   unsigned int offset = args[1]->Uint32Value();
   unsigned int type  = args[3]->Uint32Value();
@@ -324,7 +347,7 @@ Handle<Value> GLESglBufferSubDataCallback(const Arguments& args) {
 		  {
 			  GLfloat* arg1 = new  GLfloat[len];
 			  for (unsigned j = 0; j < data->Length(); j++) {
-			      Handle<Value> arg(data->Get(Integer::New(j)));
+			      Handle<Value> arg(data->Get(Integer::New(v8::Isolate::GetCurrent(), j)));
 			      arg1[j] = (GLfloat)arg->NumberValue();
 			  }
 			  ans = (void *)arg1;
@@ -335,14 +358,17 @@ Handle<Value> GLESglBufferSubDataCallback(const Arguments& args) {
 		  {
 			  GLushort* arg1 = new  GLushort[len];
 			  for (unsigned j = 0; j < data->Length(); j++) {
-			      Handle<Value> arg(data->Get(Integer::New(j)));
+			      Handle<Value> arg(data->Get(Integer::New(v8::Isolate::GetCurrent(), j)));
 			      arg1[j] = (GLushort)arg->Uint32Value();
 			  }
 			  ans = (void *)arg1;
 		  }
 		  break;
 
-		  default: return v8::Undefined();
+		  default:
+            args.GetReturnValue().SetUndefined();
+            return;
+
 	  }
 
 	  glBufferSubData((GLenum)target,
@@ -353,15 +379,17 @@ Handle<Value> GLESglBufferSubDataCallback(const Arguments& args) {
 	  //should I delete[] ans?
   }
 
-  Handle<Object> res(GlesFactory::self_);
-  return res;
+  Handle<Object> res(Local<Object>::New(v8::Isolate::GetCurrent(), GlesFactory::self_));
+  args.GetReturnValue().Set(res);
 }
 
-Handle<Value> GLESglReadPixelsCallback(const Arguments& args) {
-  if (args.Length() != 6)
-	return v8::Undefined();
+void GLESglReadPixelsCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
+  if (args.Length() != 6) {
+    args.GetReturnValue().SetUndefined();
+    return;
+  }
 
-  HandleScope handle_scope;
+  HandleScope handle_scope(v8::Isolate::GetCurrent());
   int x = args[0]->IntegerValue();
   int y = args[1]->IntegerValue();
   unsigned width = args[2]->Uint32Value();
@@ -380,23 +408,25 @@ Handle<Value> GLESglReadPixelsCallback(const Arguments& args) {
 			  (GLenum)format,
 			  (GLenum)type, ans);
 
-	  Local<Array> res = Array::New(len);
+	  Local<Array> res = Array::New(v8::Isolate::GetCurrent(), len);
 	  for (unsigned i = 0; i < len; ++i) {
-	    res->Set(Integer::New(i), Integer::New(ans[i]));
+	    res->Set(Integer::New(v8::Isolate::GetCurrent(), i), Integer::New(v8::Isolate::GetCurrent(), ans[i]));
 	  }
 
 	  delete[] ans;
-	  return handle_scope.Close(res);
+	  args.GetReturnValue().Set(res);
   }
 
-  return v8::Undefined();
+  args.GetReturnValue().SetUndefined();
 }
 
-Handle<Value> GLESglGetActiveAttribCallback(const Arguments& args) {
-  if (args.Length() != 2)
-	return v8::Undefined();
+void GLESglGetActiveAttribCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
+  if (args.Length() != 2) {
+    args.GetReturnValue().SetUndefined();
+    return;
+  }
 
-  HandleScope handle_scope;
+  HandleScope handle_scope(v8::Isolate::GetCurrent());
 
   unsigned program = args[0]->Uint32Value();
   unsigned index = args[1]->Uint32Value();
@@ -414,18 +444,20 @@ Handle<Value> GLESglGetActiveAttribCallback(const Arguments& args) {
 		  (GLenum*)&type,
 		  (GLchar*)name);
 
-  Handle<Object> ans = Object::New();
-  ans->Set(String::New("type"), Uint32::New(type));
-  ans->Set(String::New("size"), Integer::New(size));
-  ans->Set(String::New("name"), String::New(name, length));
-  return ans;
+  Handle<Object> ans = Object::New(v8::Isolate::GetCurrent());
+  ans->Set(String::NewFromUtf8(v8::Isolate::GetCurrent(), "type"), Uint32::New(v8::Isolate::GetCurrent(), type));
+  ans->Set(String::NewFromUtf8(v8::Isolate::GetCurrent(), "size"), Integer::New(v8::Isolate::GetCurrent(), size));
+  ans->Set(String::NewFromUtf8(v8::Isolate::GetCurrent(), "name"), String::NewFromUtf8(v8::Isolate::GetCurrent(), name, v8::String::kNormalString, length));
+  args.GetReturnValue().Set(ans);
 }
 
-Handle<Value> GLESglGetActiveUniformCallback(const Arguments& args) {
-  if (args.Length() != 2)
-	return v8::Undefined();
+void GLESglGetActiveUniformCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
+  if (args.Length() != 2) {
+    args.GetReturnValue().SetUndefined();
+    return;
+  }
 
-  HandleScope handle_scope;
+  HandleScope handle_scope(v8::Isolate::GetCurrent());
 
   unsigned program = args[0]->Uint32Value();
   unsigned index = args[1]->Uint32Value();
@@ -445,18 +477,20 @@ Handle<Value> GLESglGetActiveUniformCallback(const Arguments& args) {
 
   // Create a template for the answer object that'll hold
   // type/size/name as properties
-  Handle<Object> ans = Object::New();
-  ans->Set(String::New("type"), Uint32::New(type));
-  ans->Set(String::New("size"), Integer::New(size));
-  ans->Set(String::New("name"), String::New(name));
-  return ans;
+  Handle<Object> ans = Object::New(v8::Isolate::GetCurrent());
+  ans->Set(String::NewFromUtf8(v8::Isolate::GetCurrent(), "type"), Uint32::New(v8::Isolate::GetCurrent(), type));
+  ans->Set(String::NewFromUtf8(v8::Isolate::GetCurrent(), "size"), Integer::New(v8::Isolate::GetCurrent(), size));
+  ans->Set(String::NewFromUtf8(v8::Isolate::GetCurrent(), "name"), String::NewFromUtf8(v8::Isolate::GetCurrent(), name));
+  args.GetReturnValue().Set(ans);
 }
 
-Handle<Value> GLESglGetAttachedShadersCallback(const Arguments& args) {
-  if (args.Length() != 1)
-	return v8::Undefined();
+void GLESglGetAttachedShadersCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
+      if (args.Length() != 1) {
+        args.GetReturnValue().SetUndefined();
+        return;
+      }
 
-  HandleScope handle_scope;
+  HandleScope handle_scope(v8::Isolate::GetCurrent());
   unsigned program = args[0]->Uint32Value();
 
   int maxcount = 500;
@@ -468,21 +502,24 @@ Handle<Value> GLESglGetAttachedShadersCallback(const Arguments& args) {
 		  (GLsizei*)&count,
 		  (GLuint*)shaders);
 
-  Local<Array> res = Array::New(count);
+  Local<Array> res = Array::New(v8::Isolate::GetCurrent(), count);
   for (int i = 0; i < count; ++i) {
-    res->Set(Integer::New(i), Uint32::New(shaders[i]));
+    res->Set(Integer::New(v8::Isolate::GetCurrent(), i), Uint32::New(v8::Isolate::GetCurrent(), shaders[i]));
   }
 
   delete[] shaders;
 
-  return handle_scope.Close(res);
+  args.GetReturnValue().Set(res);
 }
 
-Handle<Value> GLESglGetBufferParameterivCallback(const Arguments& args) {
+void GLESglGetBufferParameterivCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
   //if less that nbr of formal parameters then do nothing
-  if (args.Length() < 2) return v8::Undefined();
+  if (args.Length() < 2) {
+    args.GetReturnValue().SetUndefined();
+    return;
+  }
   //define handle scope
-  HandleScope handle_scope;
+  HandleScope handle_scope(v8::Isolate::GetCurrent());
   //get arguments
   unsigned target = args[0]->IntegerValue();
   unsigned pname = args[1]->IntegerValue();
@@ -492,15 +529,18 @@ Handle<Value> GLESglGetBufferParameterivCallback(const Arguments& args) {
 		  (GLenum)pname,
 		  (GLint*)&ans);
 
-  return handle_scope.Close(Integer::New(ans));
+  args.GetReturnValue().Set(Integer::New(v8::Isolate::GetCurrent(), ans));
 }
 
 //GetBooleanv, GetIntegerv, GetString, GetFloatv, GetDoublev should map here.
-Handle<Value> GLESglGetParameterCallback(const Arguments& args) {
+void GLESglGetParameterCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
   //if less that nbr of formal parameters then do nothing
-  if (args.Length() < 1) return v8::Undefined();
+  if (args.Length() < 1) {
+    args.GetReturnValue().SetUndefined();
+    return;
+  }
   //define handle scope
-  HandleScope handle_scope;
+  HandleScope handle_scope(v8::Isolate::GetCurrent());
   //get arguments
   unsigned pname = args[0]->Uint32Value();
 
@@ -610,7 +650,7 @@ Handle<Value> GLESglGetParameterCallback(const Arguments& args) {
   {
 	  int ans = 0;
 	  glGetIntegerv((GLenum)pname, (GLint*)&ans);
-	  return handle_scope.Close(Integer::New(ans));
+	  args.GetReturnValue().Set(Integer::New(v8::Isolate::GetCurrent(), ans));
   }
   //2 values int
   case GL_LINE_WIDTH_RANGE:
@@ -621,14 +661,14 @@ Handle<Value> GLESglGetParameterCallback(const Arguments& args) {
 	  int* ans = new int[2];
 	  glGetIntegerv((GLenum)pname, ans);
 
-	  Local<Array> res = Array::New(2);
+	  Local<Array> res = Array::New(v8::Isolate::GetCurrent(), 2);
 	  for (int i = 0; i < 2; ++i) {
-	    res->Set(Integer::New(i), Integer::New(ans[i]));
+	    res->Set(Integer::New(v8::Isolate::GetCurrent(), i), Integer::New(v8::Isolate::GetCurrent(), ans[i]));
 	  }
 
 	  delete[] ans;
 
-	  return handle_scope.Close(res);
+	  args.GetReturnValue().Set(res);
   }
   //4 values int
   case GL_SCISSOR_BOX:
@@ -637,14 +677,14 @@ Handle<Value> GLESglGetParameterCallback(const Arguments& args) {
 	  int* ans = new int[4];
 	  glGetIntegerv((GLenum)pname, ans);
 
-	  Local<Array> res = Array::New(4);
+	  Local<Array> res = Array::New(v8::Isolate::GetCurrent(), 4);
 	  for (int i = 0; i < 4; ++i) {
-	    res->Set(Integer::New(i), Integer::New(ans[i]));
+	    res->Set(Integer::New(v8::Isolate::GetCurrent(), i), Integer::New(v8::Isolate::GetCurrent(), ans[i]));
 	  }
 
 	  delete[] ans;
 
-	  return handle_scope.Close(res);
+	  args.GetReturnValue().Set(res);
   }
 
   //1 value boolean
@@ -721,7 +761,7 @@ Handle<Value> GLESglGetParameterCallback(const Arguments& args) {
   {
 	  GLboolean ans = 0;
 	  glGetBooleanv((GLenum)pname, &ans);
-	  return handle_scope.Close(Boolean::New(ans != GL_FALSE));
+	  args.GetReturnValue().Set(Boolean::New(v8::Isolate::GetCurrent(), ans != GL_FALSE));
   }
 
   //1 value float
@@ -756,7 +796,7 @@ Handle<Value> GLESglGetParameterCallback(const Arguments& args) {
   {
 	  float ans = 0.0f;
 	  glGetFloatv((GLenum)pname, &ans);
-	  return handle_scope.Close(Number::New(ans));
+	  args.GetReturnValue().Set(Number::New(v8::Isolate::GetCurrent(), ans));
   }
 
   //4 values float
@@ -777,14 +817,14 @@ Handle<Value> GLESglGetParameterCallback(const Arguments& args) {
 	  float* ans = new float[4];
 	  glGetFloatv((GLenum)pname, ans);
 
-	  Local<Array> res = Array::New(4);
+	  Local<Array> res = Array::New(v8::Isolate::GetCurrent(), 4);
 	  for (int i = 0; i < 4; ++i) {
-	    res->Set(Integer::New(i), Number::New(ans[i]));
+	    res->Set(Integer::New(v8::Isolate::GetCurrent(), i), Number::New(v8::Isolate::GetCurrent(), ans[i]));
 	  }
 
 	  delete[] ans;
 
-	  return handle_scope.Close(res);
+	  args.GetReturnValue().Set(res);
   }
 
    //3 values float
@@ -793,14 +833,14 @@ Handle<Value> GLESglGetParameterCallback(const Arguments& args) {
 	  float* ans = new float[3];
 	  glGetFloatv((GLenum)pname, ans);
 
-	  Local<Array> res = Array::New(3);
+	  Local<Array> res = Array::New(v8::Isolate::GetCurrent(), 3);
 	  for (int i = 0; i < 3; ++i) {
-	    res->Set(Integer::New(i), Number::New(ans[i]));
+	    res->Set(Integer::New(v8::Isolate::GetCurrent(), i), Number::New(v8::Isolate::GetCurrent(), ans[i]));
 	  }
 
 	  delete[] ans;
 
-	  return handle_scope.Close(res);
+	  args.GetReturnValue().Set(res);
   }
 
   //2 values float
@@ -811,14 +851,14 @@ Handle<Value> GLESglGetParameterCallback(const Arguments& args) {
 	  float* ans = new float[2];
 	  glGetFloatv((GLenum)pname, ans);
 
-	  Local<Array> res = Array::New(2);
+	  Local<Array> res = Array::New(v8::Isolate::GetCurrent(), 2);
 	  for (int i = 0; i < 2; ++i) {
-	    res->Set(Integer::New(i), Number::New(ans[i]));
+	    res->Set(Integer::New(v8::Isolate::GetCurrent(), i), Number::New(v8::Isolate::GetCurrent(), ans[i]));
 	  }
 
 	  delete[] ans;
 
-	  return handle_scope.Close(res);
+	  args.GetReturnValue().Set(res);
   }
 
   //16 values float
@@ -829,14 +869,14 @@ Handle<Value> GLESglGetParameterCallback(const Arguments& args) {
 	  float* ans = new float[16];
 	  glGetFloatv((GLenum)pname, ans);
 
-	  Local<Array> res = Array::New(16);
+	  Local<Array> res = Array::New(v8::Isolate::GetCurrent(), 16);
 	  for (int i = 0; i < 16; ++i) {
-	    res->Set(Integer::New(i), Number::New(ans[i]));
+	    res->Set(Integer::New(v8::Isolate::GetCurrent(), i), Number::New(v8::Isolate::GetCurrent(), ans[i]));
 	  }
 
 	  delete[] ans;
 
-	  return handle_scope.Close(res);
+	  args.GetReturnValue().Set(res);
   }
 
   //4 values boolean
@@ -845,26 +885,29 @@ Handle<Value> GLESglGetParameterCallback(const Arguments& args) {
 	  GLboolean* ans = new GLboolean[4];
 	  glGetBooleanv((GLenum)pname, ans);
 
-	  Local<Array> res = Array::New(4);
+	  Local<Array> res = Array::New(v8::Isolate::GetCurrent(), 4);
 	  for (int i = 0; i < 4; ++i) {
-	    res->Set(Integer::New(i), Boolean::New(ans[i] != GL_FALSE));
+	    res->Set(Integer::New(v8::Isolate::GetCurrent(), i), Boolean::New(v8::Isolate::GetCurrent(), ans[i] != GL_FALSE));
 	  }
 
 	  delete[] ans;
 
-	  return handle_scope.Close(res);
+	  args.GetReturnValue().Set(res);
   }
 
   }
-  return v8::Undefined();
+  args.GetReturnValue().SetUndefined();
 }
 
 
-Handle<Value> GLESglGetProgramivCallback(const Arguments& args) {
+void GLESglGetProgramivCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
   //if less that nbr of formal parameters then do nothing
-  if (args.Length() != 2) return v8::Undefined();
+  if (args.Length() != 2) {
+    args.GetReturnValue().SetUndefined();
+    return;
+  }
   //define handle scope
-  HandleScope handle_scope;
+  HandleScope handle_scope(v8::Isolate::GetCurrent());
   //get arguments
   unsigned program = args[0]->Uint32Value();
   unsigned pname = args[1]->Uint32Value();
@@ -874,14 +917,17 @@ Handle<Value> GLESglGetProgramivCallback(const Arguments& args) {
   //an array.
   glGetProgramiv((GLuint)program, (GLenum)pname, (GLint*) &ans);
 
-  return handle_scope.Close(Integer::New(ans));
+  args.GetReturnValue().Set(Integer::New(v8::Isolate::GetCurrent(), ans));
 }
 
-Handle<Value> GLESglGetProgramInfoLogCallback(const Arguments& args) {
+void GLESglGetProgramInfoLogCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
-  if (args.Length() != 1) return v8::Undefined();
+  if (args.Length() != 1) {
+    args.GetReturnValue().SetUndefined();
+    return;
+  }
   //define handle scope
-  HandleScope handle_scope;
+  HandleScope handle_scope(v8::Isolate::GetCurrent());
   //get arguments
   unsigned program = args[0]->Uint32Value();
 
@@ -892,14 +938,17 @@ Handle<Value> GLESglGetProgramInfoLogCallback(const Arguments& args) {
   char* log = new char[len];
   glGetProgramInfoLog((GLuint)program, (GLsizei)len, NULL, log);
 
-  return handle_scope.Close(String::New(log));
+  args.GetReturnValue().Set(String::NewFromUtf8(v8::Isolate::GetCurrent(), log));
 }
 
-Handle<Value> GLESglGetTexParameterCallback(const Arguments& args) {
+void GLESglGetTexParameterCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
-  if (args.Length() != 2) return v8::Undefined();
+  if (args.Length() != 2) {
+    args.GetReturnValue().SetUndefined();
+    return;
+  }
   //define handle scope
-  HandleScope handle_scope;
+  HandleScope handle_scope(v8::Isolate::GetCurrent());
   //get arguments
   unsigned target = args[0]->Uint32Value();
   unsigned pname = args[1]->Uint32Value();
@@ -913,7 +962,7 @@ Handle<Value> GLESglGetTexParameterCallback(const Arguments& args) {
   {
 	  int ans = 0;
 	  glTexParameteriv((GLenum)target, (GLenum)pname, (GLint*) &ans);
-	  return handle_scope.Close(Integer::New(ans));
+	  args.GetReturnValue().Set(Integer::New(v8::Isolate::GetCurrent(), ans));
   }
 	  //4 floats
   case GL_TEXTURE_BORDER_COLOR:
@@ -921,39 +970,42 @@ Handle<Value> GLESglGetTexParameterCallback(const Arguments& args) {
 	  float* ans = new float[4];
 	  glTexParameterfv((GLenum)target, (GLenum)pname, (GLfloat*) ans);
 
-	  Local<Array> res = Array::New(4);
+	  Local<Array> res = Array::New(v8::Isolate::GetCurrent(), 4);
 	  for (int i = 0; i < 4; ++i) {
-	    res->Set(Integer::New(i), Number::New(ans[i]));
+	    res->Set(Integer::New(v8::Isolate::GetCurrent(), i), Number::New(v8::Isolate::GetCurrent(), ans[i]));
 	  }
 
 	  delete[] ans;
 
-	  return handle_scope.Close(res);
+	  args.GetReturnValue().Set(res);
   }
 	  //1 float
   case GL_TEXTURE_PRIORITY:
   {
 	  float ans = 0;
 	  glTexParameterfv((GLenum)target, (GLenum)pname, (GLfloat*) &ans);
-	  return handle_scope.Close(Number::New(ans));
+	  args.GetReturnValue().Set(Number::New(v8::Isolate::GetCurrent(), ans));
   }
 	  //1 boolean
   case GL_TEXTURE_RESIDENT:
   {
 	  int ans = 0;
 	  glTexParameteriv((GLenum)target, (GLenum)pname, (GLint*) &ans);
-	  return handle_scope.Close(Boolean::New(ans != GL_FALSE));
+	  args.GetReturnValue().Set(Boolean::New(v8::Isolate::GetCurrent(), ans != GL_FALSE));
   }
 
   }
-  return v8::Undefined();
+  args.GetReturnValue().SetUndefined();
 }
 
-Handle<Value> GLESglGetVertexAttribCallback(const Arguments& args) {
+void GLESglGetVertexAttribCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
-  if (args.Length() != 2) return v8::Undefined();
+  if (args.Length() != 2) {
+    args.GetReturnValue().SetUndefined();
+    return;
+  }
   //define handle scope
-  HandleScope handle_scope;
+  HandleScope handle_scope(v8::Isolate::GetCurrent());
   //get arguments
   unsigned index = args[0]->Uint32Value();
   unsigned pname = args[1]->Uint32Value();
@@ -967,7 +1019,7 @@ Handle<Value> GLESglGetVertexAttribCallback(const Arguments& args) {
   {
 	  GLint ans = 0;
 	  glGetVertexAttribiv((GLuint)index, (GLenum)pname, &ans);
-	  return handle_scope.Close(Integer::New(ans));
+	  args.GetReturnValue().Set(Integer::New(v8::Isolate::GetCurrent(), ans));
   }
 
   //1 boolean value
@@ -976,7 +1028,7 @@ Handle<Value> GLESglGetVertexAttribCallback(const Arguments& args) {
   {
 	  GLint ans = 0;
 	  glGetVertexAttribiv((GLuint)index, (GLenum)pname, &ans);
-	  return handle_scope.Close(Boolean::New(ans != GL_FALSE));
+	  args.GetReturnValue().Set(Boolean::New(v8::Isolate::GetCurrent(), ans != GL_FALSE));
   }
 
   //4 float values
@@ -985,25 +1037,28 @@ Handle<Value> GLESglGetVertexAttribCallback(const Arguments& args) {
 	  GLfloat* ans = new GLfloat[4];
 	  glGetVertexAttribfv((GLuint)index, (GLenum)pname, ans);
 
-	  Local<Array> res = Array::New(4);
+	  Local<Array> res = Array::New(v8::Isolate::GetCurrent(), 4);
 	  for (int i = 0; i < 4; ++i) {
-	    res->Set(Integer::New(i), Integer::New(ans[i]));
+	    res->Set(Integer::New(v8::Isolate::GetCurrent(), i), Integer::New(v8::Isolate::GetCurrent(), ans[i]));
 	  }
 
 	  delete[] ans;
 
-	  return handle_scope.Close(res);
+	  args.GetReturnValue().Set(res);
   }
   }
 
-  return v8::Undefined();
+  args.GetReturnValue().SetUndefined();
 }
 
-Handle<Value> GLESglTexImage2DCallback(const Arguments& args) {
+void GLESglTexImage2DCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
-  if (args.Length() != 9) return v8::Undefined();
+  if (args.Length() != 9) {
+    args.GetReturnValue().SetUndefined();
+    return;
+  }
   //define handle scope
-  HandleScope handle_scope;
+  HandleScope handle_scope(v8::Isolate::GetCurrent());
   //get arguments
   unsigned target = args[0]->Uint32Value();
   int level = args[1]->IntegerValue();
@@ -1020,7 +1075,7 @@ Handle<Value> GLESglTexImage2DCallback(const Arguments& args) {
 	  if( type == GL_UNSIGNED_BYTE ) {
 		  GLubyte* pixels = new  GLubyte[arr_handle->Length()];
 		  for (unsigned j = 0; j < arr_handle->Length(); j++) {
-		      Handle<Value> arg(arr_handle->Get(Integer::New(j)));
+		      Handle<Value> arg(arr_handle->Get(Integer::New(v8::Isolate::GetCurrent(), j)));
 		      GLubyte aux = (GLubyte)arg->Uint32Value();
 		      pixels[j] = aux;
 		  }
@@ -1038,7 +1093,7 @@ Handle<Value> GLESglTexImage2DCallback(const Arguments& args) {
 	  } else if( type == GL_BYTE ) {
 		  GLbyte* pixels = new  GLbyte[arr_handle->Length()];
 		  for (unsigned j = 0; j < arr_handle->Length(); j++) {
-		      Handle<Value> arg(arr_handle->Get(Integer::New(j)));
+		      Handle<Value> arg(arr_handle->Get(Integer::New(v8::Isolate::GetCurrent(), j)));
 		      GLbyte aux = (GLbyte)arg->Uint32Value();
 		      pixels[j] = aux;
 		  }
@@ -1057,7 +1112,7 @@ Handle<Value> GLESglTexImage2DCallback(const Arguments& args) {
 	  } else if( type == GL_BITMAP ) {
 		  GLbitfield* pixels = new  GLbitfield[arr_handle->Length()];
 		  for (unsigned j = 0; j < arr_handle->Length(); j++) {
-		      Handle<Value> arg(arr_handle->Get(Integer::New(j)));
+		      Handle<Value> arg(arr_handle->Get(Integer::New(v8::Isolate::GetCurrent(), j)));
 		      GLbitfield aux = (GLbitfield)arg->IntegerValue();
 		      pixels[j] = aux;
 		  }
@@ -1076,7 +1131,7 @@ Handle<Value> GLESglTexImage2DCallback(const Arguments& args) {
 	  } else if( type == GL_UNSIGNED_SHORT ) {
 		  GLushort* pixels = new  GLushort[arr_handle->Length()];
 		  for (unsigned j = 0; j < arr_handle->Length(); j++) {
-		      Handle<Value> arg(arr_handle->Get(Integer::New(j)));
+		      Handle<Value> arg(arr_handle->Get(Integer::New(v8::Isolate::GetCurrent(), j)));
 		      GLushort aux = (GLushort)arg->Uint32Value();
 		      pixels[j] = aux;
 		  }
@@ -1095,7 +1150,7 @@ Handle<Value> GLESglTexImage2DCallback(const Arguments& args) {
 	  } else if( type == GL_SHORT ) {
 		  GLshort* pixels = new  GLshort[arr_handle->Length()];
 		  for (unsigned j = 0; j < arr_handle->Length(); j++) {
-		      Handle<Value> arg(arr_handle->Get(Integer::New(j)));
+		      Handle<Value> arg(arr_handle->Get(Integer::New(v8::Isolate::GetCurrent(), j)));
 		      GLshort aux = (GLshort)arg->IntegerValue();
 		      pixels[j] = aux;
 		  }
@@ -1114,7 +1169,7 @@ Handle<Value> GLESglTexImage2DCallback(const Arguments& args) {
 	  } else if( type == GL_UNSIGNED_INT ) {
 		  GLuint* pixels = new  GLuint[arr_handle->Length()];
 		  for (unsigned j = 0; j < arr_handle->Length(); j++) {
-		      Handle<Value> arg(arr_handle->Get(Integer::New(j)));
+		      Handle<Value> arg(arr_handle->Get(Integer::New(v8::Isolate::GetCurrent(), j)));
 		      GLuint aux = (GLuint)arg->Uint32Value();
 		      pixels[j] = aux;
 		  }
@@ -1133,7 +1188,7 @@ Handle<Value> GLESglTexImage2DCallback(const Arguments& args) {
 	  } else if( type == GL_INT ) {
 		  GLint* pixels = new  GLint[arr_handle->Length()];
 		  for (unsigned j = 0; j < arr_handle->Length(); j++) {
-		      Handle<Value> arg(arr_handle->Get(Integer::New(j)));
+		      Handle<Value> arg(arr_handle->Get(Integer::New(v8::Isolate::GetCurrent(), j)));
 		      GLint aux = (GLint)arg->IntegerValue();
 		      pixels[j] = aux;
 		  }
@@ -1152,7 +1207,7 @@ Handle<Value> GLESglTexImage2DCallback(const Arguments& args) {
 	  } else if( type == GL_FLOAT ) {
 		  GLfloat* pixels = new  GLfloat[arr_handle->Length()];
 		  for (unsigned j = 0; j < arr_handle->Length(); j++) {
-		      Handle<Value> arg(arr_handle->Get(Integer::New(j)));
+		      Handle<Value> arg(arr_handle->Get(Integer::New(v8::Isolate::GetCurrent(), j)));
 		      GLfloat aux = (GLfloat)arg->NumberValue();
 		      pixels[j] = aux;
 		  }
@@ -1170,16 +1225,19 @@ Handle<Value> GLESglTexImage2DCallback(const Arguments& args) {
 	  }
   }
 
-  return v8::Undefined();
+  args.GetReturnValue().SetUndefined();
 }
 
 
 
-Handle<Value> GLESglTexSubImage2DCallback(const Arguments& args) {
+void GLESglTexSubImage2DCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
-  if (args.Length() != 9) return v8::Undefined();
+  if (args.Length() != 9) {
+    args.GetReturnValue().SetUndefined();
+    return;
+  }
   //define handle scope
-  HandleScope handle_scope;
+  HandleScope handle_scope(v8::Isolate::GetCurrent());
   //get arguments
   unsigned target = args[0]->Uint32Value();
   int level = args[1]->IntegerValue();
@@ -1198,7 +1256,7 @@ Handle<Value> GLESglTexSubImage2DCallback(const Arguments& args) {
 	  {
 		  GLubyte* pixels = new  GLubyte[arr_handle->Length()];
 		  for (unsigned j = 0; j < arr_handle->Length(); j++) {
-		      Handle<Value> arg(arr_handle->Get(Integer::New(j)));
+		      Handle<Value> arg(arr_handle->Get(Integer::New(v8::Isolate::GetCurrent(), j)));
 		      GLubyte aux = (GLubyte)arg->Uint32Value();
 		      pixels[j] = aux;
 		  }
@@ -1220,7 +1278,7 @@ Handle<Value> GLESglTexSubImage2DCallback(const Arguments& args) {
 	  {
 		  GLbyte* pixels = new  GLbyte[arr_handle->Length()];
 		  for (unsigned j = 0; j < arr_handle->Length(); j++) {
-		      Handle<Value> arg(arr_handle->Get(Integer::New(j)));
+		      Handle<Value> arg(arr_handle->Get(Integer::New(v8::Isolate::GetCurrent(), j)));
 		      GLbyte aux = (GLbyte)arg->Uint32Value();
 		      pixels[j] = aux;
 		  }
@@ -1242,7 +1300,7 @@ Handle<Value> GLESglTexSubImage2DCallback(const Arguments& args) {
 	  {
 		  GLbitfield* pixels = new  GLbitfield[arr_handle->Length()];
 		  for (unsigned j = 0; j < arr_handle->Length(); j++) {
-		      Handle<Value> arg(arr_handle->Get(Integer::New(j)));
+		      Handle<Value> arg(arr_handle->Get(Integer::New(v8::Isolate::GetCurrent(), j)));
 		      GLbitfield aux = (GLbitfield)arg->IntegerValue();
 		      pixels[j] = aux;
 		  }
@@ -1264,7 +1322,7 @@ Handle<Value> GLESglTexSubImage2DCallback(const Arguments& args) {
 	  {
 		  GLushort* pixels = new  GLushort[arr_handle->Length()];
 		  for (unsigned j = 0; j < arr_handle->Length(); j++) {
-		      Handle<Value> arg(arr_handle->Get(Integer::New(j)));
+		      Handle<Value> arg(arr_handle->Get(Integer::New(v8::Isolate::GetCurrent(), j)));
 		      GLushort aux = (GLushort)arg->Uint32Value();
 		      pixels[j] = aux;
 		  }
@@ -1286,7 +1344,7 @@ Handle<Value> GLESglTexSubImage2DCallback(const Arguments& args) {
 	  {
 		  GLshort* pixels = new  GLshort[arr_handle->Length()];
 		  for (unsigned j = 0; j < arr_handle->Length(); j++) {
-		      Handle<Value> arg(arr_handle->Get(Integer::New(j)));
+		      Handle<Value> arg(arr_handle->Get(Integer::New(v8::Isolate::GetCurrent(), j)));
 		      GLshort aux = (GLshort)arg->IntegerValue();
 		      pixels[j] = aux;
 		  }
@@ -1308,7 +1366,7 @@ Handle<Value> GLESglTexSubImage2DCallback(const Arguments& args) {
 	  {
 		  GLuint* pixels = new  GLuint[arr_handle->Length()];
 		  for (unsigned j = 0; j < arr_handle->Length(); j++) {
-		      Handle<Value> arg(arr_handle->Get(Integer::New(j)));
+		      Handle<Value> arg(arr_handle->Get(Integer::New(v8::Isolate::GetCurrent(), j)));
 		      GLuint aux = (GLuint)arg->Uint32Value();
 		      pixels[j] = aux;
 		  }
@@ -1330,7 +1388,7 @@ Handle<Value> GLESglTexSubImage2DCallback(const Arguments& args) {
 	  {
 		  GLint* pixels = new  GLint[arr_handle->Length()];
 		  for (unsigned j = 0; j < arr_handle->Length(); j++) {
-		      Handle<Value> arg(arr_handle->Get(Integer::New(j)));
+		      Handle<Value> arg(arr_handle->Get(Integer::New(v8::Isolate::GetCurrent(), j)));
 		      GLint aux = (GLint)arg->IntegerValue();
 		      pixels[j] = aux;
 		  }
@@ -1352,7 +1410,7 @@ Handle<Value> GLESglTexSubImage2DCallback(const Arguments& args) {
 	  {
 		  GLfloat* pixels = new  GLfloat[arr_handle->Length()];
 		  for (unsigned j = 0; j < arr_handle->Length(); j++) {
-		      Handle<Value> arg(arr_handle->Get(Integer::New(j)));
+		      Handle<Value> arg(arr_handle->Get(Integer::New(v8::Isolate::GetCurrent(), j)));
 		      GLfloat aux = (GLfloat)arg->NumberValue();
 		      pixels[j] = aux;
 		  }
@@ -1372,15 +1430,18 @@ Handle<Value> GLESglTexSubImage2DCallback(const Arguments& args) {
 	  }
   }
 
-  return v8::Undefined();
+  args.GetReturnValue().SetUndefined();
 }
 
 
-Handle<Value> GLESglGetRenderbufferParameterCallback(const Arguments& args) {
+void GLESglGetRenderbufferParameterCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
   //if less that nbr of formal parameters then do nothing
-  if (args.Length() != 2) return v8::Undefined();
+  if (args.Length() != 2) {
+    args.GetReturnValue().SetUndefined();
+    return;
+  }
   //define handle scope
-  HandleScope handle_scope;
+  HandleScope handle_scope(v8::Isolate::GetCurrent());
   //get arguments
   unsigned target = args[0]->Uint32Value();
   unsigned pname = args[1]->Uint32Value();
@@ -1399,18 +1460,22 @@ Handle<Value> GLESglGetRenderbufferParameterCallback(const Arguments& args) {
   {
 	  int ans = 0;
 	  glGetRenderbufferParameteriv((GLenum)target, (GLenum)pname, (GLint*)&ans);
-	  return handle_scope.Close(Integer::New(ans));
+	  args.GetReturnValue().Set(Integer::New(v8::Isolate::GetCurrent(), ans));
   }
   }
 
-  return v8::Undefined();
+  args.GetReturnValue().SetUndefined();
+  return;
 }
 
-Handle<Value> GLESglGetFramebufferAttachmentParameterCallback(const Arguments& args) {
+void GLESglGetFramebufferAttachmentParameterCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
   //if less that nbr of formal parameters then do nothing
-  if (args.Length() != 2) return v8::Undefined();
+  if (args.Length() != 2) {
+    args.GetReturnValue().SetUndefined();
+    return;
+  }
   //define handle scope
-  HandleScope handle_scope;
+  HandleScope handle_scope(v8::Isolate::GetCurrent());
   //get arguments
   unsigned target = args[0]->Uint32Value();
   unsigned attachment = args[1]->Uint32Value();
@@ -1428,18 +1493,21 @@ Handle<Value> GLESglGetFramebufferAttachmentParameterCallback(const Arguments& a
 			  (GLenum)pname,
 			  (GLint*)&ans);
 
-	  return handle_scope.Close(Integer::New(ans));
+	  args.GetReturnValue().Set(Integer::New(v8::Isolate::GetCurrent(), ans));
 //  }
 //  }
 
-  return v8::Undefined();
+  args.GetReturnValue().SetUndefined();
 }
 
-Handle<Value> GLESglGetShaderInfoLogCallback(const Arguments& args) {
+void GLESglGetShaderInfoLogCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
-  if (args.Length() != 1) return v8::Undefined();
+  if (args.Length() != 1) {
+    args.GetReturnValue().SetUndefined();
+    return;
+  }
   //define handle scope
-  HandleScope handle_scope;
+  HandleScope handle_scope(v8::Isolate::GetCurrent());
   //get arguments
   unsigned shader = args[0]->Uint32Value();
 
@@ -1450,14 +1518,17 @@ Handle<Value> GLESglGetShaderInfoLogCallback(const Arguments& args) {
   char* log = new char[len];
   glGetShaderInfoLog((GLuint)shader, (GLsizei)len, NULL, log);
 
-  return handle_scope.Close(String::New(log));
+  args.GetReturnValue().Set(String::NewFromUtf8(v8::Isolate::GetCurrent(), log));
 }
 
-Handle<Value> GLESglGetShaderSourceCallback(const Arguments& args) {
+void GLESglGetShaderSourceCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
-  if (args.Length() != 1) return v8::Undefined();
+  if (args.Length() != 1) {
+    args.GetReturnValue().SetUndefined();
+    return;
+  }
   //define handle scope
-  HandleScope handle_scope;
+  HandleScope handle_scope(v8::Isolate::GetCurrent());
   //get arguments
   unsigned shader = args[0]->Uint32Value();
 
@@ -1468,20 +1539,24 @@ Handle<Value> GLESglGetShaderSourceCallback(const Arguments& args) {
   char* log = new char[len];
   glGetShaderSource((GLuint)shader, (GLsizei)len, NULL, log);
 
-  return handle_scope.Close(String::New(log));
+  args.GetReturnValue().Set(String::NewFromUtf8(v8::Isolate::GetCurrent(), log));
 }
 
 // We expect to be called with a shader id and a single string.
-Handle<Value> GLESglShaderSourceFileCallback(const Arguments& args) {
-  if (args.Length() != 2)
-    return v8::Undefined();
+void GLESglShaderSourceFileCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
+  if (args.Length() != 2) {
+    args.GetReturnValue().SetUndefined();
+    return;
+  }
 
-  HandleScope handle_scope;
+  HandleScope handle_scope(v8::Isolate::GetCurrent());
   GLuint shader_id = args[0]->Uint32Value();
   // GLSL source is defined as an ASCII subset.
-  v8::String::AsciiValue filepath_ascii(args[1]);
-  if (!*filepath_ascii)
-    return v8::Undefined();
+  v8::String::Utf8Value filepath_ascii(args[1]);
+  if (!*filepath_ascii) {
+    args.GetReturnValue().SetUndefined();
+    return;
+  }
 
   char* filepath_str = *filepath_ascii;
 
@@ -1498,7 +1573,10 @@ Handle<Value> GLESglShaderSourceFileCallback(const Arguments& args) {
 
   std::ifstream in_file(filename);
 
-  if(!in_file.is_open()) return v8::Undefined();
+  if(!in_file.is_open()) {
+    args.GetReturnValue().SetUndefined();
+    return;
+  }
 
   std::string line, full_text = "";
   while (! in_file.eof() ) {
@@ -1515,7 +1593,7 @@ Handle<Value> GLESglShaderSourceFileCallback(const Arguments& args) {
   delete[] ans;
   delete[] filename;
 
-  Handle<Object> res(GlesFactory::self_);
-  return res;
+  Handle<Object> res(Local<Object>::New(v8::Isolate::GetCurrent(), GlesFactory::self_));
+  args.GetReturnValue().Set(res);
 }
 

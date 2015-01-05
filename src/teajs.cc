@@ -78,12 +78,11 @@ private:
 	void process_args(int argc, char ** argv) {
 		std::string err = "Invalid command line usage.\n";
 		err += "Correct usage: ";
-		err += teajs_usage; /* see the teajs_usage definition for the format */
+		err += teajs_usage; /* see the teajs_usage deftion for the format */
 		
 		int index = 0;
 		bool wait_for_debugger = false;
-		int debugger_port = 0;
-		
+
 		/* see if we have v8 options */
 		bool have_v8args = false;
 		for (; index < argc; ++index) {
@@ -127,15 +126,6 @@ private:
 					wait_for_debugger = true;
 				break;
 
-				case 'd':
-					if (index >= argc) { throw err; } /* missing option value */
-					debugger_port = atoi(argv[index]);
-#ifdef VERBOSE
-					printf("port: %i\n", debugger_port);
-#endif
-					index++; /* skip the option value */
-				break;
-				
 				case 'h':
 					printf(teajs_usage);
 					printf("\n");
@@ -153,10 +143,6 @@ private:
 			}
 			
 		} 
-		
-		if (debugger_port) { /* launch debugging agent */ 
-			v8::Debug::EnableAgent("TeaJS", debugger_port, wait_for_debugger);
-		}
 		
 		if (index < argc) {
 			/* argv[index] is the program file */

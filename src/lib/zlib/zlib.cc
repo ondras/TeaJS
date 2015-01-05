@@ -6,8 +6,8 @@
 namespace {
 
 JS_METHOD(_compress) {
-	if (args.Length() < 1) { return JS_TYPE_ERROR("Bad argument count. Use 'compress(buffer[, level])'"); }
-	if (!IS_BUFFER(args[0])) { return JS_TYPE_ERROR("First argument must be an instance of Buffer"); }
+	if (args.Length() < 1) { JS_TYPE_ERROR("Bad argument count. Use 'compress(buffer[, level])'"); return; }
+	if (!IS_BUFFER(args[0])) { JS_TYPE_ERROR("First argument must be an instance of Buffer"); return; }
 	
 	size_t inputLength = 0;
 	char * data = JS_BUFFER_TO_CHAR(args[0], &inputLength);
@@ -23,16 +23,16 @@ JS_METHOD(_compress) {
 	v8::Handle<v8::Value> buffer = JS_BUFFER(output, outputLength);
 	free(output);
 	
-	return buffer;
+	args.GetReturnValue().Set(buffer);
 }
 
 JS_METHOD(_decompress) {
-	if (args.Length() < 1) { return JS_TYPE_ERROR("Bad argument count. Use 'decompress(buffer)'"); }
-	if (!IS_BUFFER(args[0])) { return JS_TYPE_ERROR("First argument must be an instance of Buffer"); }
+	if (args.Length() < 1) { JS_TYPE_ERROR("Bad argument count. Use 'decompress(buffer)'"); return; }
+	if (!IS_BUFFER(args[0])) { JS_TYPE_ERROR("First argument must be an instance of Buffer"); return; }
 
 	size_t inputLength = 0;
 	char * data = JS_BUFFER_TO_CHAR(args[0], &inputLength);
-	
+
 	size_t chunkSize = 8192;
 	char * chunk = (char *) malloc(chunkSize);
 	char * output = (char *) malloc(chunkSize);
@@ -49,11 +49,12 @@ JS_METHOD(_decompress) {
 	if (inflateInit(&stream) != Z_OK) {
 		free(chunk);
 		free(output);
-		return JS_ERROR("Failed to decompress");
+		JS_ERROR("Failed to decompress");
+		return;
 	}
-	
+
 	int ret = Z_OK;
-	
+
 	do {
 		if (stream.avail_in == 0) break;
 
@@ -68,13 +69,14 @@ JS_METHOD(_decompress) {
 					inflateEnd(&stream);
 					free(chunk);
 					free(output);
-					return JS_ERROR("Failed to decompress");
+					JS_ERROR("Failed to decompress");
+					return;
 				break;
 			}
-			
+
 			size_t dataLength = chunkSize - stream.avail_out;
 			if (!dataLength) { continue; }
-	
+
 			while ((capacity - used) < dataLength) {
 				capacity <<= 1;
 				output = (char *) realloc(output, capacity);
@@ -88,15 +90,15 @@ JS_METHOD(_decompress) {
 	free(chunk);
 	v8::Handle<v8::Value> buffer = JS_BUFFER(output, used);
 	free(output);
-	return buffer;
+	args.GetReturnValue().Set(buffer);
 }
 
 }
 
 SHARED_INIT() {
-	v8::HandleScope handle_scope;
-	exports->Set(JS_STR("compress"), v8::FunctionTemplate::New(_compress)->GetFunction());
-	exports->Set(JS_STR("decompress"), v8::FunctionTemplate::New(_decompress)->GetFunction());
+	v8::HandleScope handle_scope(JS_ISOLATE);
+	exports->Set(JS_STR("compress"), v8::FunctionTemplate::New(JS_ISOLATE, _compress)->GetFunction());
+	exports->Set(JS_STR("decompress"), v8::FunctionTemplate::New(JS_ISOLATE, _decompress)->GetFunction());
 }
 
 

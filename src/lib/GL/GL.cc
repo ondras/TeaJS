@@ -10,7 +10,9 @@
 #include <stdlib.h>
 #include <map>
 #include <stdio.h>
+#ifndef __APPLE__
 #include <stropts.h>
+#endif
 #include <string.h>
 #include <sstream>
 
@@ -24,19 +26,19 @@ namespace GLv8 {
   JS_METHOD(_gl) {
     Handle<ObjectTemplate> obj( GlFactory::createGl() );
     Handle<Value> ret(obj->NewInstance());
-    return ret;
+    args.GetReturnValue().Set(ret);
   }
 
   JS_METHOD(_glu) {
     //Handle<ObjectTemplate> obj( GluFactory::createGlu() );
     //Handle<Value> ret(obj->NewInstance());
-    return args.This();
+    args.GetReturnValue().Set(args.This());
   }
 
   JS_METHOD(_gles) {
     Handle<ObjectTemplate> obj( GlesFactory::createGles() );
     Handle<Value> ret(obj->NewInstance());
-    return ret;
+    args.GetReturnValue().Set(ret);
   }
 
   JS_METHOD(_glut) {
@@ -58,7 +60,7 @@ namespace GLv8 {
     object_template = GlutFactory::createGlut(&pargc, (char **)argv);
     Handle<Value> ret(object_template->NewInstance());
     args.This()->Set(JS_STR("obj"),ret);
-    return args.This();
+    args.GetReturnValue().Set(args.This());
   }
 
 }
@@ -70,7 +72,7 @@ SHARED_INIT() {
   using namespace GLv8;
 
   // Create a handle scope to hold temporary references.
-  HandleScope handle_scope;
+  HandleScope handle_scope(JS_ISOLATE);
 
   // Create a template for the global object where we set the
   // built-in global functions.
@@ -100,10 +102,10 @@ SHARED_INIT() {
   Handle<ObjectTemplate> Glu_t = createGlu();
   Handle<ObjectTemplate> Glut_t = GlutFactory::createGlut(pargc, argv);
 
-  Handle<FunctionTemplate> ftGl = FunctionTemplate::New(_gl);
-  Handle<FunctionTemplate> ftGles = FunctionTemplate::New(_gles);
-  Handle<FunctionTemplate> ftGlu = FunctionTemplate::New(_glu);
-  Handle<FunctionTemplate> ftGlut = FunctionTemplate::New(_glut);
+  Handle<FunctionTemplate> ftGl = FunctionTemplate::New(JS_ISOLATE, _gl);
+  Handle<FunctionTemplate> ftGles = FunctionTemplate::New(JS_ISOLATE, _gles);
+  Handle<FunctionTemplate> ftGlu = FunctionTemplate::New(JS_ISOLATE, _glu);
+  Handle<FunctionTemplate> ftGlut = FunctionTemplate::New(JS_ISOLATE, _glut);
   ftGl->SetClassName(JS_STR("Gl"));
   ftGles->SetClassName(JS_STR("Gles"));
   ftGlu->SetClassName(JS_STR("Glu"));
@@ -119,28 +121,28 @@ SHARED_INIT() {
   Handle<Object> Gles = Gles_t->NewInstance();
   Handle<Object> Glut = Glut_t->NewInstance();
 
-  exports->Set(String::New("Gl"), Gl);
-  exports->Set(String::New("Gles"), Gles);
-  global->Set(String::New("Glu"), ftGlu->GetFunction());
-  global->Set(String::New("Glut"), ftGlut->GetFunction());
+  exports->Set(JS_STR("Gl"), Gl);
+  exports->Set(JS_STR("Gles"), Gles);
+  global->Set(JS_STR("Glu"), ftGlu->GetFunction());
+  global->Set(JS_STR("Glut"), ftGlut->GetFunction());
 
   global->Set(JS_STR("Gl"), Gl);
   global->Set(JS_STR("Glu"), Glu);
   global->Set(JS_STR("Gles"), Gles);
   global->Set(JS_STR("Glut"), Glut);
 
-  Handle<Context> context ( Context::GetCurrent() );
+  Handle<Context> context ( JS_ISOLATE->GetCurrentContext() );
 
-  GlutFactory::glut_persistent_context = Persistent<Context>::New(context);
-  GlesFactory::gles_persistent_context = Persistent<Context>::New(context);
+  GlutFactory::glut_persistent_context.Reset(JS_ISOLATE, context);
+  GlesFactory::gles_persistent_context.Reset(JS_ISOLATE, context);
 
   // Enter the new context so all the following operations take place
   // within it.
   Context::Scope context_scope(context);
 
   //Append *this* as Gl static variable so we can do dot-this-dot-that stuff
-  GlFactory::self_ = Persistent<Object>::New(Gl_t->NewInstance());
-  GlesFactory::self_ = Persistent<Object>::New(Gles_t->NewInstance());
+  GlFactory::self_.Reset(JS_ISOLATE, Gl_t->NewInstance());
+  GlesFactory::self_.Reset(JS_ISOLATE, Gles_t->NewInstance());
 
   //Set the root_path for opening shader files with
   //relative paths

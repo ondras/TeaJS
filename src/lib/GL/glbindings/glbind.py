@@ -45,6 +45,7 @@ def main():
 #include "GL/glew.h"
 #elif defined(__APPLE__)
 #include <OpenGL/OpenGL.h>
+#include <GLUT/glut.h>
 #else
 #define GL_GLEXT_PROTOTYPES
 #include <GL/gl.h>
@@ -62,9 +63,7 @@ def generate_main_function(constants, functions):
     text_out_begin = """
 
 Handle<ObjectTemplate> GlFactory::createGl(void) {
-      HandleScope handle_scope;
-
-      Handle<ObjectTemplate> Gl = ObjectTemplate::New();
+      Handle<ObjectTemplate> Gl = ObjectTemplate::New(v8::Isolate::GetCurrent());
       
       Gl->SetInternalFieldCount(1);
 
@@ -73,13 +72,13 @@ Handle<ObjectTemplate> GlFactory::createGl(void) {
     text_out_end = """
 
       // Again, return the result through the current handle scope.
-      return handle_scope.Close(Gl);
+      return Gl;
 }    
 """
-    bind_accessor = lambda n: "     Gl->Set(String::NewSymbol(\"" + '_'.join(n.split('_')[1:]) \
-        + "\"), Uint32::New(" + n + "), ReadOnly);\n"
-    bind_function = lambda n: "     Gl->Set(String::NewSymbol(\"" + n[2:] + \
-        "\"), FunctionTemplate::New(GL" + n + "Callback));\n"
+    bind_accessor = lambda n: "     Gl->Set(String::NewFromUtf8(v8::Isolate::GetCurrent(), \"" + '_'.join(n.split('_')[1:]) \
+        + "\"), Uint32::New(v8::Isolate::GetCurrent(), " + n + "), ReadOnly);\n"
+    bind_function = lambda n: "     Gl->Set(String::NewFromUtf8(v8::Isolate::GetCurrent(), \"" + n[2:] + \
+        "\"), FunctionTemplate::New(v8::Isolate::GetCurrent(), GL" + n + "Callback));\n"
     
     cts = [bind_accessor(name) for name in constants]
     fts = [bind_function(name) for name in functions]
@@ -91,11 +90,14 @@ def generate_function(obj):
 
     text_out = """
 
-Handle<<ret>> GL<name>Callback(const Arguments& args) {
+void GL<name>Callback(const FunctionCallbackInfo<<ret>>& args) {
   //if less that nbr of formal parameters then do nothing
-  if (args.Length() < <len_params>) return v8::Undefined();
+  if (args.Length() < <len_params>) {
+    args.GetReturnValue().SetUndefined();
+    return;
+  }
   //define handle scope
-  HandleScope handle_scope;
+  HandleScope handle_scope(v8::Isolate::GetCurrent());
   //get arguments
 <args>
   //make call
@@ -158,7 +160,7 @@ def generate_array_expression(type, i):
   Handle<Array> arrHandle##1 = Handle<Array>::Cast(args[##1]);
   ##2 arg##1 = new ##3[arrHandle##1->Length()];
   for (unsigned j = 0; j < arrHandle##1->Length(); j++) {
-      Handle<Value> arg(arrHandle##1->Get(Integer::New(j)));
+      Handle<Value> arg(arrHandle##1->Get(Integer::New(v8::Isolate::GetCurrent(), j)));
       ##3 aux = (##3)arg->##4;
       arg##1[j] = aux; 
   }
@@ -189,9 +191,9 @@ def generate_call(obj):
     
     #dot-this-dot-that feature
     if acc is None: 
-        return function_call + ';\n  Handle<Object> res(GlFactory::self_);\n  return res;'
+        return function_call + ';\n  Local<Object> res = Local<Object>::New(v8::Isolate::GetCurrent(), GlFactory::self_);\n  args.GetReturnValue().Set(res);'
     else:
-        return 'return ' + acc + '::New(' + function_call + ');'
+        return 'args.GetReturnValue().Set(' + function_call + ');'
     
 
 def multiple_replace(dict, text): 

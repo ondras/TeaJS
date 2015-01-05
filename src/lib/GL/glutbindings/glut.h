@@ -523,7 +523,7 @@ extern void APIENTRY glutJoystickFunc(void (*func)(unsigned int buttonMask, int 
 #endif
 
 /* GLUT color index sub-API. */
-extern void APIENTRY glutSetColor(int, GLfloat red, GLfloat green, GLfloat blue);
+extern void APIENTRY glutSetColor(int cell, GLfloat red, GLfloat green, GLfloat blue);
 extern GLfloat APIENTRY glutGetColor(int ndx, int component);
 extern void APIENTRY glutCopyColormap(int win);
 

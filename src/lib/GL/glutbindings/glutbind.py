@@ -79,8 +79,6 @@ Handle<ObjectTemplate> GlutFactory::createGlut(int* pargc, char** argv) {
       pargc_ = pargc;
       argv_  = argv;
       
-      HandleScope handle_scope;
-
       Handle<ObjectTemplate> Glut = ObjectTemplate::New();
       Glut->SetInternalFieldCount(1);
 
@@ -89,7 +87,7 @@ Handle<ObjectTemplate> GlutFactory::createGlut(int* pargc, char** argv) {
     text_out_end = """
 
       // Again, return the result through the current handle scope.
-      return handle_scope.Close(Glut);
+      return Glut;
 }    
 """
     fnt = [bind_font(name) for name in void_stars]    
@@ -101,16 +99,18 @@ Handle<ObjectTemplate> GlutFactory::createGlut(int* pargc, char** argv) {
 
 def make_constant(prefix, name):
     if name.find("BITMAP") != -1 or name.find("STROKE") != -1:
-        return_val = "return String::New(\""+ name +"\");\n"
+        return_val = "info.GetReturnValue().Set(String::NewFromUtf8(v8::Isolate::GetCurrent(), \""+ name +"\"));\n"
     else:
-        return_val = "return Uint32::New(GLUT_"+ name +");"
+        return_val = "info.GetReturnValue().Set(Uint32::New(v8::Isolate::GetCurrent(), GLUT_"+ name +"));"
     
     text_out = """
 
-Handle<Value> GetGLUT_%%(Local<String> property,
-                      const AccessorInfo &info) {
+#ifdef %%
+void GetGLUT_%%(Local<String> property,
+                      const PropertyCallbackInfo<Value> &info) {
     ##
 }
+#endif
 
 """
     return multiple_replace({
@@ -123,17 +123,22 @@ Handle<Value> GetGLUT_%%(Local<String> property,
 def make_function(prefix, name, params_list, count, return_val):
     text_out = """
 
-Handle<Value> GLUT<name>Callback(const Arguments& args) {
+#ifdef <name>
+void GLUT<name>Callback(const FunctionCallbackInfo<Value>& args) {
   //if less that nbr of formal parameters then do nothing
-  if (args.Length() < <len_params>) return v8::Undefined();
+  if (args.Length() < <len_params>) {
+    args.GetReturnValue().SetUndefined();
+    return;
+  }
   //define handle scope
-  HandleScope scope;
+  HandleScope scope(v8::Isolate::GetCurrent());
   //get arguments
 <args>
   //make call
   <call>
-  return v8::Undefined();
+  args.GetReturnValue().SetUndefined();
 }
+#endif
 
 """
     return multiple_replace({
@@ -148,36 +153,43 @@ def make_function_with_callback(prefix, name, params_list, return_val):
     
     text_out = """
 
+#ifdef <name>
 Persistent<Function> persistent<name>;
 
 <prototype> {
   //define handle scope
-  HandleScope scope;
+  HandleScope scope(v8::Isolate::GetCurrent());
 
   Handle<Value> valueArr[<nformalparams>];
 <formalparamassignment>
   
-  TryCatch try_catch;
-  Handle<Value> result = persistent<name>->Call(GlutFactory::glut_persistent_context->Global(), <nformalparams>, valueArr);
+  TryCatch try_catch(v8::Isolate::GetCurrent());
+  Local<Function> local<name> = Local<Function>::New(v8::Isolate::GetCurrent(), persistent<name>);
+  Local<Context> glut_persistent_context = Local<Context>::New(v8::Isolate::GetCurrent(), GlutFactory::glut_persistent_context);
+  Handle<Value> result = local<name>->Call(glut_persistent_context->Global(), <nformalparams>, valueArr);
   if (result.IsEmpty()) {
     String::Utf8Value error(try_catch.Exception());
     fprintf(stderr, "Exception in <name>: %s\\n", *error);
   }
 }
 
-Handle<Value> GLUT<name>Callback(const Arguments& args) {
+void GLUT<name>Callback(const FunctionCallbackInfo<Value>& args) {
   //if less that nbr of formal parameters then do nothing
-  if (args.Length() < 1 || !args[0]->IsFunction()) return v8::Undefined();
+  if (args.Length() < 1 || !args[0]->IsFunction()) {
+    args.GetReturnValue().SetUndefined();
+    return;
+  }
   //get arguments
   //delete previous assigned function
-  persistent<name>.Dispose();
+  persistent<name>.Reset();
   Handle<Function> value0 = Handle<Function>::Cast(args[0]);
-  persistent<name> = Persistent<Function>::New(value0);
+  persistent<name>.Reset(v8::Isolate::GetCurrent(), value0);
 
   //make call
   glut<name>((<signature>) func<name>);
-  return v8::Undefined();
+  args.GetReturnValue().SetUndefined();
 }
+#endif
 
 """
     nformalparams, prototype = make_prototype(name, params_list[0])
@@ -212,11 +224,11 @@ def formal_param_assignment(signature):
         ans = []
         for i, val in enumerate(pars):
             if val.find('int') != -1 or val.find('unsigned char') != -1:
-                ans.append("  valueArr[" + str(i) + "] = Integer::New(arg" + str(i) + ");")
+                ans.append("  valueArr[" + str(i) + "] = Integer::New(v8::Isolate::GetCurrent(), arg" + str(i) + ");")
             elif val.find('float') != -1 or val.find('double') != -1:
-                ans.append("  valueArr[" + str(i) + "] = Number::New(arg" + str(i) + ");")
+                ans.append("  valueArr[" + str(i) + "] = Number::New(v8::Isolate::GetCurrent(), arg" + str(i) + ");")
             elif val.find('char*') != -1:
-                ans.append("  valueArr[" + str(i) + "] = String::New(arg" + str(i) + ");")
+                ans.append("  valueArr[" + str(i) + "] = String::NewFromUtf8(v8::Isolate::GetCurrent(), arg" + str(i) + ");")
         return '\n'.join(ans)
     else:
         return ''    
@@ -284,10 +296,10 @@ def make_call(name, params_list, nb):
     return name + "(" + ", ".join([get_type(params_list[i]) + "arg" + str(i) for i in range(nb)]) + ");"
             
 def bind_accessor(prefix, name):
-    return "     " + prefix + "->SetAccessor(String::NewSymbol(\"" + name + "\"), GetGLUT_" + name + ");\n"
+    return "#ifdef " + name + "\n     " + prefix + "->SetAccessor(String::NewFromUtf8(v8::Isolate::GetCurrent(), \"" + name + "\"), GetGLUT_" + name + ");\n#endif\n"
 
 def bind_function(prefix, name):
-    return "     " + prefix + "->Set(String::NewSymbol(\"" + name + "\"), FunctionTemplate::New(GLUT" + name + "Callback));\n"
+    return "#ifdef " + name + "\n     " + prefix + "->Set(String::NewFromUtf8(v8::Isolate::GetCurrent(), \"" + name + "\"), FunctionTemplate::New(v8::Isolate::GetCurrent(), GLUT" + name + "Callback));\n#endif\n"
 
 def bind_font(name):
     return "     font_[\""+ name +"\"] = GLUT_" + name + ";\n"

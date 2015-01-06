@@ -63,7 +63,6 @@ shell_g
 /test/test262-es6/data
 /test/test262-es6/data.old
 /test/test262-es6/tc39-test262-*
-/testing/gmock
 /third_party/llvm
 /third_party/llvm-build
 /tools/clang

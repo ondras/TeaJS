@@ -3,6 +3,16 @@ import os
 
 bsd = sys.platform.find("bsd") != -1
 
+def build_v8_native(env):
+	v8_path = env["v8_path"]
+	LDFLAGS=""
+	if env["os"] == "darwin":
+		LDFLAGS="-Wl,-no_compact_unwind"
+	v8 = env.Command(v8_path, "",
+	 "make CFLAGS='-fPIC' CXXFLAGS='-fPIC' LDFLAGS='" + LDFLAGS + "' CC=" + env["CC"] + " CXX=" + env["CXX"] + " LINK=" + env["CXX"] +" -C "+ v8_path +" native component=static_library")
+	env.AlwaysBuild(v8)
+#def
+
 def build_with_binary(env, target = "", source = []):
 	e = env.Clone()
 	support = ["src/app", "src/path", "src/cache", "src/lib/binary/bytestorage"]
@@ -373,7 +383,7 @@ vars.Add(("xercesc_path", "Xerces-C++ header path", xercesc_include))
 vars.Add(("gl_path", "OpenGL header path", gl_include))
 
 # misc compile options
-vars.Add(PathVariable("v8_path", "Directory with V8", "../v8"))
+vars.Add(PathVariable("v8_path", "Directory with V8", "./deps/v8"))
 vars.Add(EnumVariable("os", "Operating system", os_string, allowed_values = ["windows", "posix", "darwin"]))
 vars.Add(("config_file", "Config file", config_path))
 
@@ -382,6 +392,10 @@ vars.Add(("cpppath", "Additional include paths (semicolon separated)", ""))
 vars.Add(("libpath", "Additional library paths (semicolon separated)", ""))
 
 env = Environment(variables=vars)
+if 'CC' in os.environ:
+	env['CC'] = os.environ['CC']
+if 'CXX' in os.environ:
+	env['CXX'] = os.environ['CXX']
 
 Help(vars.GenerateHelpText(env))
 conf = Configure(env)
@@ -399,19 +413,27 @@ if conf.CheckFunc("inet_pton"):
 if conf.CheckFunc("inet_ntop"):
 	env.Append(CPPDEFINES = ["HAVE_NTOP"])
 
+if env["os"] != "darwin":
+	env.Append(_LIBFLAGS = ["-Wl,--start-group"])
+
 # default built-in values
 env.Append(
-	LIBS = ["v8", "icui18n", "icuuc"],
-	CCFLAGS = ["-Wall", "-O3", "-std=c++11"],
+	LIBS = [],
+	CCFLAGS = ["-Wall", "-O3"],
 	CPPPATH = ["src", env["v8_path"] + "/include", env["v8_path"]],
-	LIBPATH = env["v8_path"],
+	LIBPATH = [ env["v8_path"] + "/%s" % s for s in ["out/native", "out/native/obj.target/tools/gyp", "out/native/obj.target/third_party/icu"]],
 	CPPDEFINES = [
 		"CONFIG_PATH=" + env["config_file"],
 		"VERSION=" + version,
 		env["os"]
 	],
+	_LIBFLAGS = ["-lv8_base", "-lv8_libbase", "-lv8_snapshot", "-lv8_libplatform", "-licuuc", "-licui18n", "-licudata"],
 	LINKFLAGS = []
 )
+
+if env["os"] != "darwin":
+	env.Append(_LIBFLAGS = ["-Wl,--end-group"])
+
 	
 # additional paths
 env.Append(
@@ -496,6 +518,7 @@ if env["reuse_context"] == 1:
 # if
 
 # start compiling
+build_v8_native(env)
 sources = build_sources(env, sources)
 build_binary(env)
 

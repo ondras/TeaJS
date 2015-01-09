@@ -9,7 +9,7 @@ def build_v8_native(env):
 	if env["os"] == "darwin":
 		LDFLAGS="-Wl,-no_compact_unwind -Wl,-export_dynamic -Wl,-all_load"
 	v8 = env.Command(v8_path, "",
-	 "make CFLAGS='-fPIC' CXXFLAGS='-fPIC' LDFLAGS='" + LDFLAGS + "' CC=" + env["CC"] + " CXX=" + env["CXX"] + " LINK=" + env["CXX"] +" -C "+ v8_path +" native V=1 component=static_library")
+	 "make CFLAGS='-fPIC' CXXFLAGS='-fPIC -DBUILDING_V8_SHARED' LDFLAGS='" + LDFLAGS + "' CC=" + env["CC"] + " CXX=" + env["CXX"] + " LINK=" + env["CXX"] +" -C "+ v8_path +" native library=shared snapshot=off")
 	env.AlwaysBuild(v8)
 #def
 

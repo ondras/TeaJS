@@ -445,11 +445,6 @@ if env["os"] == "posix":
 	# if
 # if
 
-# look for V8 - sanity check
-if (env["os"] != "windows") and not (conf.CheckLib("v8")):
-	print("\n---> Cannot find V8 library! <--- \n")
-# if
-
 # configured build environment
 env = conf.Finish()
 

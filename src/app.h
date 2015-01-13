@@ -49,6 +49,9 @@ protected:
 	void setup_teajs(v8::Handle<v8::Object> target);
 
 private:
+	/* current platform */
+	v8::Platform* platform;
+
 	/* current active isolate */
 	v8::Isolate *isolate;
 

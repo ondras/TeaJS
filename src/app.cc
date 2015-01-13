@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <v8.h>
+#include <include/libplatform/libplatform.h>
+
 
 #ifdef FASTCGI
 #	include <fcgi_stdio.h>
@@ -80,6 +82,10 @@ void TeaJS_App::init() {
 	this->exit_code = 0;
 
 	v8::V8::InitializeICU();
+
+  this->platform = v8::platform::CreateDefaultPlatform();
+  v8::V8::InitializePlatform(this->platform);
+
 	v8::V8::Initialize();
 
 	this->isolate = v8::Isolate::New();

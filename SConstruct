@@ -45,15 +45,6 @@ def build_binary_b(env):
 	)
 # def
 
-def build_profiler(env):
-	e = env.Clone()
-	e.SharedLibrary(
-		target = "lib/profiler",
-		source = ["src/lib/profiler/profiler.cc"],
-		SHLIBPREFIX=""
-	)
-# def
-
 def build_fibers(env):
 	e = env.Clone()
 	e.SharedLibrary(
@@ -281,8 +272,8 @@ def build_so(env, sources):
 	# if
 	e = env.Clone()
 	e.SharedLibrary(
-		target = "libteajs", 
-        source = [sources],
+		target = "libteajs",
+		source = [sources],
 		SHLIBPREFIX=""
 	)
 
@@ -369,10 +360,6 @@ vars.Add(BoolVariable("fcgi", "FastCGI support (for CGI binary)", 0))
 vars.Add(BoolVariable("debug", "Debugging support", 0))
 vars.Add(BoolVariable("verbose", "Verbose debugging messages", 0))
 vars.Add(BoolVariable("reuse_context", "Reuse context for multiple requests", 0))
-
-# since v8 3.20.8 the v8::V8::Pause/ResumeProfiler has been deprecated and was removed on v8 3.21.7
-vars.Add(BoolVariable("profiler", "V8 Profiler library", 0))
-
 
 # optional library paths
 vars.Add(("mysql_path", "MySQL header path", mysql_include))
@@ -525,7 +512,6 @@ build_binary(env)
 if env["fibers"] == 1: build_fibers(env)
 if env["mysql"] == 1: build_mysql(env)
 if env["memcached"] == 1: build_memcached(env)
-if env["profiler"] == 1: build_profiler(env)
 if env["pgsql"] == 1: build_pgsql(env)
 if env["sqlite"] == 1: build_sqlite(env)
 if env["gd"] == 1: build_gd(env)

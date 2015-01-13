@@ -29,7 +29,7 @@
  * any arguments after the v8_args but before the program_file are
  * used by TeaJS.
  */
-static const char * const teajs_usage = "tea [v8_args --] [-v] [-h] [-w] [-c path] [-d port] program_file [argument ...]";
+static const char * const teajs_usage = "tea [v8_args --] [-v] [-h] [-c path] [-d port] program_file [argument ...]";
 
 class TeaJS_CGI : public TeaJS_App {
 public:
@@ -81,7 +81,6 @@ private:
 		err += teajs_usage; /* see the teajs_usage deftion for the format */
 		
 		int index = 0;
-		bool wait_for_debugger = false;
 
 		/* see if we have v8 options */
 		bool have_v8args = false;
@@ -122,10 +121,6 @@ private:
 					index++; /* skip the option value */
 				break;
 				
-				case 'w':
-					wait_for_debugger = true;
-				break;
-
 				case 'h':
 					printf(teajs_usage);
 					printf("\n");

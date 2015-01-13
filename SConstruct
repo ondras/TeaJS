@@ -6,10 +6,14 @@ bsd = sys.platform.find("bsd") != -1
 def build_v8_native(env):
 	v8_path = env["v8_path"]
 	LDFLAGS=""
+	CFLAGS="-fPIC"
+	GYP_LIBTOOLFLAGS=""
 	if env["os"] == "darwin":
-		LDFLAGS="-Wl,-no_compact_unwind -Wl,-export_dynamic -Wl,-all_load"
+		LDFLAGS="-Wl,-no_compact_unwind -Wl,-export_dynamic -Wl,-all_load -fvisibility=default"
+		CFLAGS+=" -fvisibility=default"
+		GYP_LIBTOOLFLAGS+=" -sc"
 	v8 = env.Command(v8_path, "",
-	 "make CFLAGS='-fPIC' CXXFLAGS='-fPIC -DBUILDING_V8_SHARED' LDFLAGS='" + LDFLAGS + "' CC=" + env["CC"] + " CXX=" + env["CXX"] + " LINK=" + env["CXX"] +" -C "+ v8_path +" native library=shared snapshot=off")
+	 "make CFLAGS='" + CFLAGS + "' CXXFLAGS='" + CFLAGS + "' LDFLAGS='" + LDFLAGS + "' CC=" + env["CC"] + " CXX=" + env["CXX"] + " LINK=" + env["CXX"] +" GYP_LIBTOOLFLAGS='" + GYP_LIBTOOLFLAGS + "' -C "+ v8_path +" component=static_library native")
 	env.AlwaysBuild(v8)
 #def
 
@@ -432,11 +436,6 @@ if env["os"] == "posix":
 	# if
 # if
 
-# look for V8 - sanity check
-if (env["os"] != "windows") and not (conf.CheckLib("v8")):
-	print("\n---> Cannot find V8 library! <--- \n")
-# if
-
 # configured build environment
 env = conf.Finish()
 
@@ -455,7 +454,9 @@ if env["os"] == "posix":
 # add macos-specific values
 if env["os"] == "darwin":
 	env.Append(
-		CPPDEFINES = ["DSO_EXT=dylib"]
+		CPPDEFINES = ["DSO_EXT=dylib"],
+		CCFLAGS = ["-stdlib=libstdc++"],
+		LINKFLAGS = ["-stdlib=libstdc++"]
 	)
 # if
 
@@ -522,25 +523,25 @@ if env["os"] != "darwin":
 	env.Append(LINKFLAGS = ["-Wl,--export-dynamic"])
 	env.Append(_LIBFLAGS = ["-Wl,--whole-archive", "-Wl,--start-group"])
 	env.Append(
-		_LIBFLAGS= ["deps/v8/out/native/obj.target/tools/gyp/libv8_base.a",
-			"deps/v8/out/native/obj.target/tools/gyp/libv8_libbase.a",
-			"deps/v8/out/native/obj.target/tools/gyp/libv8_snapshot.a",
-			"deps/v8/out/native/obj.target/tools/gyp/libv8_libplatform.a",
-			"deps/v8/out/native/obj.target/third_party/icu/libicuuc.a",
-			"deps/v8/out/native/obj.target/third_party/icu/libicui18n.a",
-			"deps/v8/out/native/obj.target/third_party/icu/libicudata.a"]
+		_LIBFLAGS= [env["v8_path"] + "/out/native/obj.target/tools/gyp/libv8_base.a",
+			env["v8_path"] + "/out/native/obj.target/tools/gyp/libv8_libbase.a",
+			env["v8_path"] + "/out/native/obj.target/tools/gyp/libv8_snapshot.a",
+			env["v8_path"] + "/out/native/obj.target/tools/gyp/libv8_libplatform.a",
+			env["v8_path"] + "/out/native/obj.target/third_party/icu/libicuuc.a",
+			env["v8_path"] + "/out/native/obj.target/third_party/icu/libicui18n.a",
+			env["v8_path"] + "/out/native/obj.target/third_party/icu/libicudata.a"]
 		)
 	env.Append(_LIBFLAGS = ["-Wl,--end-group", "-Wl,--no-whole-archive"])
 else:
-	env.Append(LINKFLAGS = ["-Wl,-export_dynamic", "-Wl,-all_load"])
+	env.Append(LINKFLAGS = ["-Wl,-export_dynamic", "-Wl,-all_load", "-fvisibility=default"])
 	env.Append(
-		_LIBFLAGS= ["deps/v8/out/native/libv8_base.a",
-			"deps/v8/out/native/libv8_libbase.a",
-			"deps/v8/out/native/libv8_snapshot.a",
-			"deps/v8/out/native/libv8_libplatform.a",
-			"deps/v8/out/native/libicuuc.a",
-			"deps/v8/out/native/libicui18n.a",
-			"deps/v8/out/native/libicudata.a"]
+		_LIBFLAGS= [env["v8_path"] + "/out/native/libv8_base.a",
+			env["v8_path"] + "/out/native/libv8_libbase.a",
+			env["v8_path"] + "/out/native/libv8_snapshot.a",
+			env["v8_path"] + "/out/native/libv8_libplatform.a",
+			env["v8_path"] + "/out/native/libicuuc.a",
+			env["v8_path"] + "/out/native/libicui18n.a",
+			env["v8_path"] + "/out/native/libicudata.a"]
 		)
 
 if env["module"] == 1: build_module(env, sources)

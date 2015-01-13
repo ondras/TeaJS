@@ -413,8 +413,8 @@ JS_METHOD(_connect) {
 	
 	result = connect(sock, (sockaddr *) &addr, len);
 	
-	if (!result) { JS_BOOL(true); return; }
-	if (WOULD_BLOCK) { JS_BOOL(false); return; }
+	if (!result) { args.GetReturnValue().Set(JS_BOOL(true)); return; }
+	if (WOULD_BLOCK) { args.GetReturnValue().Set(JS_BOOL(false)); return; }
 
 	FormatError();
 }
@@ -528,6 +528,7 @@ JS_METHOD(_receive) {
 		delete[] data;
 		if (type == SOCK_DGRAM) { SAVE_VALUE(1, create_peer((sockaddr *) &addr)); }
 		args.GetReturnValue().Set(buffer);
+		return;
 	}
 	
 	delete[] data;

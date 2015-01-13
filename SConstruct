@@ -11,7 +11,7 @@ def build_v8_native(env):
 	if env["os"] == "darwin":
 		LDFLAGS="-Wl,-no_compact_unwind -Wl,-export_dynamic -Wl,-all_load -fvisibility=default"
 		CFLAGS+=" -fvisibility=default"
-		GYP_LIBTOOLFLAGS+=" -all_load"
+		GYP_LIBTOOLFLAGS+=" -sc"
 	v8 = env.Command(v8_path, "",
 	 "make CFLAGS='" + CFLAGS + "' CXXFLAGS='" + CFLAGS + "' LDFLAGS='" + LDFLAGS + "' CC=" + env["CC"] + " CXX=" + env["CXX"] + " LINK=" + env["CXX"] +" GYP_LIBTOOLFLAGS='" + GYP_LIBTOOLFLAGS + "' -C "+ v8_path +" component=static_library native")
 	env.AlwaysBuild(v8)

@@ -7,9 +7,9 @@ def build_v8_native(env):
 	v8_path = env["v8_path"]
 	LDFLAGS=""
 	if env["os"] == "darwin":
-		LDFLAGS="-Wl,-no_compact_unwind"
+		LDFLAGS="-Wl,-no_compact_unwind -Wl,-export_dynamic -Wl,-all_load"
 	v8 = env.Command(v8_path, "",
-	 "make CFLAGS='-fPIC' CXXFLAGS='-fPIC' LDFLAGS='" + LDFLAGS + "' CC=" + env["CC"] + " CXX=" + env["CXX"] + " LINK=" + env["CXX"] +" -C "+ v8_path +" native component=static_library")
+	 "make CFLAGS='-fPIC' CXXFLAGS='-fPIC -DBUILDING_V8_SHARED' LDFLAGS='" + LDFLAGS + "' CC=" + env["CC"] + " CXX=" + env["CXX"] + " LINK=" + env["CXX"] +" -C "+ v8_path +" native library=shared snapshot=off")
 	env.AlwaysBuild(v8)
 #def
 
@@ -400,26 +400,16 @@ if conf.CheckFunc("inet_pton"):
 if conf.CheckFunc("inet_ntop"):
 	env.Append(CPPDEFINES = ["HAVE_NTOP"])
 
-if env["os"] != "darwin":
-	env.Append(_LIBFLAGS = ["-Wl,--start-group"])
-
 # default built-in values
 env.Append(
-	LIBS = [],
-	CCFLAGS = ["-Wall", "-O3"],
+	CCFLAGS = ["-Wall", "-O3", "-fPIC"],
 	CPPPATH = ["src", env["v8_path"] + "/include", env["v8_path"]],
-	LIBPATH = [ env["v8_path"] + "/%s" % s for s in ["out/native", "out/native/obj.target/tools/gyp", "out/native/obj.target/third_party/icu"]],
 	CPPDEFINES = [
 		"CONFIG_PATH=" + env["config_file"],
 		"VERSION=" + version,
 		env["os"]
-	],
-	_LIBFLAGS = ["-lv8_base", "-lv8_libbase", "-lv8_snapshot", "-lv8_libplatform", "-licuuc", "-licui18n", "-licudata"],
-	LINKFLAGS = []
+	]
 )
-
-if env["os"] != "darwin":
-	env.Append(_LIBFLAGS = ["-Wl,--end-group"])
 
 	
 # additional paths
@@ -507,22 +497,52 @@ if env["reuse_context"] == 1:
 # start compiling
 build_v8_native(env)
 sources = build_sources(env, sources)
-build_binary(env)
 
-if env["fibers"] == 1: build_fibers(env)
-if env["mysql"] == 1: build_mysql(env)
-if env["memcached"] == 1: build_memcached(env)
-if env["pgsql"] == 1: build_pgsql(env)
-if env["sqlite"] == 1: build_sqlite(env)
-if env["gd"] == 1: build_gd(env)
-if env["socket"] == 1: build_socket(env)
-if env["process"] == 1: build_process(env)
-if env["fs"] == 1: build_fs(env)
-if env["zlib"] == 1: build_zlib(env)
-if env["tls"] == 1: build_tls(env)
-if env["xdom"] == 1: build_xdom(env)
-if env["gl"] == 1: build_gl(env)
-if env["binary_b"] == 1: build_binary_b(env)
+env_lib = env.Clone()
+env_lib.Append(LINKFLAGS = ["-Wl,-undefined", "-Wl,dynamic_lookup"])
+
+build_binary(env_lib)
+
+if env["fibers"] == 1: build_fibers(env_lib)
+if env["mysql"] == 1: build_mysql(env_lib)
+if env["memcached"] == 1: build_memcached(env_lib)
+if env["pgsql"] == 1: build_pgsql(env_lib)
+if env["sqlite"] == 1: build_sqlite(env_lib)
+if env["gd"] == 1: build_gd(env_lib)
+if env["socket"] == 1: build_socket(env_lib)
+if env["process"] == 1: build_process(env_lib)
+if env["fs"] == 1: build_fs(env_lib)
+if env["zlib"] == 1: build_zlib(env_lib)
+if env["tls"] == 1: build_tls(env_lib)
+if env["xdom"] == 1: build_xdom(env_lib)
+if env["gl"] == 1: build_gl(env_lib)
+if env["binary_b"] == 1: build_binary_b(env_lib)
+
+if env["os"] != "darwin":
+	env.Append(LINKFLAGS = ["-Wl,--export-dynamic"])
+	env.Append(_LIBFLAGS = ["-Wl,--whole-archive", "-Wl,--start-group"])
+	env.Append(
+		_LIBFLAGS= ["deps/v8/out/native/obj.target/tools/gyp/libv8_base.a",
+			"deps/v8/out/native/obj.target/tools/gyp/libv8_libbase.a",
+			"deps/v8/out/native/obj.target/tools/gyp/libv8_snapshot.a",
+			"deps/v8/out/native/obj.target/tools/gyp/libv8_libplatform.a",
+			"deps/v8/out/native/obj.target/third_party/icu/libicuuc.a",
+			"deps/v8/out/native/obj.target/third_party/icu/libicui18n.a",
+			"deps/v8/out/native/obj.target/third_party/icu/libicudata.a"]
+		)
+	env.Append(_LIBFLAGS = ["-Wl,--end-group", "-Wl,--no-whole-archive"])
+else:
+	env.Append(LINKFLAGS = ["-Wl,-export_dynamic", "-Wl,-all_load"])
+	env.Append(
+		_LIBFLAGS= ["deps/v8/out/native/libv8_base.a",
+			"deps/v8/out/native/libv8_libbase.a",
+			"deps/v8/out/native/libv8_snapshot.a",
+			"deps/v8/out/native/libv8_libplatform.a",
+			"deps/v8/out/native/libicuuc.a",
+			"deps/v8/out/native/libicui18n.a",
+			"deps/v8/out/native/libicudata.a"]
+		)
+
 if env["module"] == 1: build_module(env, sources)
 if env["so"] == 1: build_so(env, sources)
 if env["cgi"] == 1: build_cgi(env, sources)

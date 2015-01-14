@@ -104,6 +104,33 @@ JS_METHOD(_usleep) {
 }
 
 /**
+ * run GC and forzen for n ms, default is 1000
+ */
+JS_METHOD(_gc) {
+	int idle_time = args.Length() ? args[0]->Int32Value() : 1000;
+	JS_ISOLATE->IdleNotification(idle_time);
+	args.GetReturnValue().SetUndefined();
+}
+
+/**
+ * run HEAP statistics
+ */
+JS_METHOD(_heap_statistics) {
+	v8::HeapStatistics heap_statistics;
+	v8::Handle<v8::Object> result = v8::Object::New(JS_ISOLATE);
+
+	JS_ISOLATE->GetHeapStatistics(&heap_statistics);
+
+	result->Set(JS_STR("total_heap_size"), JS_INT(heap_statistics.total_heap_size()));
+	result->Set(JS_STR("total_heap_size_executable"), JS_INT(heap_statistics.total_heap_size_executable()));
+	result->Set(JS_STR("total_physical_size"), JS_INT(heap_statistics.total_physical_size()));
+	result->Set(JS_STR("used_heap_size"), JS_INT(heap_statistics.used_heap_size()));
+	result->Set(JS_STR("heap_size_limit"), JS_INT(heap_statistics.heap_size_limit()));
+
+	args.GetReturnValue().Set(result);
+}
+
+/**
  * Return the number of microseconds that have elapsed since the epoch.
  */
 JS_METHOD(_getTimeInMicroseconds) {
@@ -166,6 +193,8 @@ void setup_system(v8::Handle<v8::Object> global, char ** envp, std::string mainf
 	system->Set(JS_STR("getpid"), v8::FunctionTemplate::New(JS_ISOLATE, _getpid)->GetFunction());
 	system->Set(JS_STR("sleep"), v8::FunctionTemplate::New(JS_ISOLATE, _sleep)->GetFunction());
 	system->Set(JS_STR("usleep"), v8::FunctionTemplate::New(JS_ISOLATE, _usleep)->GetFunction());
+	system->Set(JS_STR("gc"), v8::FunctionTemplate::New(JS_ISOLATE, _gc)->GetFunction());
+	system->Set(JS_STR("heap_statistics"), v8::FunctionTemplate::New(JS_ISOLATE, _heap_statistics)->GetFunction());
 	system->Set(JS_STR("getTimeInMicroseconds"), v8::FunctionTemplate::New(JS_ISOLATE, _getTimeInMicroseconds)->GetFunction());
 	system->Set(JS_STR("env"), env);
 	

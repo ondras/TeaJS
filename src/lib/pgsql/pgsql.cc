@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <map>
+#include <memory>
 #include <stdio.h>
 #include <string.h>
 #include <sstream>
@@ -112,6 +113,7 @@ v8::Handle<v8::Array> fetch_any(pq::PGresult *res,bool fetch_all,bool fetch_obje
 			}
 		}
 	}
+  free(types);
 	return result;
 }
 
@@ -321,6 +323,7 @@ JS_METHOD(_query) {
 	v8::String::Utf8Value q(args[0]);
 	pq::PGresult *res;
 	res = pq::PQexec(conn, *q);
+	
 	int code = -1;
 	if (!(!res)) {
 		code = pq::PQresultStatus(res);
@@ -517,34 +520,36 @@ JS_METHOD(_query) {
     v8::String::Utf8Value q(args[0]);
     v8::Handle<v8::Array> tarray = v8::Handle<v8::Array>::Cast(args[1]->ToObject());
     v8::Handle<v8::Object> parray = args[1]->ToObject();
+    int sock = pq::PQsocket(conn);
+    if (sock < 0) {
+      JS_ERROR("SOCKET ERROR");
+      return;
+    }
     int nparams = tarray->Length();
     char ** params = (char **)malloc(nparams);
     size_t n = 0;
     for(int i = 0; i < nparams; i++) {
 	n = tarray->Get(JS_INT(i))->ToString()->Utf8Length();
 	v8::String::Utf8Value tval(tarray->Get(JS_INT(i))->ToString());
-	params[i] = new char[n + 1];
 	params[i] = strdup(*tval);
-    }
-    int sock = pq::PQsocket(conn);
-    if (sock < 0) {
-      JS_ERROR("SOCKET ERROR");
-      return;
     }
     fd_set write_mask;
     FD_ZERO(&write_mask);
     FD_SET(sock, &write_mask);
     int code = 0;
     int flush = pq::PQflush(conn);
+    bool has_error = false;
     while (code < 1) {
       if (flush < 0) {
         JS_ERROR("[js_pgsql.cc @ _sendqueryparams()] ERROR: pq::PQflush() returned an error code");
-        return;
+        has_error = true;
+	break;
       } else {
         while (flush > 0) {
           if (select(sock + 1, NULL, &write_mask, NULL, NULL) == -1) {
             JS_ERROR("SOCKET ERROR");
-            return;
+            has_error = true;
+	    break;
           } else {
             flush = pq::PQflush(conn);
           }
@@ -552,7 +557,8 @@ JS_METHOD(_query) {
       }
       if (flush < 0) {
 	      JS_ERROR("[js_pgsql.cc @ _sendqueryparams()] ERROR: pq::PQflush() returned an error code");
-        return;
+              has_error = true;
+	      break;
       }
       code = pq::PQsendQueryParams(conn, *q, nparams, NULL, params, NULL, NULL, 0);
       flush = pq::PQflush(conn);
@@ -564,13 +570,23 @@ JS_METHOD(_query) {
 	msg << PGSQL_ERROR;
 	std::string err(msg.str());
 	JS_ERROR(err.c_str());
-  return;
+        has_error = true;
+	break;
       }
     }
-    int qc = args.This()->Get(JS_STR("queryCount"))->ToInteger()->Int32Value();
-    args.This()->Set(JS_STR("queryCount"), JS_INT(qc+1));
-    args.GetReturnValue().Set(code);
+    
+    if (!has_error) {
+	    int qc = args.This()->Get(JS_STR("queryCount"))->ToInteger()->Int32Value();
+	    args.This()->Set(JS_STR("queryCount"), JS_INT(qc+1));
+	    args.GetReturnValue().Set(code);
+    }
+    
+    for(int i = 0; i < nparams; i++)
+        if (params[i]) free(params[i]);
+    free(params);
+    
   }
+  
   JS_METHOD(_isconnected) {
     PGSQL_PTR_CON;
  //   ASSERT_CONNECTED;
@@ -818,10 +834,14 @@ JS_METHOD(_execute) {
 	for(uint32_t i = 0; i < len; i++) {
 		uint32_t n = tmp->Get(JS_INT(i))->ToString()->Utf8Length();
 		v8::String::Utf8Value tval(tmp->Get(JS_INT(i))->ToString());
-		q[i] = new char[n + 1];
 		q[i] = strdup(*tval);
 	}
 	pq::PGresult * res = pq::PQexecPrepared(conn, *n, len, (const char* const*)q, NULL, NULL, 0);
+        
+	for(int i = 0; i < len; i++)
+            if (q[i]) free(q[i]);
+        free(q);
+	
 	int code = -1;
 	if (!(!res)) { code = pq::PQresultStatus(res); }
 	if (code != pq::PGRES_COMMAND_OK && code != pq::PGRES_TUPLES_OK) {
@@ -853,33 +873,35 @@ JS_METHOD(_execute) {
     ASSERT_CONNECTED;
     v8::String::Utf8Value n(args[0]);
     v8::Handle<v8::Array> tmp ( v8::Handle<v8::Array>::Cast(args[1]) );
-    uint32_t len = tmp->Length();
-    char ** q = (char **)malloc(len);
-    for(uint32_t i = 0; i < len; i++) {
-	uint32_t n = tmp->Get(JS_INT(i))->ToString()->Utf8Length();
-	v8::String::Utf8Value tval(tmp->Get(JS_INT(i))->ToString());
-	q[i] = new char[n + 1];
-	q[i] = strdup(*tval);
-    }    
     int sock = pq::PQsocket(conn);
     if (sock < 0) {
       JS_ERROR("SOCKET ERROR");
       return;
     }
+    uint32_t len = tmp->Length();
+    char ** q = (char **)malloc(len);
+    for(uint32_t i = 0; i < len; i++) {
+	uint32_t n = tmp->Get(JS_INT(i))->ToString()->Utf8Length();
+	v8::String::Utf8Value tval(tmp->Get(JS_INT(i))->ToString());
+	q[i] = strdup(*tval);
+    }    
     fd_set write_mask;
     FD_ZERO(&write_mask);
     FD_SET(sock, &write_mask);
     int code = 0;
     int flush = pq::PQflush(conn);
+    bool has_error = false;
     while (code < 1) {
       if (flush < 0) {
         JS_ERROR("[js_pgsql.cc @ _sendexecute()] ERROR: pq::PQflush() returned an error code");
-        return;
+        has_error = true;
+	break;
       } else {
         while (flush > 0) {
           if (select(sock + 1, NULL, &write_mask, NULL, NULL) == -1) {
             JS_ERROR("SOCKET ERROR");
-            return;
+            has_error = true;
+	    break;
           } else {
             flush = pq::PQflush(conn);
           }
@@ -887,7 +909,8 @@ JS_METHOD(_execute) {
       }
       if (flush < 0) {
         JS_ERROR("[js_pgsql.cc @ _sendexecute()] ERROR: pq::PQflush() returned an error code");
-        return;
+        has_error = true;
+	break;
       }
       code = pq::PQsendQueryPrepared(conn, *n, len, (const char* const*)q, NULL, NULL, 0);
       flush = pq::PQflush(conn);
@@ -899,12 +922,21 @@ JS_METHOD(_execute) {
       	msg << PGSQL_ERROR;
       	std::string err(msg.str());
       	JS_ERROR(err.c_str());
-        return;
+        has_error = true;
+	break;
       }
     }
-    int qc = args.This()->Get(JS_STR("queryCount"))->ToInteger()->Int32Value();
-    args.This()->Set(JS_STR("queryCount"), JS_INT(qc+1));
-    args.GetReturnValue().Set(JS_BOOL(code));
+    
+    if (!has_error) {
+	    int qc = args.This()->Get(JS_STR("queryCount"))->ToInteger()->Int32Value();
+	    args.This()->Set(JS_STR("queryCount"), JS_INT(qc+1));
+	    args.GetReturnValue().Set(JS_BOOL(code));
+    }
+    
+    for(int i = 0; i < len; i++)
+        if (q[i]) free(q[i]);
+    free(q);
+    
   }
 
   JS_METHOD(_prepare) {
@@ -1209,13 +1241,16 @@ JS_METHOD(_execute) {
       for(int i = 0; i < nparams; i++) {
 	n = p->Get(JS_INT(i))->ToString()->Utf8Length();
 	v8::String::Utf8Value tval(p->Get(JS_INT(i))->ToString());
-	params[i] = new char[n + 1];
 	params[i] = strdup(*tval);
       }
       if (prepared==1)
 	code = pq::PQsendQueryPrepared(conn, *q, nparams, (const char* const*)params, NULL, NULL, 0);
       else
 	code = pq::PQsendQueryParams(conn, *q, nparams, NULL, params, NULL, NULL, 0);
+      
+	for (int i = 0; i < nparams; i++)
+		if (params[i]) free(params[i]);
+	free(params);
     }
     else {
       if (prepared==1)
@@ -1223,6 +1258,10 @@ JS_METHOD(_execute) {
       else
 	code = pq::PQsendQuery(conn, *q);
     }
+    
+    if (*q) free(*q);
+    free(q);    
+    
     if (code==1) {
 
 	// v8::Locker locker;
@@ -1364,13 +1403,16 @@ JS_METHOD(_execute) {
       for(int i = 0; i < nparams; i++) {
 	n = p->Get(JS_INT(i))->ToString()->Utf8Length();
 	v8::String::Utf8Value tval(p->Get(JS_INT(i))->ToString());
-	params[i] = new char[n + 1];
 	params[i] = strdup(*tval);
       }
       if (prepared==1)
 	code = pq::PQsendQueryPrepared(conn, *q, nparams, (const char* const*)params, NULL, NULL, 0);
       else
 	code = pq::PQsendQueryParams(conn, *q, nparams, NULL, params, NULL, NULL, 0);
+
+	for (int i = 0; i < nparams; i++)
+		if (params[i]) free(params[i]);
+	free(params);
     }
     else {
       if (prepared==1)
@@ -1378,6 +1420,8 @@ JS_METHOD(_execute) {
       else
 	code = pq::PQsendQuery(conn, *q);
     }
+    if (*q) free(*q);
+    free(q);
     if (code==1)
       while (!(res > 0))
 	if ( select(sock + 1, &input_mask, NULL, NULL, NULL) ) {

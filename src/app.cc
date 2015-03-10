@@ -174,9 +174,6 @@ void TeaJS_App::finish() {
 	}
 	this->onexit.clear();
 
-	/* garbage collection */
-	this->gc.finish();
-	
 	/* export cache */
 	this->cache.clearExports();
 	
